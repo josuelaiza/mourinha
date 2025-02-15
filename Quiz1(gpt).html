@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz de Exercícios</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .theme-select {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .theme-select select {
+      font-size: 1em;
+      padding: 5px;
+    }
+    .counters {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+      color: #555;
+    }
+    .question {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    .options {
+      list-style-type: none;
+      padding: 0;
+    }
+    .options li {
+      margin-bottom: 10px;
+    }
+    .option-button {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 4px;
+      background-color: #007BFF;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .option-button:hover {
+      background-color: #0056b3;
+    }
+    .feedback {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Quiz de Exercícios</h1>
+    
+    <div class="theme-select">
+      <label for="theme">Selecione o tema: </label>
+      <select id="theme" onchange="themeChanged()">
+        <option value="all">Todos os Temas</option>
+        <option value="Matemática">Matemática</option>
+        <option value="História">História</option>
+        <option value="Geografia">Geografia</option>
+        <option value="Ciências">Ciências</option>
+        <option value="Língua Portuguesa">Língua Portuguesa</option>
+      </select>
+    </div>
+    
+    <div class="counters">
+      <span id="solvedCount">Questões Respondidas: 0</span> |
+      <span id="remainingCount">Questões Restantes: 30</span>
+    </div>
+    
+    <div id="questionContainer">
+      <!-- A questão atual será carregada aqui -->
+    </div>
+    
+    <div id="feedback" class="feedback"></div>
+  </div>
+  
+  <script>
+    // Conjunto de 30 questões divididas em 5 temas (6 por tema)
+    const allQuestions = [
+      // Tema: Matemática
+      {
+        id: 1,
+        theme: "Matemática",
+        question: "Qual o valor de 2 + 2?",
+        options: ["3", "4", "5", "6"],
+        answer: 1
+      },
+      {
+        id: 2,
+        theme: "Matemática",
+        question: "Qual é o resultado de 5 * 3?",
+        options: ["15", "10", "8", "20"],
+        answer: 0
+      },
+      {
+        id: 3,
+        theme: "Matemática",
+        question: "Qual número dentre os seguintes é primo?",
+        options: ["4", "6", "7", "8"],
+        answer: 2
+      },
+      {
+        id: 4,
+        theme: "Matemática",
+        question: "Quanto é 10 - 3?",
+        options: ["5", "7", "8", "6"],
+        answer: 1
+      },
+      {
+        id: 5,
+        theme: "Matemática",
+        question: "Quanto é 9 dividido por 3?",
+        options: ["2", "3", "4", "5"],
+        answer: 1
+      },
+      {
+        id: 6,
+        theme: "Matemática",
+        question: "Qual a raiz quadrada de 16?",
+        options: ["2", "3", "4", "5"],
+        answer: 2
+      },
+      
+      // Tema: História
+      {
+        id: 7,
+        theme: "História",
+        question: "Quem foi o primeiro presidente do Brasil?",
+        options: ["Getúlio Vargas", "Deodoro da Fonseca", "Juscelino Kubitschek", "Tancredo Neves"],
+        answer: 1
+      },
+      {
+        id: 8,
+        theme: "História",
+        question: "Em que ano ocorreu a Independência do Brasil?",
+        options: ["1822", "1889", "1500", "1808"],
+        answer: 0
+      },
+      {
+        id: 9,
+        theme: "História",
+        question: "Qual civilização antiga construiu as pirâmides?",
+        options: ["Romanos", "Egípcios", "Maias", "Gregos"],
+        answer: 1
+      },
+      {
+        id: 10,
+        theme: "História",
+        question: "Quem descobriu o Brasil?",
+        options: ["Pedro Álvares Cabral", "Cristóvão Colombo", "Vasco da Gama", "Martim Lutero"],
+        answer: 0
+      },
+      {
+        id: 11,
+        theme: "História",
+        question: "Qual foi o período da ditadura militar no Brasil?",
+        options: ["1964 a 1985", "1930 a 1945", "1985 a 1992", "1950 a 1960"],
+        answer: 0
+      },
+      {
+        id: 12,
+        theme: "História",
+        question: "Em que continente se localiza o Egito?",
+        options: ["Ásia", "África", "Europa", "América"],
+        answer: 1
+      },
+      
+      // Tema: Geografia
+      {
+        id: 13,
+        theme: "Geografia",
+        question: "Qual é o maior país do mundo em área?",
+        options: ["Canadá", "Estados Unidos", "Rússia", "China"],
+        answer: 2
+      },
+      {
+        id: 14,
+        theme: "Geografia",
+        question: "Qual é a capital da França?",
+        options: ["Berlim", "Madri", "Paris", "Londres"],
+        answer: 2
+      },
+      {
+        id: 15,
+        theme: "Geografia",
+        question: "Qual destes é um oceano?",
+        options: ["Atlântico", "Sahara", "Andes", "Amazonas"],
+        answer: 0
+      },
+      {
+        id: 16,
+        theme: "Geografia",
+        question: "Qual país é conhecido como a Terra do Sol Nascente?",
+        options: ["China", "Japão", "Índia", "Rússia"],
+        answer: 1
+      },
+      {
+        id: 17,
+        theme: "Geografia",
+        question: "Qual é o maior rio do mundo?",
+        options: ["Mississippi", "Nilo", "Amazonas", "Yangtzé"],
+        answer: 2
+      },
+      {
+        id: 18,
+        theme: "Geografia",
+        question: "Em que continente fica o Brasil?",
+        options: ["Ásia", "África", "América", "Europa"],
+        answer: 2
+      },
+      
+      // Tema: Ciências
+      {
+        id: 19,
+        theme: "Ciências",
+        question: "Em que estado físico a água se encontra a 0°C?",
+        options: ["Sólido", "Líquido", "Gasoso", "Plasma"],
+        answer: 0
+      },
+      {
+        id: 20,
+        theme: "Ciências",
+        question: "Qual é o planeta mais próximo do Sol?",
+        options: ["Terra", "Vênus", "Mercúrio", "Marte"],
+        answer: 2
+      },
+      {
+        id: 21,
+        theme: "Ciências",
+        question: "Qual é o processo pelo qual as plantas produzem seu alimento?",
+        options: ["Fotossíntese", "Respiração", "Digestão", "Transpiração"],
+        answer: 0
+      },
+      {
+        id: 22,
+        theme: "Ciências",
+        question: "Qual dos seguintes não é um mamífero?",
+        options: ["Baleia", "Golfinho", "Tubarão", "Canguru"],
+        answer: 2
+      },
+      {
+        id: 23,
+        theme: "Ciências",
+        question: "Quantos sentidos humanos temos?",
+        options: ["Cinco", "Seis", "Sete", "Quatro"],
+        answer: 0
+      },
+      {
+        id: 24,
+        theme: "Ciências",
+        question: "Qual é a principal fonte de energia para a Terra?",
+        options: ["Oceano", "Vento", "Sol", "Terra"],
+        answer: 2
+      },
+      
+      // Tema: Língua Portuguesa
+      {
+        id: 25,
+        theme: "Língua Portuguesa",
+        question: "Qual a forma correta para se referir a pessoas: 'a gente' ou 'agente'?",
+        options: ["a gente", "agente", "ambos", "nenhum"],
+        answer: 0
+      },
+      {
+        id: 26,
+        theme: "Língua Portuguesa",
+        question: "Qual é o plural de 'cão'?",
+        options: ["cãos", "cães", "cãoes", "cãezinhos"],
+        answer: 1
+      },
+      {
+        id: 27,
+        theme: "Língua Portuguesa",
+        question: "Qual a função do acento agudo na palavra 'café'?",
+        options: ["Indicar tonicidade", "Indicar plural", "Indicar dúvida", "Indicar diminutivo"],
+        answer: 0
+      },
+      {
+        id: 28,
+        theme: "Língua Portuguesa",
+        question: "Qual a classe gramatical da palavra 'rápido'?",
+        options: ["Substantivo", "Adjetivo", "Verbo", "Advérbio"],
+        answer: 1
+      },
+      {
+        id: 29,
+        theme: "Língua Portuguesa",
+        question: "Qual é o oposto de 'alegre'?",
+        options: ["Triste", "Feliz", "Contente", "Animado"],
+        answer: 0
+      },
+      {
+        id: 30,
+        theme: "Língua Portuguesa",
+        question: "Qual é a função dos pronomes?",
+        options: ["Substituir os substantivos", "Descrever ações", "Indicar tempo", "Conectar frases"],
+        answer: 0
+      }
+    ];
+    
+    // Cópia das questões que ainda não foram respondidas corretamente.
+    // Cada questão respondida corretamente será removida deste array.
+    let pendingQuestions = [...allQuestions];
+    
+    // Retorna o tema selecionado no menu
+    function getSelectedTheme() {
+      const themeSelect = document.getElementById("theme");
+      return themeSelect.value;
+    }
+    
+    // Atualiza os contadores de questões respondidas e pendentes,
+    // considerando o tema selecionado. Para "Todos os Temas" são contadas todas.
+    function updateCounters() {
+      const selectedTheme = getSelectedTheme();
+      let totalQuestionsForTheme = 0;
+      let pendingForTheme = 0;
+      if (selectedTheme === "all") {
+        totalQuestionsForTheme = allQuestions.length;
+        pendingForTheme = pendingQuestions.length;
+      } else {
+        totalQuestionsForTheme = allQuestions.filter(q => q.theme === selectedTheme).length;
+        pendingForTheme = pendingQuestions.filter(q => q.theme === selectedTheme).length;
+      }
+      const solved = totalQuestionsForTheme - pendingForTheme;
+      document.getElementById("solvedCount").textContent = "Questões Respondidas: " + solved;
+      document.getElementById("remainingCount").textContent = "Questões Restantes: " + pendingForTheme;
+    }
+    
+    // Carrega a próxima questão disponível de acordo com o tema selecionado
+    function loadNextQuestion() {
+      const selectedTheme = getSelectedTheme();
+      // Filtra as questões pendentes pelo tema (ou usa todas se "all")
+      const filtered = pendingQuestions.filter(q => selectedTheme === "all" || q.theme === selectedTheme);
+      
+      const container = document.getElementById("questionContainer");
+      const feedbackDiv = document.getElementById("feedback");
+      feedbackDiv.textContent = "";
+      
+      if (filtered.length === 0) {
+        container.innerHTML = "<p style='text-align:center;'>Parabéns! Você concluiu todas as questões deste tema.</p>";
+        return;
+      }
+      
+      // Seleciona a primeira questão do filtro
+      const currentQuestion = filtered[0];
+      
+      // Cria o HTML para exibir a questão e as 4 alternativas
+      let html = "<div class='question'><strong>" + currentQuestion.question + "</strong></div>";
+      html += "<ul class='options'>";
+      currentQuestion.options.forEach((option, index) => {
+        html += "<li><button class='option-button' onclick='checkAnswer(" + currentQuestion.id + ", " + index + ")'>" + option + "</button></li>";
+      });
+      html += "</ul>";
+      container.innerHTML = html;
+    }
+    
+    // Função chamada ao clicar em uma alternativa.
+    // Verifica se a resposta está correta e atualiza os arrays e contadores.
+    function checkAnswer(questionId, selectedOption) {
+      // Procura a questão na lista de pendentes
+      const questionIndex = pendingQuestions.findIndex(q => q.id === questionId);
+      if (questionIndex === -1) return; // Se já foi resolvida, não faz nada.
+      
+      const question = pendingQuestions[questionIndex];
+      const feedbackDiv = document.getElementById("feedback");
+      
+      if (selectedOption === question.answer) {
+        feedbackDiv.style.color = "green";
+        feedbackDiv.textContent = "Acertou!";
+        // Remove a questão – ela foi respondida corretamente
+        pendingQuestions.splice(questionIndex, 1);
+      } else {
+        feedbackDiv.style.color = "red";
+        feedbackDiv.textContent = "Errou!";
+        // Remove a questão da posição atual e a reinsere no final para tentar novamente
+        pendingQuestions.splice(questionIndex, 1);
+        pendingQuestions.push(question);
+      }
+      
+      updateCounters();
+      
+      // Aguarda 1 segundo para mostrar o feedback e então carrega a próxima questão
+      setTimeout(loadNextQuestion, 1000);
+    }
+    
+    // Quando o usuário muda o tema, atualiza os contadores e carrega a questão inicial para aquele tema
+    function themeChanged() {
+      updateCounters();
+      loadNextQuestion();
+    }
+    
+    // Inicializa o quiz ao carregar a página
+    window.onload = function() {
+      updateCounters();
+      loadNextQuestion();
+    }
+  </script>
+</body>
+</html>

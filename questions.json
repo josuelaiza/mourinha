@@ -1,5 +1,0 @@
-[
-  { "id": 1, "theme": "História", "question": "Qual cientista descobriu que uma corrente elétrica gera um campo magnético ao redor do fio?", "options": ["André‐Marie Ampère", "Michael Faraday", "Hans Christian Ørsted", "James Clerk Maxwell"], "answer": 2 },
-  { "id": 26, "theme": "Generalidades do Ensaio", "question": "Qual é o objetivo principal do ensaio por correntes parasitas?", "options": ["Aquecer o material para soldagem", "Induzir pequenas correntes elétricas em um material condutor e observar as mudanças nos campos magnéticos", "Medir a resistência elétrica de um material", "Alterar a composição química do material"], "answer": 1 }
-  
-]

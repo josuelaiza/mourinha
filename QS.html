@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUIZ - Correntes Parasitas Nível 1</title>
+  <link rel="stylesheet" href="stylesqs.css">
+</head>
+<body>
+  <div class="container">
+    <button id="hamburgerBtn" onclick="toggleHamburgerMenu()">≡</button>
+    <div id="landingPage">
+      <h1>Correntes Parasitas Nível 1</h1>
+      <div class="card-container">
+        <div class="card" onclick="startExercicios()">
+          <h2>Exercícios</h2>
+          <p>Estude no seu ritmo, através de exercícios com foco em tópicos específicos.</p>
+        </div>
+        <div class="card" onclick="checkSimuladoState()">
+          <h2>Simulado</h2>
+          <p>Teste seus conhecimentos em condições similares ao exame real.</p>
+        </div>
+      </div>
+    </div>
+    <div id="quizContainer" style="display:none;">
+      <button id="openMenuBtn" class="open-menu-btn" onclick="showOverlay()">Selecionar Tópicos</button>
+      <div id="progressWrapper" style="display:none;">
+        <div class="progress-container">
+          <div class="progress-bar" id="progressBar">
+            <span id="remainingQuestions"></span>
+          </div>
+        </div>
+      </div>
+      <div id="questionContainer"></div>
+      <div id="feedback" class="feedback"></div>
+    </div>
+    <div id="resultContainer" style="display:none;"></div>
+  </div>
+  <div id="themeOverlay">
+    <div class="overlay-content">
+      <h2>Selecione os Tópicos</h2>
+      <label>
+        <input type="checkbox" class="theme-checkbox" value="Processo de Fabricação de Materiais">
+        Processo de Fabricação de Materiais
+      </label>
+      <label>
+        <input type="checkbox" class="theme-checkbox" value="Tipos de Ensaios Não Destrutivos">
+        Tipos de Ensaios Não Destrutivos
+      </label>
+      <label>
+        <input type="checkbox" class="theme-checkbox" value="Generalidades do Ensaio">
+        Generalidades do Ensaio
+      </label>
+      <label>
+        <input type="checkbox" class="theme-checkbox" value="Princípios e Teoria do Ensaio">
+        Princípios e Teoria do Ensaio
+      </label>
+      <label>
+        <input type="checkbox" class="theme-checkbox" value="Fatores que Afetam o Ensaio">
+        Fatores que Afetam o Ensaio
+      </label>
+      <button onclick="applyThemesAndClose()">Aplicar Tópicos</button>
+    </div>
+  </div>
+  <div id="keyboardOverlay" style="display:none;">
+    <div class="overlay-content">
+      <button id="closeKeyboardBtn" onclick="closeKeyboard()">X</button>
+      <h2>Quantas questões você deseja no simulado?</h2>
+      <input type="text" id="quantityInput" readonly>
+      <div id="keyboardContainer"></div>
+      <button onclick="confirmQuantity()">Confirmar</button>
+    </div>
+  </div>
+  <div id="hamburgerMenu" style="display:none;">
+    <div id="hamburgerMenuContent">
+      <button onclick="goToHome()">Página inicial</button>
+      <button onclick="resetHistory()">Resetar Histórico</button>
+    </div>
+  </div>
+  <script>
+    // ### VARIÁVEIS DE ÂMBITO GERAL ###
+    let mode = "";
+    let allQuestions = [];
+    let pendingQuestions = [];
+    let currentQuestion = null;
+    let selectedOptionIndex = null;
+    let simuladoQuestions = [];
+    let simuladoResults = [];
+    let simuladoStartTime = null;
+    let totalSimuladoQuestions = 0;
+    let respondedQuestions = 0;
+    let selectedThemes = [];
+    let orderedThemes = [];
+    const COURSE_KEY = "CPN1";
+
+    // ### FUNÇÕES DE ÂMBITO GERAL ###
+    function loadQuestions() {
+      fetch("questionsCPN1.json")
+        .then(response => response.json())
+        .then(data => {
+          allQuestions = data;
+          pendingQuestions = [...allQuestions];
+          restoreState();
+          setOrderedThemes();
+        })
+        .catch(error => console.error('Erro ao carregar as questões:', error));
+    }
+
+    function setOrderedThemes() {
+      const checkboxes = document.querySelectorAll('.theme-checkbox');
+      orderedThemes = Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function startExercicios() {
+      mode = "exercicios";
+      document.getElementById("landingPage").style.display = "none";
+      document.getElementById("quizContainer").style.display = "block";
+      document.getElementById("openMenuBtn").style.display = "block";
+      updateCounters();
+      loadNextQuestion();
+    }
+
+    function checkSimuladoState() {
+      const savedSimuladoQuestions = localStorage.getItem(`simuladoQuestions_${COURSE_KEY}`);
+      if (savedSimuladoQuestions && JSON.parse(savedSimuladoQuestions).length > 0) {
+        restoreSimulado();
+      } else {
+        openQuantitySelector();
+      }
+    }
+
+    function restoreSimulado() {
+      mode = "simulado";
+      document.getElementById("landingPage").style.display = "none";
+      document.getElementById("quizContainer").style.display = "block";
+      document.getElementById("openMenuBtn").style.display = "none";
+      updateCounters();
+      loadNextQuestion();
+    }
+
+    function openQuantitySelector() {
+      document.getElementById("keyboardOverlay").style.display = "block";
+      createKeyboard();
+    }
+
+    function closeKeyboard() {
+      document.getElementById("keyboardOverlay").style.display = "none";
+    }
+
+    function createKeyboard() {
+      const keyboardContainer = document.getElementById("keyboardContainer");
+      keyboardContainer.innerHTML = "";
+      const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+      numbers.forEach(num => {
+        const btn = document.createElement("button");
+        btn.textContent = num;
+        btn.classList.add("keyboard-btn");
+        btn.onclick = () => appendToInput(num);
+        keyboardContainer.appendChild(btn);
+      });
+      const apagarBtn = document.createElement("button");
+      apagarBtn.textContent = "Apagar";
+      apagarBtn.classList.add("keyboard-btn");
+      apagarBtn.onclick = () => deleteLastDigit();
+      keyboardContainer.appendChild(apagarBtn);
+    }
+
+    function appendToInput(num) {
+      const input = document.getElementById("quantityInput");
+      input.value += num;
+    }
+
+    function deleteLastDigit() {
+      const input = document.getElementById("quantityInput");
+      input.value = input.value.slice(0, -1);
+    }
+
+    function confirmQuantity() {
+      const input = document.getElementById("quantityInput");
+      let quantity = parseInt(input.value) || 0;
+
+      let availableThemes = orderedThemes.filter(theme => allQuestions.some(q => q.theme === theme));
+      const numThemes = availableThemes.length;
+      if (numThemes === 0) {
+        alert("Não há tópicos disponíveis.");
+        return;
+      }
+
+      if (quantity < numThemes) {
+        quantity = numThemes;
+      }
+
+      const totalAvailable = allQuestions.filter(q => availableThemes.includes(q.theme)).length;
+      if (quantity > totalAvailable) {
+        quantity = totalAvailable;
+      }
+
+      totalSimuladoQuestions = quantity;
+      document.getElementById("keyboardOverlay").style.display = "none";
+      alert(`O simulado terá ${quantity} questões.`);
+      buildSimuladoQuestions(quantity, availableThemes);
+      startSimulado();
+    }
+
+    function startSimulado() {
+      mode = "simulado";
+      document.getElementById("landingPage").style.display = "none";
+      document.getElementById("quizContainer").style.display = "block";
+      document.getElementById("openMenuBtn").style.display = "none";
+      simuladoResults = [];
+      simuladoStartTime = Date.now();
+      respondedQuestions = 0;
+      updateCounters();
+      loadNextQuestion();
+    }
+
+    function buildSimuladoQuestions(quantity, availableThemes) {
+      const themeQuestions = {};
+      availableThemes.forEach(theme => {
+        themeQuestions[theme] = allQuestions.filter(q => q.theme === theme);
+      });
+
+      const questionsPerTheme = {};
+      const baseQuestions = Math.floor(quantity / availableThemes.length);
+      const extraQuestions = quantity % availableThemes.length;
+
+      availableThemes.forEach((theme, index) => {
+        questionsPerTheme[theme] = baseQuestions + (index < extraQuestions ? 1 : 0);
+      });
+
+      let remainingQuestions = quantity;
+      availableThemes.forEach(theme => {
+        const available = themeQuestions[theme].length;
+        if (questionsPerTheme[theme] > available) {
+          questionsPerTheme[theme] = available;
+          remainingQuestions -= available;
+        } else {
+          remainingQuestions -= questionsPerTheme[theme];
+        }
+      });
+
+      while (remainingQuestions > 0) {
+        availableThemes.forEach(theme => {
+          if (remainingQuestions > 0 && questionsPerTheme[theme] < themeQuestions[theme].length) {
+            questionsPerTheme[theme]++;
+            remainingQuestions--;
+          }
+        });
+      }
+
+      simuladoQuestions = [];
+      availableThemes.forEach(theme => {
+        const shuffled = shuffleArray([...themeQuestions[theme]]);
+        simuladoQuestions = simuladoQuestions.concat(shuffled.slice(0, questionsPerTheme[theme]));
+      });
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function updateCounters() {
+  const progressWrapper = document.getElementById('progressWrapper');
+  const remainingQuestionsSpan = document.getElementById('remainingQuestions');
+
+  if (mode === "exercicios") {
+    const selectedThemes = getSelectedThemes();
+    const totalQuestions = allQuestions.filter(q => selectedThemes.includes(q.theme)).length;
+    const pendingForThemes = pendingQuestions.filter(q => selectedThemes.includes(q.theme)).length;
+    const correctAnswers = totalQuestions - pendingForThemes;
+    const progress = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+    document.getElementById('progressBar').style.width = progress + '%';
+    remainingQuestionsSpan.textContent = pendingForThemes;
+    remainingQuestionsSpan.classList.remove('hidden'); // Mostra o texto no modo exercícios
+    progressWrapper.style.display = 'block';
+  } else if (mode === "simulado") {
+    const progress = totalSimuladoQuestions > 0 ? (respondedQuestions / totalSimuladoQuestions) * 100 : 0;
+    document.getElementById('progressBar').style.width = progress + '%';
+    remainingQuestionsSpan.classList.add('hidden'); // Oculta o texto no modo simulado
+    progressWrapper.style.display = 'block';
+  }
+}
+
+    function loadNextQuestion() {
+      if (mode === "exercicios") {
+        const selectedThemes = getSelectedThemes();
+        const container = document.getElementById("questionContainer");
+        const feedbackDiv = document.getElementById("feedback");
+        feedbackDiv.textContent = "";
+
+        if (selectedThemes.length === 0) {
+          container.innerHTML = "<p style='text-align:center;'>Por favor, selecione ao menos um tópico.</p>";
+          document.getElementById('progressWrapper').style.display = 'none';
+          return;
+        }
+
+        const filtered = pendingQuestions.filter(q => selectedThemes.includes(q.theme));
+        if (filtered.length === 0) {
+          container.innerHTML = "<p style='text-align:center;'>Parabéns! Você concluiu todas as questões dos tópicos selecionados.</p>";
+          document.getElementById('progressWrapper').style.display = 'none';
+          return;
+        }
+
+        const randomIndex = Math.floor(Math.random() * filtered.length);
+        currentQuestion = filtered[randomIndex];
+        selectedOptionIndex = null;
+
+        let html = "<div class='question'>";
+        html += "<p class='theme'>Tópico: " + currentQuestion.theme + "</p>";
+        html += "<strong>" + currentQuestion.question + "</strong>";
+        html += "</div>";
+        html += "<ul class='options'>";
+        currentQuestion.options.forEach((option, index) => {
+          html += "<li><button type='button' class='option-button' onclick='selectOption(" + index + ")'>" + option + "</button></li>";
+        });
+        html += "</ul>";
+        html += "<div class='btn-group'>";
+        html += "<button type='button' class='action-button responder' onclick='submitAnswer()'>Responder</button>";
+        html += "<button type='button' class='action-button pular' onclick='skipQuestion()'>Pular</button>";
+        html += "</div>";
+
+        container.innerHTML = html;
+      } else if (mode === "simulado") {
+        const container = document.getElementById("questionContainer");
+        const feedbackDiv = document.getElementById("feedback");
+        feedbackDiv.textContent = "";
+
+        if (simuladoQuestions.length === 0) {
+          finishSimulado();
+          return;
+        }
+
+        currentQuestion = simuladoQuestions[0];
+        selectedOptionIndex = null;
+
+        let html = "<div class='question'>";
+        html += "<p class='theme'>Tópico: " + currentQuestion.theme + "</p>";
+        html += "<strong>" + currentQuestion.question + "</strong>";
+        html += "</div>";
+        html += "<ul class='options'>";
+        currentQuestion.options.forEach((option, index) => {
+          html += "<li><button type='button' class='option-button' onclick='selectOption(" + index + ")'>" + option + "</button></li>";
+        });
+        html += "</ul>";
+        html += "<div class='btn-group'>";
+        html += "<button type='button' class='action-button responder' onclick='submitAnswer()'>Responder</button>";
+        html += "<button type='button' class='action-button pular' onclick='skipQuestion()'>Pular</button>";
+        html += "</div>";
+
+        container.innerHTML = html;
+        updateCounters();
+      }
+    }
+
+    function selectOption(index) {
+      selectedOptionIndex = index;
+      const buttons = document.querySelectorAll('#questionContainer .option-button');
+      buttons.forEach((btn, idx) => {
+        btn.classList.toggle('selected', idx === index);
+      });
+    }
+
+    function submitAnswer() {
+      if (selectedOptionIndex === null) {
+        alert("Por favor, selecione uma opção antes de responder.");
+        return;
+      }
+
+      const buttons = document.querySelectorAll('#questionContainer .option-button');
+      const selectedButton = buttons[selectedOptionIndex];
+
+      if (mode === "exercicios") {
+        const qIndex = pendingQuestions.findIndex(q => q.id === currentQuestion.id);
+        if (qIndex === -1) return;
+
+        if (selectedOptionIndex === currentQuestion.answer) {
+          selectedButton.classList.add('correct');
+          pendingQuestions.splice(qIndex, 1);
+        } else {
+          selectedButton.classList.add('incorrect');
+          pendingQuestions.splice(qIndex, 1);
+          pendingQuestions.push(currentQuestion);
+        }
+
+        updateCounters();
+        saveState();
+        setTimeout(() => {
+          selectedButton.classList.remove('correct', 'incorrect');
+          loadNextQuestion();
+        }, 1000);
+      } else if (mode === "simulado") {
+        simuladoResults.push({
+          id: currentQuestion.id,
+          question: currentQuestion.question,
+          options: currentQuestion.options,
+          chosen: selectedOptionIndex,
+          correct: currentQuestion.answer,
+          theme: currentQuestion.theme
+        });
+        simuladoQuestions.shift();
+        respondedQuestions++;
+        updateCounters();
+        saveState();
+        loadNextQuestion();
+      }
+    }
+
+    function skipQuestion() {
+      if (mode === "exercicios") {
+        const qIndex = pendingQuestions.findIndex(q => q.id === currentQuestion.id);
+        if (qIndex === -1) return;
+
+        pendingQuestions.splice(qIndex, 1);
+        pendingQuestions.push(currentQuestion);
+        loadNextQuestion();
+      } else if (mode === "simulado") {
+        simuladoQuestions.push(simuladoQuestions.shift());
+        loadNextQuestion();
+      }
+    }
+
+    function finishSimulado() {
+      document.getElementById("quizContainer").style.display = "none";
+      const resultContainer = document.getElementById("resultContainer");
+      resultContainer.style.display = "block";
+
+      let endTime = Date.now();
+      let timeTaken = Math.floor((endTime - simuladoStartTime) / 1000);
+      let correctCount = simuladoResults.filter(r => r.chosen === r.correct).length;
+      let total = totalSimuladoQuestions;
+      let percentage = total > 0 ? ((correctCount / total) * 100).toFixed(0) : 0;
+
+      let resultHtml = "<h2>Resultado do Simulado</h2>";
+      resultHtml += "<p>Pontuação: " + correctCount + " de " + total + " (" + percentage + "%)</p>";
+      resultHtml += "<p>Tempo: " + timeTaken + " segundos</p>";
+
+      let incorrectResults = simuladoResults.filter(r => r.chosen !== r.correct);
+      if (incorrectResults.length > 0) {
+        resultHtml += "<h3>Questões incorretas:</h3>";
+        incorrectResults.forEach(r => {
+          resultHtml += "<div class='result-question'>";
+          resultHtml += "<p><strong>" + r.question + "</strong></p>";
+          resultHtml += "<p>Sua resposta: " + (r.chosen !== null && r.chosen < r.options.length ? r.options[r.chosen] : "Nenhuma resposta") + "</p>";
+          resultHtml += "<p>Resposta correta: " + r.options[r.correct] + "</p>";
+          resultHtml += "</div>";
+        });
+      } else {
+        resultHtml += "<p>Parabéns! Todas as respostas estão corretas.</p>";
+      }
+
+      resultContainer.innerHTML = resultHtml;
+
+      localStorage.removeItem(`simuladoQuestions_${COURSE_KEY}`);
+      localStorage.removeItem(`simuladoResults_${COURSE_KEY}`);
+      localStorage.removeItem(`simuladoStartTime_${COURSE_KEY}`);
+      localStorage.removeItem(`totalSimuladoQuestions_${COURSE_KEY}`);
+      localStorage.removeItem(`respondedQuestions_${COURSE_KEY}`);
+    }
+
+    function toggleHamburgerMenu() {
+      const menu = document.getElementById("hamburgerMenu");
+      menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+
+    function goToHome() {
+      document.getElementById("hamburgerMenu").style.display = "none";
+      document.getElementById("quizContainer").style.display = "none";
+      document.getElementById("resultContainer").style.display = "none";
+      document.getElementById("landingPage").style.display = "block";
+      document.getElementById("keyboardOverlay").style.display = "none";
+    }
+
+    function resetHistory() {
+      const confirmMessage = "Tem certeza que deseja resetar todo o histórico do curso 'Correntes Parasitas Nível 1'? Isso não pode ser desfeito.";
+      if (confirm(confirmMessage)) {
+        localStorage.removeItem(`pendingQuestions_${COURSE_KEY}`);
+        localStorage.removeItem(`selectedThemes_${COURSE_KEY}`);
+        localStorage.removeItem(`simuladoQuestions_${COURSE_KEY}`);
+        localStorage.removeItem(`simuladoResults_${COURSE_KEY}`);
+        localStorage.removeItem(`simuladoStartTime_${COURSE_KEY}`);
+        localStorage.removeItem(`totalSimuladoQuestions_${COURSE_KEY}`);
+        localStorage.removeItem(`respondedQuestions_${COURSE_KEY}`);
+        pendingQuestions = [...allQuestions];
+        selectedThemes = [];
+        simuladoQuestions = [];
+        simuladoResults = [];
+        totalSimuladoQuestions = 0;
+        respondedQuestions = 0;
+        document.querySelectorAll('.theme-checkbox').forEach(cb => cb.checked = false);
+        goToHome();
+      }
+    }
+
+    function showOverlay() {
+      document.getElementById("themeOverlay").style.display = "block";
+    }
+
+    function applyThemesAndClose() {
+      selectedThemes = getSelectedThemes();
+      pendingQuestions = allQuestions.filter(q => selectedThemes.includes(q.theme));
+      updateCounters();
+      loadNextQuestion();
+      document.getElementById("themeOverlay").style.display = "none";
+    }
+
+    function getSelectedThemes() {
+      const checkboxes = document.querySelectorAll('.theme-checkbox');
+      let selected = [];
+      checkboxes.forEach(cb => {
+        if (cb.checked) {
+          selected.push(cb.value);
+        }
+      });
+      return selected;
+    }
+
+    function saveState() {
+      if (mode === "exercicios") {
+        localStorage.setItem(`pendingQuestions_${COURSE_KEY}`, JSON.stringify(pendingQuestions));
+        localStorage.setItem(`selectedThemes_${COURSE_KEY}`, JSON.stringify(selectedThemes));
+      } else if (mode === "simulado") {
+        localStorage.setItem(`simuladoResults_${COURSE_KEY}`, JSON.stringify(simuladoResults));
+        localStorage.setItem(`simuladoQuestions_${COURSE_KEY}`, JSON.stringify(simuladoQuestions));
+        localStorage.setItem(`simuladoStartTime_${COURSE_KEY}`, simuladoStartTime);
+        localStorage.setItem(`totalSimuladoQuestions_${COURSE_KEY}`, totalSimuladoQuestions);
+        localStorage.setItem(`respondedQuestions_${COURSE_KEY}`, respondedQuestions);
+      }
+    }
+
+    function restoreState() {
+      const savedPending = localStorage.getItem(`pendingQuestions_${COURSE_KEY}`);
+      if (savedPending) {
+        pendingQuestions = JSON.parse(savedPending);
+      } else {
+        pendingQuestions = [...allQuestions];
+      }
+      const savedThemes = localStorage.getItem(`selectedThemes_${COURSE_KEY}`);
+      if (savedThemes) {
+        selectedThemes = JSON.parse(savedThemes);
+        document.querySelectorAll('.theme-checkbox').forEach(cb => {
+          cb.checked = selectedThemes.includes(cb.value);
+        });
+      } else {
+        selectedThemes = [];
+      }
+      const savedSimuladoQuestions = localStorage.getItem(`simuladoQuestions_${COURSE_KEY}`);
+      if (savedSimuladoQuestions) {
+        simuladoQuestions = JSON.parse(savedSimuladoQuestions);
+      } else {
+        simuladoQuestions = [];
+      }
+      const savedSimuladoResults = localStorage.getItem(`simuladoResults_${COURSE_KEY}`);
+      if (savedSimuladoResults) {
+        simuladoResults = JSON.parse(savedSimuladoResults);
+      } else {
+        simuladoResults = [];
+      }
+      const savedStartTime = localStorage.getItem(`simuladoStartTime_${COURSE_KEY}`);
+      if (savedStartTime) {
+        simuladoStartTime = parseInt(savedStartTime);
+      } else {
+        simuladoStartTime = null;
+      }
+      const savedTotalQuestions = localStorage.getItem(`totalSimuladoQuestions_${COURSE_KEY}`);
+      if (savedTotalQuestions) {
+        totalSimuladoQuestions = parseInt(savedTotalQuestions);
+      } else {
+        totalSimuladoQuestions = 0;
+      }
+      const savedResponded = localStorage.getItem(`respondedQuestions_${COURSE_KEY}`);
+      if (savedResponded) {
+        respondedQuestions = parseInt(savedResponded);
+      } else {
+        respondedQuestions = 0;
+      }
+    }
+
+    window.onload = function() {
+      loadQuestions();
+    };
+  </script>
+</body>
+</html>

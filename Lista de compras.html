@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lista de Compras</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+    header {
+      background: #007bff;
+      color: #fff;
+      padding: 15px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header .header-content button {
+      background: #ffc107;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+    form {
+      background: #fff;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    form h2 {
+      margin-top: 0;
+    }
+    /* Div que agrupa os campos */
+    #fieldsDiv .form-group {
+      margin-bottom: 10px;
+    }
+    #fieldsDiv label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    #fieldsDiv input[type="text"],
+    #fieldsDiv input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    /* Div dos botões fora da área dos campos */
+    #formButtons {
+      margin-top: 10px;
+    }
+    #formButtons button {
+      background: #28a745;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 1em;
+      margin-right: 5px;
+    }
+    #formButtons button:hover {
+      background: #218838;
+    }
+    .search-bar {
+      margin-bottom: 20px;
+    }
+    .search-bar input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .item-list {
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+    }
+    .item:last-child {
+      border-bottom: none;
+    }
+    .item input[type="checkbox"] {
+      flex-shrink: 0;
+    }
+    .item .info {
+      flex: 1;
+      margin-left: 10px;
+    }
+    .item .info p {
+      margin: 2px 0;
+    }
+    .item .actions button {
+      margin-left: 5px;
+      padding: 5px 8px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .item .actions button.edit {
+      background: #ffc107;
+      color: #fff;
+    }
+    .item .actions button.delete {
+      background: #dc3545;
+      color: #fff;
+    }
+    .summary {
+      margin-top: 20px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    @media (max-width: 600px) {
+      .item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .item .actions {
+        margin-top: 10px;
+      }
+    }
+    .clear-all-container {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .clear-all-container button {
+        background: #dc3545;
+        color: #fff;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+
+    .clear-all-container button:hover {
+        background: #c82333;
+     }
+  </style>
+</head>
+<body>
+  <!-- Cabeçalho com total à esquerda e botão de modo à direita -->
+  <header>
+    <div class="header-content">
+      <div>Total: <span id="totalValue">R$ 0,00</span></div>
+      <button id="toggleModeBtn">Modo balança</button>
+    </div>
+  </header>
+  
+  <div class="container">
+    <!-- Formulário para adicionar/editar itens -->
+    <form id="itemForm">
+      <h2 id="formTitle">Adicionar Item</h2>
+      <div id="fieldsDiv">
+        <div class="form-group">
+          <label id="nameLabel" for="itemName">Nome do item*</label>
+          <input type="text" id="itemName" placeholder="Ex: Arroz" required>
+        </div>
+        <div class="form-group">
+          <label id="priceLabel" for="itemPrice">Preço (R$)*</label>
+          <input type="text" id="itemPrice" placeholder="Ex: 10,50" required inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label id="quantityLabel" for="itemQuantity">Quantidade*</label>
+          <input type="number" id="itemQuantity" placeholder="Ex: 2" min="1" required>
+        </div>
+      </div>
+      <div id="formButtons">
+        <button type="submit" id="btnSubmit">Adicionar</button>
+        <button type="button" id="btnCancelEdit" style="display:none;">Cancelar edição</button>
+        <button type="button" id="btnDeselectAll">Desmarcar todos</button>
+      </div>
+    </form>
+    
+    <!-- Barra de pesquisa -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Pesquisar itens...">
+    </div>
+    
+    <!-- Lista de itens -->
+    <div class="item-list" id="itemList"></div>
+
+    <!-- Resumo dos itens -->
+    <div class="summary" id="itemSummary">
+      <p>Total de itens: <span id="totalItems">0</span></p>
+      <p>Itens abandonados: <span id="abandonedItems">0</span></p>
+    </div>
+    <div class="clear-all-container">
+      <button type="button" id="btnClearAll">Apagar Tudo</button>
+    </div>
+  </div>
+  
+  <script>
+    // Variáveis de estado
+    let items = [];
+    let editId = null;
+    // Modo global: "normal" ou "balanca"
+    let currentMode = "normal";
+    
+    // Seleção de elementos
+    const totalValueEl = document.getElementById('totalValue');
+    const toggleModeBtn = document.getElementById('toggleModeBtn');
+    const itemForm = document.getElementById('itemForm');
+    const formTitle = document.getElementById('formTitle');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const btnCancelEdit = document.getElementById('btnCancelEdit');
+    const btnDeselectAll = document.getElementById('btnDeselectAll');
+    const itemNameInput = document.getElementById('itemName');
+    const itemPriceInput = document.getElementById('itemPrice');
+    const itemQuantityInput = document.getElementById('itemQuantity');
+    const itemListEl = document.getElementById('itemList');
+    const searchInput = document.getElementById('searchInput');
+    const btnClearAll = document.getElementById('btnClearAll');
+    
+    // Labels do formulário
+    const nameLabel = document.getElementById('nameLabel');
+    const priceLabel = document.getElementById('priceLabel');
+    const quantityLabel = document.getElementById('quantityLabel');
+    
+    // Atualiza os textos dos labels e placeholders do formulário conforme o modo atual
+    function updateFormLabels() {
+      if (currentMode === "normal") {
+        priceLabel.textContent = "Preço (R$)*";
+        priceLabel.setAttribute('for', 'itemPrice');
+        itemPriceInput.placeholder = "Ex: 10,50";
+        quantityLabel.textContent = "Quantidade*";
+        itemQuantityInput.placeholder = "Ex: 2";
+      } else if (currentMode === "balanca") {
+        priceLabel.textContent = "Preço (kg)*";
+        priceLabel.setAttribute('for', 'itemPrice');
+        itemPriceInput.placeholder = "Ex: 10,00";
+        quantityLabel.textContent = "Quantidade (g)*";
+        itemQuantityInput.placeholder = "Ex: 500";
+      }
+    }
+    
+    // Atualiza o texto do botão de toggle (ele mostra o modo para o qual irá mudar)
+    function updateToggleButtonText() {
+      if (currentMode === "normal") {
+        toggleModeBtn.textContent = "Modo balança";
+      } else {
+        toggleModeBtn.textContent = "Modo normal";
+      }
+    }
+    
+    // Formata valor para moeda brasileira
+    function formatCurrency(value) {
+      return parseFloat(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+    
+    // Atualiza o total considerando somente itens marcados e calculando de acordo com o modo de cada item
+    function updateTotal() {
+      const total = items.filter(item => item.selected)
+        .reduce((acc, item) => {
+          if (item.mode === "normal") {
+            return acc + (item.price * item.quantity);
+          } else { // balança
+            return acc + (item.price * (item.quantity / 1000));
+          }
+        }, 0);
+      totalValueEl.textContent = formatCurrency(total);
+    }
+    
+    // Atualiza o resumo (total de itens e itens abandonados)
+    function updateSummary() {
+      const totalItemsEl = document.getElementById('totalItems');
+      const abandonedItemsEl = document.getElementById('abandonedItems');
+      totalItemsEl.textContent = items.length;
+      abandonedItemsEl.textContent = items.filter(item => !item.selected).length;
+    }
+    
+    // Salva os itens no localStorage
+    function saveItems() {
+      localStorage.setItem('shoppingList', JSON.stringify(items));
+    }
+    
+    // Carrega os itens do localStorage
+    function loadItems() {
+      const data = localStorage.getItem('shoppingList');
+      if (data) {
+        items = JSON.parse(data);
+      }
+    }
+    
+    // Renderiza a lista de itens aplicando filtro e ajustando a exibição conforme o modo de cada item
+    function renderItems() {
+      const filter = searchInput.value.toLowerCase();
+      itemListEl.innerHTML = '';
+      items.filter(item => item.name.toLowerCase().includes(filter))
+        .forEach(item => {
+          let itemTotal;
+          let displayQuantity;
+          let displayPrice;
+          if (item.mode === "normal") {
+            itemTotal = item.price * item.quantity;
+            displayQuantity = `Qtd: ${item.quantity}`;
+            displayPrice = `Preço(un): ${formatCurrency(item.price)}`;
+          } else { // balança
+            itemTotal = item.price * (item.quantity / 1000);
+            displayQuantity = `Qtd: ${item.quantity} g`;
+            displayPrice = `Preço(kg): ${formatCurrency(item.price)}`;
+          }
+          const div = document.createElement('div');
+          div.className = 'item';
+          div.innerHTML = `
+            <input type="checkbox" class="item-checkbox" data-id="${item.id}" ${item.selected ? 'checked' : ''}>
+            <div class="info">
+              <p><strong>${item.name}</strong></p>
+              <p>${displayQuantity} | ${displayPrice} | Total: ${formatCurrency(itemTotal)}</p>
+            </div>
+            <div class="actions">
+              <button class="edit" data-id="${item.id}">Editar</button>
+              <button class="delete" data-id="${item.id}">Excluir</button>
+            </div>
+          `;
+          itemListEl.appendChild(div);
+        });
+      updateTotal();
+      updateSummary();
+    }
+    
+    // Limpa os campos do formulário e reseta o estado de edição
+    function clearForm() {
+      itemNameInput.value = '';
+      itemPriceInput.value = '';
+      itemQuantityInput.value = '';
+      editId = null;
+      formTitle.textContent = 'Adicionar Item';
+      btnSubmit.textContent = 'Adicionar';
+      // Exibe o botão "Desmarcar todos" ao sair do modo de edição
+      btnDeselectAll.style.display = 'inline-block';
+    }
+    
+    // Converte string de moeda para número (suporta vírgula ou ponto)
+    function parsePrice(value) {
+      value = value.replace(/[^\d.,]/g, '');
+      value = value.replace(',', '.');
+      return parseFloat(value) || 0;
+    }
+    
+    // Máscara simples de moeda no campo de valor
+    itemPriceInput.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/[^\d,\.]/g, '');
+      const parts = value.split(/[,\.]/);
+      if (parts.length > 1) {
+        value = parts.shift() + ',' + parts.join('');
+      }
+      e.target.value = value;
+    });
+    
+    // Evento do formulário para adicionar/editar item
+    itemForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = itemNameInput.value.trim();
+      const price = parsePrice(itemPriceInput.value.trim());
+      const quantity = parseInt(itemQuantityInput.value);
+      
+      if (!name || price <= 0 || quantity <= 0) {
+        alert('Preencha todos os campos corretamente.');
+        return;
+      }
+      
+      if (editId) {
+        // Atualiza item em modo edição – o item passa a ser marcado e seu modo é o atual do formulário
+        items = items.map(item => {
+          if (item.id === editId) {
+            return { id: item.id, name, price, quantity, selected: true, mode: currentMode };
+          }
+          return item;
+        });
+        // Reabilita o botão de modo e oculta o botão "Cancelar edição"
+        toggleModeBtn.disabled = false;
+        btnCancelEdit.style.display = 'none';
+      } else {
+        // Adiciona novo item com o modo atual
+        const newItem = {
+          id: Date.now().toString(),
+          name,
+          price,
+          quantity,
+          selected: true,
+          mode: currentMode
+        };
+        items.push(newItem);
+      }
+      
+      saveItems();
+      renderItems();
+      clearForm();
+    });
+    
+    // Delegação de eventos para edição e exclusão de itens
+    itemListEl.addEventListener('click', function(e) {
+      if (e.target.classList.contains('edit')) {
+        const id = e.target.getAttribute('data-id');
+        const item = items.find(item => item.id === id);
+        if (item) {
+          // Se o item editado tiver um modo diferente do atual, muda o modo do formulário
+          if (item.mode !== currentMode) {
+            currentMode = item.mode;
+            updateToggleButtonText();
+            updateFormLabels();
+          }
+          // Ativa o modo de edição, bloqueia a mudança de modo e oculta o botão "Desmarcar todos"
+          editId = item.id;
+          itemNameInput.value = item.name;
+          itemPriceInput.value = item.price.toString().replace('.', ',');
+          itemQuantityInput.value = item.quantity;
+          formTitle.textContent = 'Editar Item';
+          btnSubmit.textContent = 'Atualizar';
+          toggleModeBtn.disabled = true;
+          btnCancelEdit.style.display = 'inline-block';
+          btnDeselectAll.style.display = 'none';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+      if (e.target.classList.contains('delete')) {
+        const id = e.target.getAttribute('data-id');
+        if (confirm('Deseja excluir este item?')) {
+          items = items.filter(item => item.id !== id);
+          saveItems();
+          renderItems();
+        }
+      }
+    });
+    
+    // Evento para cancelar a edição
+    btnCancelEdit.addEventListener('click', function() {
+      clearForm();
+      toggleModeBtn.disabled = false;
+      btnCancelEdit.style.display = 'none';
+    });
+    
+    // Atualiza o status dos checkboxes dos itens
+    itemListEl.addEventListener('change', function(e) {
+      if (e.target.classList.contains('item-checkbox')) {
+        const id = e.target.getAttribute('data-id');
+        const checked = e.target.checked;
+        items = items.map(item => {
+          if (item.id === id) {
+            return { ...item, selected: checked };
+          }
+          return item;
+        });
+        saveItems();
+        updateTotal();
+        updateSummary();
+      }
+    });
+    
+    // Evento de filtro de busca
+    searchInput.addEventListener('input', renderItems);
+    
+    // Botão "Desmarcar todos": desmarca todos os itens
+    btnDeselectAll.addEventListener('click', function() {
+      items.forEach(item => item.selected = false);
+      saveItems();
+      renderItems();
+    });
+    
+    // Evento do botão de toggle de modo
+    toggleModeBtn.addEventListener('click', function() {
+      // Alterna o modo global, atualiza os labels e zera os campos
+      currentMode = (currentMode === "normal") ? "balanca" : "normal";
+      updateToggleButtonText();
+      updateFormLabels();
+      clearForm();
+    });
+    // Evento para limpar LocalStorage
+    btnClearAll.addEventListener('click', function() {
+    if (confirm('Deseja apagar todos os itens? Essa ação não poderá ser desfeita.')) {
+    localStorage.removeItem('shoppingList');
+    items = [];
+    renderItems();
+    }
+    });
+    
+    // Inicialização
+    loadItems();
+    renderItems();
+    updateFormLabels();
+    updateToggleButtonText();
+  </script>
+</body>
+</html>

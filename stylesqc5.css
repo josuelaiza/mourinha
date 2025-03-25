@@ -607,3 +607,89 @@ h1 {
 #registerBtn:hover {
   background-color: #218838;
 }
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#loginPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100%;
+  background-color: #f0f0f0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000; /* Garante que a tela de login fique acima de tudo */
+}
+
+#loginPage h1 {
+  margin-bottom: 20px;
+  font-size: 2em;
+  color: #333;
+}
+
+#loginForm {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+}
+
+#loginForm input {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1em;
+}
+
+#loginForm button {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+#loginForm button:hover {
+  background-color: #0056b3;
+}
+
+#registerBtn {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  width: 300px;
+}
+
+#registerBtn:hover {
+  background-color: #218838;
+}
+
+/* Esconde o botão hambúrguer na tela de login */
+#hamburgerBtn {
+  display: none;
+}
+
+#loginPage[style*="display: block"] ~ .container #hamburgerBtn {
+  display: none;
+}
+
+#loginPage[style*="display: none"] ~ .container #hamburgerBtn {
+  display: block;
+}

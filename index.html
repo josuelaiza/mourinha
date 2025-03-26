@@ -264,20 +264,22 @@
 
     // Função para atualizar labels e placeholders do formulário conforme o modo
     function updateFormLabels() {
-      if (currentMode === "normal") {
-        priceLabel.textContent = "Preço (R$)*";
-        itemPriceInput.placeholder = "Ex: 10,50";
-        quantityLabel.textContent = "Quantidade*";
-        itemQuantityInput.placeholder = ""; // Sem placeholder no modo normal
-        itemQuantityInput.value = "1"; // Valor padrão 1 no modo normal
-      } else {
-        priceLabel.textContent = "Preço (kg)*";
-        itemPriceInput.placeholder = "Ex: 10,00";
-        quantityLabel.textContent = "Quantidade (g)*";
-        itemQuantityInput.placeholder = "Ex: 500"; // Placeholder no modo balança
-        itemQuantityInput.value = ""; // Limpa o valor no modo balança
-      }
-    }
+     if (currentMode === "normal") {
+      priceLabel.textContent = "Preço (R$)*";
+      itemPriceInput.placeholder = "Ex: 10,50";
+      quantityLabel.textContent = "Quantidade*";
+      itemQuantityInput.placeholder = "";
+      itemQuantityInput.value = "1";
+      itemNameInput.placeholder = "Ex: Arroz"; // Placeholder no modo normal
+   } else {
+      priceLabel.textContent = "Preço (kg)*";
+      itemPriceInput.placeholder = "Ex: 10,00";
+      quantityLabel.textContent = "Quantidade (g)*";
+      itemQuantityInput.placeholder = "Ex: 500";
+      itemQuantityInput.value = "";
+      itemNameInput.placeholder = "Ex: Cebola"; // Placeholder no modo balança
+  }
+}
 
     // Função para atualizar o texto do botão de alternância de modo
     function updateToggleButtonText() {

@@ -829,8 +829,8 @@
     "id": 121,
     "theme": "Tipos de Ensaios Não Destrutivos",
     "question": "Qual método de END requer a aplicação de um campo magnético na peça?",
-    "options": ["Ensaio por correntes parasitas.", "Ensaio por partículas magnéticas.", "Ensaio por termografia.", "Ensaio visual."],
-    "answer": 1
+    "options": ["Ensaio por correntes parasitas.", "Ensaio por partículas magnéticas.", "Tanto a alternativa A quanto a B estão corretas.", "Nenhuma das alternativas anteriores está correta."],
+    "answer": 2
   },
   {
     "id": 122,
@@ -1161,7 +1161,7 @@
 { "id": 196, "theme": "Processo de Fabricação de Materiais", "question": "Qual das alternativas não é uma vantagem dos materiais compósitos?", "options": ["Resistência à corrosão", "Resistência à fadiga", "Necessita de intensa usinagem", "Mínima usinagem requerida"], "answer": 2 },
 { "id": 197, "theme": "Processo de Fabricação de Materiais", "question": "Quais das alternativas apresenta corretamente as cinco categorias de processos de fabricação de materiais metálicos?", "options": ["Conformação Mecânica, Usinagem, Metalurgia do Pó, Fundição, Laminação.", "Conformação Mecânica, Usinagem, Metalurgia do Pó, Extrusão, Soldagem.", "Conformação Mecânica, Usinagem, Metalurgia do Pó, Fundição, Soldagem.", "Conformação Mecânica, Usinagem, Forjamento, Fundição, Soldagem."], "answer": 2 },
 { "id": 198, "theme": "Processo de Fabricação de Materiais", "question": "Qual é a principal característica dos processos de conformação mecânica?", "options": ["Utilizam metal no estado líquido para preencher moldes.", "Aplicam força intensa sobre ligas metálicas no estado sólido, causando deformação plástica.", "Requerem tratamento térmico para alterar a estrutura cristalina do metal.", "São usados exclusivamente para produzir peças de geometria simples."], "answer": 1 },
-{ "id": 199, "theme": "Processo de Fabricação de Materiais", "question": "Qual dos seguintes processos NÃO é listado como principal método de conformação no texto?", "options": ["Estampagem", "Extrusão", "Fundição", "Trefilação"], "answer": 2 },
+{ "id": 199, "theme": "Processo de Fabricação de Materiais", "question": "Qual dos seguintes processos NÃO é listado como principal método de conformação?", "options": ["Estampagem", "Extrusão", "Fundição", "Trefilação"], "answer": 2 },
 { "id": 200, "theme": "Processo de Fabricação de Materiais", "question": "Qual é a função da matriz nos processos de conformação?", "options": ["Medir as dimensões finais da peça após o resfriamento.", "Aquecer o metal até seu ponto de fusão.", "Aplicar as forças necessárias para deformar o metal e definir sua forma.", "Remover impurezas químicas do material durante a conformação."], "answer": 2 },
 { "id": 201, "theme": "Processo de Fabricação de Materiais", "question": "Qual é o resultado final da deformação plástica nos processos de conformação?", "options": ["O metal retorna à sua forma original após o resfriamento.", "O metal assume uma forma parcial ou quase totalmente definida pela geometria da matriz.", "O metal se funde e solidifica no formato do molde.", "O metal perde completamente suas propriedades mecânicas."], "answer": 1 },
 { "id": 202, "theme": "Processo de Fabricação de Materiais", "question": "Que tipo de deformação ocorre nos processos de conformação mecânica?", "options": ["Deformação elástica (reversível).", "Deformação plástica (permanente).", "Deformação térmica (por expansão).", "Deformação química (por oxidação)."], "answer": 1 },

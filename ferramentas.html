@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Ferramentas</title>
+    <style>
+        /* CSS Reset e Configurações Globais */
+        :root {
+            --cor-fundo: #121212;
+            --cor-fundo-gradiente: linear-gradient(135deg, #1e1e1e, #121212);
+            --cor-texto-principal: #e0e0e0;
+            --cor-texto-secundario: #b3b3b3;
+            --cor-destaque: #007BFF;
+            --cor-select-fundo: #2c2c2c;
+            --cor-select-borda: #444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--cor-fundo);
+            background-image: var(--cor-fundo-gradiente);
+            color: var(--cor-texto-principal);
+            overflow: hidden; /* Evita rolagem na página principal */
+        }
+
+        /* Container Principal */
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            height: 100%;
+            padding: 20px;
+        }
+
+        /* Títulos e Textos */
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: -1px;
+            animation: fadeInDown 0.8s ease-in-out;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: var(--cor-texto-secundario);
+            margin-bottom: 30px;
+            max-width: 500px;
+            animation: fadeIn 1.2s ease-in-out;
+        }
+
+        /* Estilização do Select */
+        .select-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            animation: fadeInUp 0.8s ease-in-out;
+        }
+
+        #toolSelector {
+            /* Remove a aparência padrão */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+
+            /* Estilos customizados */
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1rem;
+            color: var(--cor-texto-principal);
+            background-color: var(--cor-select-fundo);
+            border: 1px solid var(--cor-select-borda);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #toolSelector:hover {
+            border-color: var(--cor-destaque);
+        }
+
+        #toolSelector:focus {
+            outline: none;
+            border-color: var(--cor-destaque);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        /* Seta customizada para o select */
+        .select-container::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%) rotate(45deg);
+            width: 8px;
+            height: 8px;
+            border-bottom: 2px solid var(--cor-texto-secundario);
+            border-right: 2px solid var(--cor-texto-secundario);
+            pointer-events: none; /* Permite clicar no select através da seta */
+            transition: border-color 0.3s ease;
+        }
+        
+        .select-container:hover::after {
+            border-color: var(--cor-destaque);
+        }
+
+        /* Animações */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Responsividade para Celulares */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            p {
+                font-size: 1rem;
+            }
+            #toolSelector {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="main-container">
+        <h1>Painel de Ferramentas</h1>
+        <p>Selecione uma ferramenta abaixo para começar. A ferramenta será aberta em uma nova aba.</p>
+        
+        <div class="select-container">
+            <select id="toolSelector">
+                <option value="" disabled selected>Escolha uma ferramenta...</option>
+                </select>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ================================================================== //
+            // == ADICIONE SUAS FERRAMENTAS AQUI DENTRO DESTA LISTA            == //
+            // ================================================================== //
+            // Formato: { nome: "Nome que aparecerá na lista", url: "nome-do-arquivo.html" }
+            // A ordem aqui não importa, a lista será ordenada alfabeticamente.
+            
+            const minhasFerramentas = [
+                { nome: "Lista de Compras", url: "Lista de compras.html" },
+                { nome: "Lista de Compras de Mercado", url: "ferramentas/lista-compras.html" },
+                { nome: "Calculadora de IMC", url: "ferramentas/calculadora-imc.html" },
+                { nome: "Gerador de Senhas Seguras", url: "ferramentas/gerador-senha.html" },
+                { nome: "Conversor de Unidades", url: "ferramentas/conversor.html" },
+                { nome: "Cronômetro Online", url: "ferramentas/cronometro.html" }
+            ];
+
+            // ================================================================== //
+            // == FIM DA ÁREA DE EDIÇÃO                                        == //
+            // ================================================================== //
+
+            const selectElement = document.getElementById('toolSelector');
+
+            // 1. Ordena a lista de ferramentas em ordem alfabética pelo nome
+            minhasFerramentas.sort((a, b) => {
+                // localeCompare é ideal para ordenar strings, lidando com acentos e cedilhas
+                return a.nome.localeCompare(b.nome);
+            });
+
+            // 2. Preenche o select com as ferramentas ordenadas
+            minhasFerramentas.forEach(ferramenta => {
+                const option = document.createElement('option');
+                option.value = ferramenta.url;
+                option.textContent = ferramenta.nome;
+                selectElement.appendChild(option);
+            });
+
+            // 3. Adiciona o evento para abrir a ferramenta em uma nova aba
+            selectElement.addEventListener('change', function() {
+                const urlSelecionada = this.value;
+
+                if (urlSelecionada) {
+                    // Abre a URL em uma nova aba (_blank)
+                    window.open(urlSelecionada, '_blank');
+                    
+                    // Reseta o select para a opção inicial
+                    this.selectedIndex = 0;
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

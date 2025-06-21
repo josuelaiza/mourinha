@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-             <div class="mt-6 text-right">
+            <div class="mt-6 text-right">
                 <button id="clear-filters-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500">
                     Limpar Filtros
                 </button>
@@ -70,7 +70,7 @@
         </div>
     </div>
 
-    <div id="modal" class="hidden-initial fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div id="modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
         <div id="modal-content" class="bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-enter relative">
             <div class="p-6 md:p-8">
                 <button id="modal-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
@@ -84,10 +84,9 @@
         </div>
     </div>
 
-
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- ELEMENT SELECTORS ---
+        // --- Seletores de Elementos ---
         const quickSearchInput = document.getElementById('quick-search-input');
         const keywordInput = document.getElementById('keyword-input');
         const keywordTagsContainer = document.getElementById('keyword-tags-container');
@@ -98,18 +97,19 @@
         const modal = document.getElementById('modal');
         const modalCloseBtn = document.getElementById('modal-close-btn');
 
-        // --- STATE MANAGEMENT ---
+        // --- Gerenciamento de Estado ---
         let allProcedures = [];
         let activeKeywordFilters = new Set();
 
         const normalizeString = (str) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
 
-        // --- DATA FETCHING ---
+        // --- Carregamento de Dados ---
         const initializeApp = async () => {
             try {
                 const response = await fetch('procedures.json');
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}.`);
                 allProcedures = await response.json();
+                console.log("Procedimentos carregados:", allProcedures); // Log para verificar os dados
                 populateTopics();
                 displayProcedures(allProcedures);
             } catch (error) {
@@ -119,7 +119,7 @@
             }
         };
 
-        // --- UI RENDERING ---
+        // --- Renderização da Interface ---
         const populateTopics = () => {
             const topics = [...new Set(allProcedures.map(p => p.topico))].sort((a, b) => a.localeCompare(b));
             topicFiltersContainer.innerHTML = '';
@@ -154,7 +154,7 @@
         const displayProcedures = (procedures) => {
             resultsContainer.innerHTML = '';
             if (procedures.length === 0) {
-                if (allProcedures.length > 0) { // Only show message if there are procedures to filter from
+                if (allProcedures.length > 0) {
                     showMessage("Nenhum procedimento encontrado com os filtros aplicados.");
                 }
                 return;
@@ -188,26 +188,23 @@
             resultsContainer.classList.remove('hidden');
         };
 
-        // --- FILTERING LOGIC ---
+        // --- Lógica de Filtros ---
         const applyFilters = () => {
             const quickSearchTerm = normalizeString(quickSearchInput.value);
             const selectedTopics = [...document.querySelectorAll('#topic-filters-container input:checked')].map(cb => cb.value);
             let filteredProcedures = allProcedures;
 
-            // 1. Filter by quick search term (instant search)
             if (quickSearchTerm) {
-                 filteredProcedures = filteredProcedures.filter(proc =>
+                filteredProcedures = filteredProcedures.filter(proc =>
                     normalizeString(proc.titulo).includes(quickSearchTerm) ||
                     normalizeString(proc.informacao).includes(quickSearchTerm)
                 );
             }
 
-            // 2. Filter by topics
             if (selectedTopics.length > 0) {
                 filteredProcedures = filteredProcedures.filter(proc => selectedTopics.includes(proc.topico));
             }
 
-            // 3. Filter by keywords (AND logic)
             if (activeKeywordFilters.size > 0) {
                 activeKeywordFilters.forEach(keyword => {
                     const normalizedKeyword = normalizeString(keyword);
@@ -221,7 +218,7 @@
             displayProcedures(filteredProcedures);
         };
 
-        // --- EVENT HANDLERS ---
+        // --- Manipuladores de Eventos ---
         quickSearchInput.addEventListener('input', applyFilters);
 
         keywordInput.addEventListener('keydown', (e) => {
@@ -251,7 +248,7 @@
             activeKeywordFilters.clear();
             document.querySelectorAll('#topic-filters-container input:checked').forEach(cb => cb.checked = false);
             keywordInput.value = '';
-            quickSearchInput.value = ''; // Also clear the quick search
+            quickSearchInput.value = '';
             renderKeywordTags();
             applyFilters();
         });
@@ -262,25 +259,27 @@
         });
 
         const showModal = (id) => {
+            console.log("showModal chamado com id:", id); // Log para depuração
             const procedure = allProcedures.find(p => p.id == id);
             if (!procedure) return;
-            
+
             document.getElementById('modal-title').textContent = procedure.titulo;
             document.getElementById('modal-topic').textContent = procedure.topico;
             document.getElementById('modal-info').innerHTML = procedure.informacao.replace(/\n/g, '<br>');
-            
+
             const imgContainer = document.getElementById('modal-image-container');
             const img = document.getElementById('modal-image');
-            
+
+            img.src = ''; // Limpa o src antes de configurar
+            imgContainer.classList.add('hidden');
+
             if (procedure.imagem) {
                 img.src = procedure.imagem;
                 img.alt = `Imagem para ${procedure.titulo}`;
                 imgContainer.classList.remove('hidden');
                 img.onerror = () => { imgContainer.classList.add('hidden'); };
-            } else {
-                imgContainer.classList.add('hidden');
             }
-            
+
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         };
@@ -294,7 +293,7 @@
         modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideModal(); });
 
-        // --- INITIAL LOAD ---
+        // --- Carregamento Inicial ---
         initializeApp();
     });
     </script>

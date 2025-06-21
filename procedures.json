@@ -1,0 +1,219 @@
+[
+  {
+    "id": 1,
+    "titulo": "Conceitos Básicos: Manifesto e Volume",
+    "topico": "Informações Gerais",
+    "informacao": "- Manifesto: Um número que engloba 1 ou mais volumes. É o controle do produto, como um código de rastreio, criado para expedição de material por aeronave.\n- Volume: É cada caixa do manifesto. Atenção para volumes 'desmembrados', que são vários itens com a mesma numeração de volume.",
+    "imagem": ""
+  },
+  {
+    "id": 2,
+    "titulo": "Guarda e Digitalização de Documentos",
+    "topico": "Informações Gerais",
+    "informacao": "Todo documento recebido e assinado deve ser guardado na pasta do conferente. Ao final do serviço, tudo deve ser escaneado e entregue juntamente com o livro e mapa de carga, conforme o checklist de encerramento de serviço.",
+    "imagem": ""
+  },
+  {
+    "id": 3,
+    "titulo": "Sigla: DTCEA-UA",
+    "topico": "Informações Gerais",
+    "informacao": "DTCEA-UA é a sigla para o destacamento de São Gabriel da Cachoeira.",
+    "imagem": ""
+  },
+  {
+    "id": 4,
+    "titulo": "Obrigatoriedade da Conferência Física",
+    "topico": "Informações Gerais",
+    "informacao": "Sempre que uma carga for embarcar ou chegar, é obrigatória a presença do conferente para a conferência. É essencial contar os volumes, verificar etiquetas e coletar a assinatura de envio/recebimento.",
+    "imagem": ""
+  },
+  {
+    "id": 5,
+    "titulo": "Tipo de Envio: Manifesto vs. Recibo",
+    "topico": "Informações Gerais",
+    "informacao": "Envio por manifesto é exclusivo para expedição via aeronave.\nPara transporte terrestre, o envio é feito por recibo.\nExceção: Tambor de óleo com destino CINDACTA IV é enviado por manifesto, mesmo que o transporte seja terrestre.",
+    "imagem": ""
+  },
+  {
+    "id": 6,
+    "titulo": "Procedimento de Vias do Manifesto Aéreo",
+    "topico": "Informações Gerais",
+    "informacao": "Para expedição aérea, imprima 3 vias do manifesto, todas assinadas por você:\n- 1ª via: Fica com você, com a assinatura do mecânico.\n- 2ª via: Fica com o mecânico.\n- 3ª via: Fica com o recebedor de destino (entregar ao mecânico para que ele repasse).\nSe houver cargas para destinos diferentes na mesma aeronave, fazer 3 vias para cada destino. O manifesto só deve ser 'expedido' no SILOMS após o embarque e a decolagem da aeronave.",
+    "imagem": ""
+  },
+  {
+    "id": 7,
+    "titulo": "Leitura do Quadro de Voo (QMC)",
+    "topico": "Informações Gerais",
+    "informacao": "QMC é o Quadro de Voo. O horário é em Zulu. Para converter para o horário local de Manaus, subtraia 4 horas. Exemplo: 1110Z significa 07:10 da manhã.",
+    "imagem": ""
+  },
+  {
+    "id": 8,
+    "titulo": "Pressurização de Aeronaves e Riscos",
+    "topico": "Informações Gerais",
+    "informacao": "O risco de explosão ou vazamento de gás é menor em aeronaves não pressurizadas. Mesmo assim, o transporte de gás deve seguir as regulamentações (IATA-DGR).\n- C-95 (Bandeirantes): Não é pressurizada.\n- C-98 (Caravan): Não é pressurizada.\n- C-105 (Amazonas/Arara): É PRESSURIZADA.",
+    "imagem": ""
+  },
+  {
+    "id": 9,
+    "titulo": "Instrução de Embalagem 200 (IATA-DGR)",
+    "topico": "Informações Gerais",
+    "informacao": "Refere-se a como materiais perigosos devem ser embalados. Aplica-se a gases comprimidos e liquefeitos (como R22). Define especificações de cilindros, fechamento, proteção contra vazamento e limites de pressão para garantir o transporte aéreo seguro.",
+    "imagem": ""
+  },
+  {
+    "id": 10,
+    "titulo": "O que é a Guia de Movimentação de Material (GMM)?",
+    "topico": "Informações Gerais",
+    "informacao": "A GMM é um documento que formaliza o transporte e o recebimento de um material antes da criação do volume no sistema. Ela contém todos os dados necessários para cadastrar um novo volume (remetente, destinatário, peso, etc.). Mesmo com a GMM, é importante pesar o material e confirmar o destino com o remetente.",
+    "imagem": ""
+  },
+  {
+    "id": 11,
+    "titulo": "Prioridades do Conferente e Tarefas da Seção",
+    "topico": "Informações Gerais",
+    "informacao": "A prioridade do conferente é atender aeronaves e atendimentos gerais fora do expediente. O manuseio de cargas terrestres é responsabilidade do pessoal da seção, mas pode ser feito pelo conferente se estiver ocioso.",
+    "imagem": ""
+  },
+  {
+    "id": 12,
+    "titulo": "Regras Gerais da Secretaria e Armazém",
+    "topico": "Informações Gerais",
+    "informacao": "- Portão PCAN: Manter fechado e trancado.\n- Gaiola de Carga: Chave fica com o supervisor. Usada para guardar cargas farejadas para embarque futuro.\n- EPI: Usar colete refletor e EPIs ao se aproximar de aeronaves.\n- Ar condicionado: Não deixar ligado a noite inteira.\n- Limpeza: A secretaria e o armazém devem ser mantidos limpos e organizados. O conferente deve coordenar a equipe para isso.",
+    "imagem": ""
+  },
+  {
+    "id": 13,
+    "titulo": "Ação em Caso de Suspeita de Carga Danificada",
+    "topico": "Informações Críticas",
+    "informacao": "Caso haja suspeita de algo errado com a carga (vazamento, avaria, etc.), ela pode ser aberta para verificação. O ideal é gravar um vídeo da abertura ou chamar um superior para testemunhar o procedimento.",
+    "imagem": ""
+  },
+  {
+    "id": 14,
+    "titulo": "Procedimento para Volume Faltante",
+    "topico": "Informações Críticas",
+    "informacao": "Caso constate a falta de um volume durante o recebimento, comunique imediatamente o pessoal da seção ou o suboficial para que informem o procedimento a ser seguido no sistema.",
+    "imagem": ""
+  },
+  {
+    "id": 15,
+    "titulo": "Regra: Recebimento de Carga Fora do Expediente",
+    "topico": "Informações Críticas",
+    "informacao": "NÃO receber carga fora do horário de expediente ou nos finais de semana sem autorização prévia do chefe do CAN. Caso alguém insista em entregar, ligue para o Sub Renaldo ou para o chefe do CAN para informar a situação. Se a autorização for enviada por grupo, pergunte se o chefe está ciente para ter um registro.",
+    "imagem": ""
+  },
+  {
+    "id": 16,
+    "titulo": "Procedimento para Carga Recebida Fora do Expediente",
+    "topico": "Informações Críticas",
+    "informacao": "Cargas recebidas fora do expediente devem ser deixadas nas carretas designadas dentro do armazém, nunca nas áreas de rota ou no loader. Tire uma foto da carga e do manifesto e envie no grupo para que a equipe do dia seguinte esteja ciente.",
+    "imagem": ""
+  },
+  {
+    "id": 17,
+    "titulo": "Manuseio de Cargas Sem Volume Criado",
+    "topico": "Informações Críticas",
+    "informacao": "Se uma carga chega sem volume criado, ela deve ficar nas carretas de espera. Coloque um papel com as informações e avise no grupo. O correto é criar um novo volume, mas como isso exige a assinatura de um remetente, é perigoso fazê-lo sem a presença de um. Fale com um superior antes. Se necessário, o remetente pode ser cadastrado como 'PCAN-MN'.",
+    "imagem": ""
+  },
+  {
+    "id": 18,
+    "titulo": "Consulta de Compatibilidade de Carga e Passageiros",
+    "topico": "Informações Críticas",
+    "informacao": "Existe um livro na seção que informa se um material é compatível para transporte com passageiros (P.A.X). A consulta é feita pelo pessoal da seção. Alguns materiais podem ir com passageiros militares, mas não com civis.",
+    "imagem": ""
+  },
+  {
+    "id": 19,
+    "titulo": "Notificação de Carga Restrita ou Perigosa",
+    "topico": "Informações Críticas",
+    "informacao": "Carga Restrita necessita de uma notificação específica. Preencha o formulário disponível na seção e tire 3 cópias:\n1. Uma vai no volume.\n2. Outra é entregue ao mecânico.\n3. A última é grampeada junto ao recibo assinado que fica com você.\nSempre pergunte se a carga é perigosa ao receber. Se o entregador não trouxer a ficha de notificação, é sua função preenchê-la.",
+    "imagem": ""
+  },
+  {
+    "id": 20,
+    "titulo": "Transporte de Gás R22 (ONU 1018)",
+    "topico": "Informações Críticas",
+    "informacao": "O gás refrigerante R22 (ONU 1018) é proibido para transporte com passageiros. \nExceção: Em 'quantidade limitada (LTDA)' e cumprindo a Instrução de Embalagem 200, pode ser transportado se cada embalagem tiver no máximo 75kg. \nEm avião de carga (sem passageiros), o limite por embalagem sobe para 150kg. \nSempre confirme com a seção antes de despachar esta carga e lembre-se de usar a notificação de carga perigosa.",
+    "imagem": ""
+  },
+  {
+    "id": 21,
+    "titulo": "Registro de Orientações Verbais sobre Cargas",
+    "topico": "Informações Críticas",
+    "informacao": "Toda orientação verbal sobre uma carga deve ser registrada. Coloque um aviso impresso na própria carga (Ex: 'Segundo o supervisor X, esta carga deve seguir para Y...') e comunique no grupo. Pergunte o máximo de detalhes (o que é, por que, qual voo) e pegue o contato de quem deu a informação para evitar problemas futuros.",
+    "imagem": ""
+  },
+  {
+    "id": 22,
+    "titulo": "Devolução de Equipamentos da Aeronave (Pallets, Fitas)",
+    "topico": "Informações Pré Embarque",
+    "informacao": "Se o PCAN não tiver equipamentos (pallets, fitas) para devolver à aeronave, será necessário desmontar o pallet recebido para que a aeronave retorne com a mesma dotação. Em aeronaves que chegam sem equipamentos para troca, o PCAN deve incluir o equipamento emprestado como um volume no manifesto de carga, para que o destino o devolva.",
+    "imagem": ""
+  },
+  {
+    "id": 23,
+    "titulo": "Regra de Ouro: Etiqueta e Registro",
+    "topico": "Informações Pré Embarque",
+    "informacao": "Nenhuma carga pode embarcar sem ter a etiqueta de volume e sem estar devidamente registrada no sistema. Tudo que sai do PCAN deve ter registro.",
+    "imagem": ""
+  },
+  {
+    "id": 24,
+    "titulo": "Procedimento de Faro da Carga",
+    "topico": "Informações Pré Embarque",
+    "informacao": "Toda carga que embarca em aeronave deve passar pelo faro. O faro ocorre, em teoria, 1 HORA antes da decolagem. A carga deve estar pronta e disponível nesse prazo. Levar a carga depois do faro pode atrasar o voo e gerar punição. O supervisor aciona o faro, mas é bom pedir para ser avisado quando a equipe chegar.",
+    "imagem": ""
+  },
+  {
+    "id": 25,
+    "titulo": "Checklist para Expedição de Carga",
+    "topico": "Informações Pré Embarque",
+    "informacao": "1. Separar os volumes que vão embarcar.\n2. Preparar manifesto ou recibo e adicionar os volumes.\n3. Imprimir as 3 vias.\n4. Levar a carga para o faro (1h antes do voo).\n5. Colocar EPI e colete refletor.\n6. Para o C-105 (Arara), levar a carga 2h antes.\n7. Embarcar a carga, pegar assinatura do Mecânico ou Load-Master (no caso do C-105) e entregar as outras 2 vias.\n8. Após a decolagem, clicar em 'expedir' no sistema.\n9. Guardar o recibo assinado na pasta.",
+    "imagem": ""
+  },
+  {
+    "id": 26,
+    "titulo": "Checklist para Recebimento de Carga",
+    "topico": "Informações Pós Desembarque",
+    "informacao": "1. Receber fisicamente a carga.\n2. Conferir os volumes, escrever 'Recebido' no manifesto/recibo.\n3. Guardar o recibo na pasta do conferente.\n4. Receber os volumes no sistema SILOMS.\n5. Colocar os volumes na área de rota correta.\nEste procedimento deve ser feito na íntegra, mesmo fora do expediente, não devendo ser deixado para o próximo turno.",
+    "imagem": ""
+  },
+  {
+    "id": 27,
+    "titulo": "Assinatura de Manifesto: 'Recebido' vs 'Não Conferido'",
+    "topico": "Informações Pós Desembarque",
+    "informacao": "Ao receber a via do manifesto do entregador, você pode assinar como:\n- 'Recebido': Quando você confere tudo e está correto.\n- 'Recebido e não conferido': Quando há muitos volumes e não há tempo de conferir tudo no momento.\nLembre-se que, no sistema, não é possível receber apenas parte de um manifesto. Ou você recebe tudo, ou não recebe nada.",
+    "imagem": ""
+  },
+  {
+    "id": 28,
+    "titulo": "Coleta de Dados do Entregador",
+    "topico": "Informações Pós Desembarque",
+    "informacao": "Toda carga recebida deve ter um recibo ou manifesto com nome, CPF, telefone e e-mail da pessoa que realizou a entrega, para contato em caso de discrepâncias.",
+    "imagem": ""
+  },
+  {
+    "id": 29,
+    "titulo": "Registro Fotográfico das Cargas",
+    "topico": "Informações Pós Desembarque",
+    "informacao": "Tire fotos das cargas recebidas e salvas numa pasta do seu dia de serviço. Isso serve como prova e referência para consultas futuras.",
+    "imagem": ""
+  },
+  {
+    "id": 30,
+    "titulo": "Exemplo: Carga Chega mas Manifesto está em 'Seleção Prévia'",
+    "topico": "Situações Exemplo",
+    "informacao": "Se uma carga chega fisicamente, mas no sistema o manifesto ainda está como 'Seleção Prévia', significa que o conferente de origem não 'expediu' o manifesto. Você não conseguirá recebê-la no sistema. Se essa carga precisar seguir viagem, você terá que criar um 'manifesto a frio' (para voo) ou 'recibo a frio' (para terrestre). Antes de fazer isso, informe a situação a um superior. Ele pode preferir contatar a origem para que o manifesto seja expedido corretamente.",
+    "imagem": ""
+  },
+  {
+    "id": 31,
+    "titulo": "Exemplo: Carga em Retirada mas Manifesto está como 'Expedido'",
+    "topico": "Situações Exemplo",
+    "informacao": "Se um cliente vem retirar uma carga e o manifesto dela ainda consta como 'Expedido' no sistema, significa que o conferente anterior não finalizou o recebimento. O procedimento é: conferir o volume fisicamente no armazém e, se estiver tudo OK, entrar no manifesto no sistema, receber todos os volumes e, então, criar o recibo de saída para o cliente.",
+    "imagem": ""
+  }
+]

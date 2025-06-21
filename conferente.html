@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base de Conhecimento - Conferente</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #d1d5db; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .modal-enter { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .hidden-initial { display: none; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-white">Base de Conhecimento do Conferente</h1>
+            <p class="text-gray-400 mt-2">Encontre rapidamente informações e procedimentos importantes.</p>
+        </header>
+
+        <div class="bg-gray-800 p-6 rounded-xl shadow-lg mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="quick-search-input" class="block text-sm font-medium text-gray-300 mb-2">Pesquisa Rápida</label>
+                    <input type="text" id="quick-search-input" placeholder="Digite para filtrar instantaneamente..." class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 transition">
+                </div>
+                <div>
+                    <label for="keyword-input" class="block text-sm font-medium text-gray-300 mb-2">Filtrar por Palavras-Chave (tecle Enter)</label>
+                    <input type="text" id="keyword-input" placeholder="Adicione palavras-chave uma a uma..." class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 transition">
+                    <div id="keyword-tags-container" class="flex flex-wrap gap-2 mt-3">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 pt-6">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Filtrar por Tópicos</label>
+                <div id="topic-filters-container" class="flex flex-wrap gap-x-6 gap-y-3 items-center">
+                    <span class="text-gray-500">Carregando tópicos...</span>
+                </div>
+            </div>
+
+             <div class="mt-6 text-right">
+                <button id="clear-filters-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500">
+                    Limpar Filtros
+                </button>
+            </div>
+        </div>
+
+        <main id="results-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        </main>
+        
+        <div id="message-container" class="text-center py-16 hidden">
+            <p class="text-xl text-gray-400"></p>
+        </div>
+    </div>
+
+    <div id="modal" class="hidden-initial fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div id="modal-content" class="bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-enter relative">
+            <div class="p-6 md:p-8">
+                <button id="modal-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+                <h2 id="modal-title" class="text-2xl font-bold text-white mb-2"></h2>
+                <span id="modal-topic" class="inline-block bg-blue-600 text-white text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full mb-4"></span>
+                <div id="modal-image-container" class="my-4"><img id="modal-image" src="" alt="Imagem do Procedimento" class="max-w-full h-auto rounded-lg mx-auto"></div>
+                <div id="modal-info" class="text-gray-300 leading-relaxed prose prose-invert max-w-none"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- ELEMENT SELECTORS ---
+        const quickSearchInput = document.getElementById('quick-search-input');
+        const keywordInput = document.getElementById('keyword-input');
+        const keywordTagsContainer = document.getElementById('keyword-tags-container');
+        const topicFiltersContainer = document.getElementById('topic-filters-container');
+        const resultsContainer = document.getElementById('results-container');
+        const messageContainer = document.getElementById('message-container');
+        const clearFiltersBtn = document.getElementById('clear-filters-btn');
+        const modal = document.getElementById('modal');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // --- STATE MANAGEMENT ---
+        let allProcedures = [];
+        let activeKeywordFilters = new Set();
+
+        const normalizeString = (str) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+
+        // --- DATA FETCHING ---
+        const initializeApp = async () => {
+            try {
+                const response = await fetch('procedures.json');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}.`);
+                allProcedures = await response.json();
+                populateTopics();
+                displayProcedures(allProcedures);
+            } catch (error) {
+                console.error("Erro ao carregar o arquivo procedures.json:", error);
+                const errorMessage = "Erro: Não foi possível carregar o arquivo 'procedures.json'. Se você estiver abrindo este arquivo HTML diretamente no seu navegador (usando 'file:///...'), esta é a causa provável do erro. Para que a página funcione, ela precisa ser executada a partir de um servidor web local (ex: usando a extensão 'Live Server' no VS Code).";
+                showMessage(errorMessage);
+            }
+        };
+
+        // --- UI RENDERING ---
+        const populateTopics = () => {
+            const topics = [...new Set(allProcedures.map(p => p.topico))].sort((a, b) => a.localeCompare(b));
+            topicFiltersContainer.innerHTML = '';
+            topics.forEach(topic => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center';
+                const checkboxId = `topic-${topic.replace(/\s+/g, '-')}`;
+                wrapper.innerHTML = `
+                    <input type="checkbox" id="${checkboxId}" value="${topic}" class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-600 cursor-pointer">
+                    <label for="${checkboxId}" class="ml-2 text-sm text-gray-300 cursor-pointer">${topic}</label>
+                `;
+                topicFiltersContainer.appendChild(wrapper);
+                wrapper.querySelector('input').addEventListener('change', applyFilters);
+            });
+        };
+        
+        const renderKeywordTags = () => {
+            keywordTagsContainer.innerHTML = '';
+            activeKeywordFilters.forEach(keyword => {
+                const tag = document.createElement('span');
+                tag.className = 'flex items-center bg-blue-600 text-white text-sm font-medium pl-3 pr-2 py-1 rounded-full';
+                tag.innerHTML = `
+                    ${keyword}
+                    <button class="remove-tag-btn ml-2 text-blue-200 hover:text-white" data-keyword="${keyword}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                `;
+                keywordTagsContainer.appendChild(tag);
+            });
+        };
+        
+        const displayProcedures = (procedures) => {
+            resultsContainer.innerHTML = '';
+            if (procedures.length === 0) {
+                if (allProcedures.length > 0) { // Only show message if there are procedures to filter from
+                    showMessage("Nenhum procedimento encontrado com os filtros aplicados.");
+                }
+                return;
+            }
+            hideMessage();
+            procedures.forEach(proc => {
+                const card = document.createElement('div');
+                card.className = 'procedure-card bg-gray-800 rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer';
+                card.dataset.id = proc.id;
+                const imageHtml = proc.imagem ? `<img src="${proc.imagem}" alt="${proc.titulo}" class="w-full h-40 object-cover" onerror="this.style.display='none'">` : '';
+                card.innerHTML = `
+                    ${imageHtml}
+                    <div class="p-5">
+                        <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-200 bg-blue-800">${proc.topico}</span>
+                        <h3 class="text-lg font-bold mt-3 text-white truncate">${proc.titulo}</h3>
+                        <p class="text-gray-400 text-sm mt-1 h-10 overflow-hidden">${proc.informacao}</p>
+                    </div>
+                `;
+                resultsContainer.appendChild(card);
+            });
+        };
+
+        const showMessage = (text) => {
+            messageContainer.querySelector('p').textContent = text;
+            messageContainer.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+        };
+
+        const hideMessage = () => {
+            messageContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+        };
+
+        // --- FILTERING LOGIC ---
+        const applyFilters = () => {
+            const quickSearchTerm = normalizeString(quickSearchInput.value);
+            const selectedTopics = [...document.querySelectorAll('#topic-filters-container input:checked')].map(cb => cb.value);
+            let filteredProcedures = allProcedures;
+
+            // 1. Filter by quick search term (instant search)
+            if (quickSearchTerm) {
+                 filteredProcedures = filteredProcedures.filter(proc =>
+                    normalizeString(proc.titulo).includes(quickSearchTerm) ||
+                    normalizeString(proc.informacao).includes(quickSearchTerm)
+                );
+            }
+
+            // 2. Filter by topics
+            if (selectedTopics.length > 0) {
+                filteredProcedures = filteredProcedures.filter(proc => selectedTopics.includes(proc.topico));
+            }
+
+            // 3. Filter by keywords (AND logic)
+            if (activeKeywordFilters.size > 0) {
+                activeKeywordFilters.forEach(keyword => {
+                    const normalizedKeyword = normalizeString(keyword);
+                    filteredProcedures = filteredProcedures.filter(proc =>
+                        normalizeString(proc.titulo).includes(normalizedKeyword) ||
+                        normalizeString(proc.informacao).includes(normalizedKeyword)
+                    );
+                });
+            }
+            
+            displayProcedures(filteredProcedures);
+        };
+
+        // --- EVENT HANDLERS ---
+        quickSearchInput.addEventListener('input', applyFilters);
+
+        keywordInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const keyword = keywordInput.value.trim();
+                if (keyword) {
+                    activeKeywordFilters.add(keyword);
+                    renderKeywordTags();
+                    applyFilters();
+                    keywordInput.value = '';
+                }
+            }
+        });
+
+        keywordTagsContainer.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.remove-tag-btn');
+            if (removeBtn) {
+                const keywordToRemove = removeBtn.dataset.keyword;
+                activeKeywordFilters.delete(keywordToRemove);
+                renderKeywordTags();
+                applyFilters();
+            }
+        });
+        
+        clearFiltersBtn.addEventListener('click', () => {
+            activeKeywordFilters.clear();
+            document.querySelectorAll('#topic-filters-container input:checked').forEach(cb => cb.checked = false);
+            keywordInput.value = '';
+            quickSearchInput.value = ''; // Also clear the quick search
+            renderKeywordTags();
+            applyFilters();
+        });
+        
+        resultsContainer.addEventListener('click', (e) => {
+            const card = e.target.closest('.procedure-card');
+            if (card) showModal(card.dataset.id);
+        });
+
+        const showModal = (id) => {
+            const procedure = allProcedures.find(p => p.id == id);
+            if (!procedure) return;
+            
+            document.getElementById('modal-title').textContent = procedure.titulo;
+            document.getElementById('modal-topic').textContent = procedure.topico;
+            document.getElementById('modal-info').innerHTML = procedure.informacao.replace(/\n/g, '<br>');
+            
+            const imgContainer = document.getElementById('modal-image-container');
+            const img = document.getElementById('modal-image');
+            
+            if (procedure.imagem) {
+                img.src = procedure.imagem;
+                img.alt = `Imagem para ${procedure.titulo}`;
+                imgContainer.classList.remove('hidden');
+                img.onerror = () => { imgContainer.classList.add('hidden'); };
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+            
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        };
+
+        const hideModal = () => {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        };
+
+        modalCloseBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideModal(); });
+
+        // --- INITIAL LOAD ---
+        initializeApp();
+    });
+    </script>
+</body>
+</html>

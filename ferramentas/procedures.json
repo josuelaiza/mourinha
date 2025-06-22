@@ -3,112 +3,115 @@
     "id": 1,
     "titulo": "Conceitos Fundamentais: Manifesto e Volume",
     "topico": "Informações Gerais",
-    [span_0](start_span)"informacao": "No serviço, os termos mais comuns são 'Manifesto' e 'Volume'.[span_0](end_span) [span_1](start_span)O Manifesto é um número que representa um ou mais volumes, funcionando como um código de rastreio para cargas expedidas (enviadas para outra localidade).[span_1](end_span) [span_2](start_span)Já o Volume se refere a cada caixa individual dentro de um manifesto.[span_2](end_span) [span_3](start_span)É importante notar que, ocasionalmente, um volume pode ser 'desmembrado', ou seja, pode consistir em vários itens ou caixas com a mesma numeração de volume.[span_3](end_span)",
+    "informacao": "No serviço, os termos mais comuns são 'Manifesto' e 'Volume'. O Manifesto é um número que representa um ou mais volumes, funcionando como um código de rastreio para cargas expedidas (enviadas para outra localidade). Já o Volume se refere a cada caixa individual dentro de um manifesto. É importante notar que, ocasionalmente, um volume pode ser 'desmembrado', ou seja, pode consistir em vários itens ou caixas com a mesma numeração de volume.",
     "imagem": ""
   },
   {
     "id": 2,
     "titulo": "Registro e Arquivamento de Documentos",
     "topico": "Informações Gerais",
-    [span_4](start_span)"informacao": "Todo documento recebido e assinado deve ser guardado na pasta do conferente.[span_4](end_span) [span_5](start_span)Ao final do serviço, todos os documentos devem ser escaneados e, em seguida, juntados com o livro e o mapa de carga para serem entregues na seção ao 1S Djalma.[span_5](end_span) [span_6](start_span)Existe um checklist que deve ser verificado antes de ir embora para garantir que nenhuma tarefa foi esquecida.[span_6](end_span)",
+    "informacao": "Todo documento recebido e assinado deve ser guardado na pasta do conferente. Ao final do serviço, todos os documentos devem ser escaneados e, em seguida, juntados com o livro e o mapa de carga para serem entregues na seção ao 1S Djalma. Existe um checklist que deve ser verificado antes de ir embora para garantir que nenhuma tarefa foi esquecida.",
     "imagem": ""
   },
   {
     "id": 3,
     "titulo": "Presença Obrigatória na Movimentação de Cargas",
     "topico": "Informações Gerais",
-    [span_7](start_span)"informacao": "É obrigatória a presença do conferente para conferir toda carga que embarca ou chega.[span_7](end_span) [span_8](start_span)É necessário obter a assinatura de quem envia ou recebe a carga, sempre contando os volumes e, se possível, verificando a etiqueta de cada um.[span_8](end_span)",
+    "informacao": "É obrigatória a presença do conferente para conferir toda carga que embarca ou chega. É necessário obter a assinatura de quem envia ou recebe a carga, sempre contando os volumes e, se possível, verificando a etiqueta de cada um.",
     "imagem": ""
   },
   {
     "id": 4,
     "titulo": "Diferença de Envio: Aéreo vs. Terrestre",
     "topico": "Informações Gerais",
-    [span_9](start_span)"informacao": "O envio por manifesto é exclusivo para cargas transportadas por aeronave.[span_9](end_span) [span_10](start_span)Para transporte terrestre, o envio deve ser feito por recibo.[span_10](end_span) [span_11](start_span)A exceção é o tambor de óleo com destino ao CINDACTA IV, que é transportado por via terrestre, mas exige um manifesto.[span_11](end_span)",
+    "informacao": "O envio por manifesto é exclusivo para cargas transportadas por aeronave. Para transporte terrestre, o envio deve ser feito por recibo. A exceção é o tambor de óleo com destino ao CINDACTA IV, que é transportado por via terrestre, mas exige um manifesto.",
     "imagem": ""
   },
   {
     "id": 5,
     "titulo": "Procedimento de Expedição de Carga Aérea",
     "topico": "Informações Pré Embarque",
-    [span_12](start_span)"informacao": "Para expedir uma carga por aeronave, devem ser impressas 3 vias do manifesto, todas assinadas pelo conferente.[span_12](end_span) [span_13](start_span)Uma via fica com o conferente (com a assinatura do mecânico), outra com o mecânico, e a terceira com o recebedor no destino.[span_13](end_span) [span_14](start_span)O mecânico deve ser orientado a entregar a via ao recebedor no destino.[span_14](end_span) [span_15](start_span)Se houver cargas para diferentes localidades na mesma aeronave (ex: Natal e Belém), devem ser feitas 3 vias do manifesto para cada destino.[span_15](end_span) [span_16](start_span)A carga só deve ser marcada como 'expedida' no sistema Siloms após o embarque e a decolagem da aeronave, e com a assinatura do mecânico já coletada.[span_16](end_span)",
+    "informacao": "Para expedir uma carga por aeronave, devem ser impressas 3 vias do manifesto, todas assinadas pelo conferente. Uma via fica com o conferente (com a assinatura do mecânico), outra com o mecânico, e a terceira com o recebedor no destino. O mecânico deve ser orientado a entregar a via ao recebedor no destino. Se houver cargas para diferentes localidades na mesma aeronave (ex: Natal e Belém), devem ser feitas 3 vias do manifesto para cada destino. A carga só deve ser marcada como 'expedida' no sistema Siloms após o embarque e a decolagem da aeronave, e com a assinatura do mecânico já coletada.",
     "imagem": ""
   },
   {
     "id": 6,
     "titulo": "Leitura do Quadro de Voo (QMC)",
     "topico": "Informações Gerais",
-    [span_17](start_span)"informacao": "O QMC (Quadro de Voo) apresenta os horários em formato Zulu.[span_17](end_span) [span_18](start_span)Para saber o horário local, é preciso subtrair 4 horas.[span_18](end_span) [span_19](start_span)Por exemplo, 1110Z (Zulu) corresponde a 7h10min local.[span_19](end_span)",
+    "informacao": "O QMC (Quadro de Voo) apresenta os horários em formato Zulu. Para saber o horário local, é preciso subtrair 4 horas. Por exemplo, 1110Z (Zulu) corresponde a 7h10min local.",
     "imagem": ""
   },
   {
     "id": 7,
     "titulo": "Transporte de Gás Pressurizado em Aeronaves",
     "topico": "Transporte de Materiais Perigosos",
-    [span_20](start_span)"informacao": "O risco de explosão e vazamento de gás de botijas é menor em aeronaves não pressurizadas.[span_20](end_span) [span_21](start_span)Em aeronaves pressurizadas, as variações de pressão durante o voo podem aumentar o risco.[span_21](end_span) [span_22](start_span)No entanto, o transporte de gás pressurizado em qualquer tipo de aeronave deve seguir as regulamentações de materiais perigosos, como a IATA-DGR.[span_22](end_span)[span_23](start_span)\n\n* **Aeronaves Não Pressurizadas:** C-95 Bandeirantes, C-98 Caravan.[span_23](end_span)[span_24](start_span)\n* **Aeronave Pressurizada:** C-105 Amazonas (Arara).[span_24](end_span)",
+    "informacao": "O risco de explosão e vazamento de gás de botijas é menor em aeronaves não pressurizadas. Em aeronaves pressurizadas, as variações de pressão durante o voo podem aumentar o risco. No entanto, o transporte de gás pressurizado em qualquer tipo de aeronave deve seguir as regulamentações de materiais perigosos, como a IATA-DGR.
+
+* **Aeronaves Não Pressurizadas:** C-95 Bandeirantes, C-98 Caravan.
+* **Aeronave Pressurizada:** C-105 Amazonas (Arara).",
     "imagem": ""
   },
   {
     "id": 8,
     "titulo": "Instrução de Embalagem 200 (IATA-DGR)",
     "topico": "Transporte de Materiais Perigosos",
-    [span_25](start_span)"informacao": "A instrução de embalagem 200 do Regulamento de Mercadorias Perigosas (IATA-DGR) se refere ao transporte aéreo de gases comprimidos e liquefeitos, como o R22.[span_25](end_span) [span_26](start_span)Ela detalha o tipo de recipiente, material de embalagem, resistência do cilindro, métodos de fechamento, proteção contra vazamentos e limites de pressão para garantir o transporte seguro.[span_26](end_span) [span_27](start_span)As embalagens devem ser cilindros ou contêineres aprovados, testados e certificados.[span_27](end_span)",
+    "informacao": "A instrução de embalagem 200 do Regulamento de Mercadorias Perigosas (IATA-DGR) se refere ao transporte aéreo de gases comprimidos e liquefeitos, como o R22. Ela detalha o tipo de recipiente, material de embalagem, resistência do cilindro, métodos de fechamento, proteção contra vazamentos e limites de pressão para garantir o transporte seguro. As embalagens devem ser cilindros ou contêineres aprovados, testados e certificados.",
     "imagem": ""
   },
   {
     "id": 9,
     "titulo": "Segurança e Controle de Acesso",
     "topico": "Segurança",
-    [span_28](start_span)"informacao": "O portão do PCAN deve ser mantido fechado e trancado, sendo aberto apenas para a passagem de veículos.[span_28](end_span) [span_29](start_span)A chave da 'gaiola' de cargas fica com o supervisor de dia.[span_29](end_span) [span_30](start_span)Esta gaiola é usada para armazenar cargas já farejadas que aguardam embarque no dia seguinte ou de madrugada, evitando que sejam comprometidas ou sabotadas.[span_30](end_span)",
+    "informacao": "O portão do PCAN deve ser mantido fechado e trancado, sendo aberto apenas para a passagem de veículos. A chave da 'gaiola' de cargas fica com o supervisor de dia. Esta gaiola é usada para armazenar cargas já farejadas que aguardam embarque no dia seguinte ou de madrugada, evitando que sejam comprometidas ou sabotadas.",
     "imagem": ""
   },
   {
     "id": 10,
     "titulo": "Uso de EPI",
     "topico": "Segurança",
-    [span_31](start_span)"informacao": "Ao conferir o recebimento e envio de cargas próximo a aeronaves, é obrigatório o uso de EPI (Equipamento de Proteção Individual) e colete refletor.[span_31](end_span)",
+    "informacao": "Ao conferir o recebimento e envio de cargas próximo a aeronaves, é obrigatório o uso de EPI (Equipamento de Proteção Individual) e colete refletor.",
     "imagem": ""
   },
   {
     "id": 11,
     "titulo": "Comunicação e Passagem de Serviço",
     "topico": "Rotina e Comunicação",
-    [span_32](start_span)"informacao": "É importante perguntar ao conferente que está saindo se há cargas que chegaram e não foram conferidas por ele, e se ele as recebeu no sistema.[span_32](end_span) [span_33](start_span)Também se deve perguntar sobre cargas previstas para sair, para programação e preparação da carga e do recibo.[span_33](end_span)",
+    "informacao": "É importante perguntar ao conferente que está saindo se há cargas que chegaram e não foram conferidas por ele, e se ele as recebeu no sistema. Também se deve perguntar sobre cargas previstas para sair, para programação e preparação da carga e do recibo.",
     "imagem": ""
   },
   {
     "id": 12,
     "titulo": "Armazenamento de Cargas Recém-Chegadas",
     "topico": "Procedimentos de Armazenagem",
-    [span_34](start_span)"informacao": "Itens que acabaram de chegar no PCAN-MN para serem cadastrados devem, após o cadastro do volume no sistema, ser movidos para o armazém e alocados em sua respectiva área de rota, não devendo permanecer na secretaria.[span_34](end_span)",
+    "informacao": "Itens que acabaram de chegar no PCAN-MN para serem cadastrados devem, após o cadastro do volume no sistema, ser movidos para o armazém e alocados em sua respectiva área de rota, não devendo permanecer na secretaria.",
     "imagem": ""
   },
   {
     "id": 13,
     "titulo": "Guia de Movimentação de Material (GMM)",
     "topico": "Informações Gerais",
-    [span_35](start_span)[span_36](start_span)"informacao": "A GMM (Guia de Movimentação de Material) é um documento que acompanha o material e contém informações sobre os itens dentro da caixa, sendo preenchida antes da criação do volume no sistema.[span_35](end_span)[span_36](end_span) [span_37](start_span)Ela formaliza o transporte e o recebimento, garantindo o controle e a rastreabilidade do material.[span_37](end_span) [span_38](start_span)A GMM contém todos os dados necessários para cadastrar um novo volume, como informações do remetente, destinatário, peso e se a carga é perigosa.[span_38](end_span) [span_39](start_span)Mesmo com a GMM, é importante pesar a carga e confirmar o destino com o remetente.[span_39](end_span)",
+    "informacao": "A GMM (Guia de Movimentação de Material) é um documento que acompanha o material e contém informações sobre os itens dentro da caixa, sendo preenchida antes da criação do volume no sistema. Ela formaliza o transporte e o recebimento, garantindo o controle e a rastreabilidade do material. A GMM contém todos os dados necessários para cadastrar um novo volume, como informações do remetente, destinatário, peso e se a carga é perigosa. Mesmo com a GMM, é importante pesar a carga e confirmar o destino com o remetente.",
     "imagem": ""
   },
   {
     "id": 14,
     "titulo": "Prioridades do Conferente",
     "topico": "Rotina e Comunicação",
-    [span_40](start_span)"informacao": "A prioridade do conferente é atender aeronaves e realizar atendimentos gerais fora do expediente.[span_40](end_span) [span_41](start_span)O manuseio de cargas terrestres é responsabilidade do pessoal da seção, mas o conferente pode auxiliar se estiver desocupado.[span_41](end_span)",
+    "informacao": "A prioridade do conferente é atender aeronaves e realizar atendimentos gerais fora do expediente. O manuseio de cargas terrestres é responsabilidade do pessoal da seção, mas o conferente pode auxiliar se estiver desocupado.",
     "imagem": ""
   },
   {
     "id": 15,
     "titulo": "Organização e Limpeza da Secretaria",
     "topico": "Rotina e Comunicação",
-    [span_42](start_span)"informacao": "A secretaria deve ser mantida sempre limpa e organizada.[span_42](end_span) [span_43](start_span)Não é permitido deixar o ar condicionado ligado durante a noite toda nem deixar restos de comida na sala.[span_43](end_span) [span_44](start_span)O conferente deve, em tese, coordenar a equipe para manter a organização e a limpeza.[span_44](end_span) [span_45](start_span)A coleta de lixo é coordenada pela seção e realizada pela SCOAM às segundas, quartas e sextas, às 10h.[span_45](end_span)",
+    "informacao": "A secretaria deve ser mantida sempre limpa e organizada. Não é permitido deixar o ar condicionado ligado durante a noite toda nem deixar restos de comida na sala. O conferente deve, em tese, coordenar a equipe para manter a organização e a limpeza. A coleta de lixo é coordenada pela seção e realizada pela SCOAM às segundas, quartas e sextas, às 10h.",
     "imagem": ""
   },
   {
     "id": 16,
     "titulo": "Organização do Armazém",
     "topico": "Procedimentos de Armazenagem",
-    [span_46](start_span)"informacao": "O armazém deve ser mantido limpo e organizado.[span_46](end_span) [span_47](start_span)É responsabilidade do pessoal do fim de semana manter a organização.[span_47](end_span) O conferente deve gerenciar e coordenar com o operador para que os equipamentos estejam sempre organizados, não deixando objetos como fitas, copos e garrafas sobre eles.",
+    "informacao": "O armazém deve ser mantido limpo e organizado. É responsabilidade do pessoal do fim de semana manter a organização. O conferente deve gerenciar e coordenar com o operador para que os equipamentos estejam sempre organizados, não deixando objetos como fitas, copos e garrafas sobre eles.",
     "imagem": ""
   },
   {

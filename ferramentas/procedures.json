@@ -45,7 +45,7 @@
     "id": 7,
     "titulo": "Transporte de Gás Pressurizado em Aeronaves",
     "topico": "Transporte de Materiais Perigosos",
-    "informacao": "O risco de explosão e vazamento de gás de botijas é menor em aeronaves não pressurizadas. Em aeronaves pressurizadas, as variações de pressão durante o voo podem aumentar o risco. No entanto, o transporte de gás pressurizado em qualquer tipo de aeronave deve seguir as regulamentações de materiais perigosos, como a IATA-DGR. \n**Aeronaves Não Pressurizadas:** C-95 Bandeirantes, C-98 Caravan.\n**Aeronave Pressurizada:** C-105 Amazonas (Arara).",
+    "informacao": "O risco de explosão e vazamento de gás de botijas é menor em aeronaves não pressurizadas. Em aeronaves pressurizadas, as variações de pressão durante o voo podem aumentar o risco. No entanto, o transporte de gás pressurizado em qualquer tipo de aeronave deve seguir as regulamentações de materiais perigosos, como a IATA-DGR. \n<strong>Aeronaves Não Pressurizadas:</strong> C-95 Bandeirantes, C-98 Caravan.\n<strong>Aeronave Pressurizada:</strong> C-105 Amazonas (Arara).",
     "imagem": ""
   },
   {
@@ -276,28 +276,28 @@
     "id": 40,
     "titulo": "Transporte de Combustível, PCL, GLP",
     "topico": "Transporte de Materiais Perigosos",
-    "informacao": "- O conferente deve cobrar a **Notificação de Carga Restrita** (preenchida pelo solicitante/remetente com Nº ONU e descrição do material).\n- **Tambores:** Embarque apenas em aeronave de carga. Seguir instruções do manual de cargas perigosas (DGR-IATA). Tambores vazios são considerados inflamáveis devido ao risco de vapores/explosões.\n- **Botijão de gás (GLP, UN 1075):** Transporte aéreo proibido com passageiros. Autorizado na FAB apenas nas aeronaves H-36, H-60, C-95, C-105 (esta última não pressurizada). Máximo de 13 kg por botijão. Temperatura interna da aeronave não deve ultrapassar 60°C. Voo abaixo de 10.000 pés de altitude. Empilhamento permitido apenas com estabilidade garantida.",
+    "informacao": "- O conferente deve cobrar a <strong>Notificação de Carga Restrita</strong> (preenchida pelo solicitante/remetente com Nº ONU e descrição do material).\n- <strong>Tambores:</strong> Embarque apenas em aeronave de carga. Seguir instruções do manual de cargas perigosas (DGR-IATA). Tambores vazios são considerados inflamáveis devido ao risco de vapores/explosões.\n- <strong>Botijão de gás (GLP, UN 1075):</strong> Transporte aéreo proibido com passageiros. Autorizado na FAB apenas nas aeronaves H-36, H-60, C-95, C-105 (esta última não pressurizada). Máximo de 13 kg por botijão. Temperatura interna da aeronave não deve ultrapassar 60°C. Voo abaixo de 10.000 pés de altitude. Empilhamento permitido apenas com estabilidade garantida.",
     "imagem": ""
   },
   {
     "id": 41,
     "titulo": "Transporte de Material Bélico",
     "topico": "Transporte de Materiais Perigosos",
-    "informacao": "- Seguir manual de cargas perigosas (DGR-IATA).\n- Conferente deve cobrar a **Notificação de Carga Restrita** (preenchida pelo solicitante).\n- Não deve permanecer nos PCAN/TTL por segurança. Em caso de pernoite sem armazenamento adequado, requerer **guarda armada**.\n- Segregação feita **apenas por militar especialista em armamento** (presença obrigatória no carregamento/descarregamento).\n- Material não pertencente ao Comando da Aeronáutica: solicitar instruções ao CTLA.",
+    "informacao": "- Seguir manual de cargas perigosas (DGR-IATA).\n- Conferente deve cobrar a <strong>Notificação de Carga Restrita</strong> (preenchida pelo solicitante).\n- Não deve permanecer nos PCAN/TTL por segurança. Em caso de pernoite sem armazenamento adequado, requerer <strong>guarda armada</strong>.\n- Segregação feita <strong>apenas por militar especialista em armamento</strong> (presença obrigatória no carregamento/descarregamento).\n- Material não pertencente ao Comando da Aeronáutica: solicitar instruções ao CTLA.",
     "imagem": ""
   },
   {
     "id": 42,
     "titulo": "Transporte de Baterias",
     "topico": "Transporte de Materiais Perigosos",
-    "informacao": "- **Baterias de Chumbo Ácido não blindadas (fora da embalagem original):** Transportar em caixa de madeira com substância absorvente/higroscópica (serragem), sempre na **vertical**.\n- **Baterias de Lítio ou outros tipos:** Consultar o DGR.",
+    "informacao": "- <strong>Baterias de Chumbo Ácido não blindadas (fora da embalagem original):</strong> Transportar em caixa de madeira com substância absorvente/higroscópica (serragem), sempre na <strong>vertical</strong>.\n- <strong>Baterias de Lítio ou outros tipos:</strong> Consultar o DGR.",
     "imagem": ""
   },
   {
     "id": 43,
     "titulo": "Transporte de Perecíveis/Rancho",
     "topico": "Transporte de Materiais Perigosos",
-    "informacao": "- Receber e embarcar com **iminência da decolagem** para evitar atrasos e danos.\n- Carga deve chegar com no **mínimo 2 horas de antecedência** na área de paletização; o descumprimento impede o embarque.\n- **Material congelado:** Acondicionado em vasilhames térmicos para evitar danos ao piso por descongelamento.\n- Embalagem adequada é responsabilidade do remetente/solicitante.",
+    "informacao": "- Receber e embarcar com <strong>iminência da decolagem</strong> para evitar atrasos e danos.\n- Carga deve chegar com no <strong>mínimo 2 horas de antecedência</strong> na área de paletização; o descumprimento impede o embarque.\n- <strong>Material congelado:</strong> Acondicionado em vasilhames térmicos para evitar danos ao piso por descongelamento.\n- Embalagem adequada é responsabilidade do remetente/solicitante.",
     "imagem": ""
   },
   {
@@ -311,7 +311,7 @@
     "id": 45,
     "titulo": "Organização Setorial: Secretaria e Armazém",
     "topico": "Procedimentos de Armazenagem",
-    "informacao": "**1 - DA SECRETARIA:**\n- Manter limpa e organizada: Mesas organizadas, sem restos de alimentos, varrer e passar pano.\n- Recolher lixo (SCOAM recolhe 2ª, 4ª e 6ª às 10:00 hs - coordenar com OPO/Sup CAN).\n- Material recebido para transporte deve ser **imediatamente colocado no armazém/rota** (não permanecer na secretaria).\n\n**2 - DO ARMAZÉM:**\n- Manter limpo e organizado.\n- **Carga não conferida:** Armazenar em local específico (carretas de paletes/rampas internas). **NUNCA** colocar na rota sem recebimento/conferência/procedimentos SILOMS.",
+    "informacao": "<strong>1 - DA SECRETARIA:</strong>\n- Manter limpa e organizada: Mesas organizadas, sem restos de alimentos, varrer e passar pano.\n- Recolher lixo (SCOAM recolhe 2ª, 4ª e 6ª às 10:00 hs - coordenar com OPO/Sup CAN).\n- Material recebido para transporte deve ser <strong>imediatamente colocado no armazém/rota</strong> (não permanecer na secretaria).\n\n<strong>2 - DO ARMAZÉM:</strong>\n- Manter limpo e organizado.\n- <strong>Carga não conferida:</strong> Armazenar em local específico (carretas de paletes/rampas internas). <strong>NUNCA</strong> colocar na rota sem recebimento/conferência/procedimentos SILOMS.",
     "imagem": ""
   },
   {
@@ -367,7 +367,7 @@
     "id": 53,
     "titulo": "Tutorial de Cadastro de Volume",
     "topico": "SILOMS: Tutoriais e Procedimentos",
-    "informacao": "- **Prioridade:** Geralmente 'carga não prevista' ou 'material do MAer no geral'.\n- **Tipo de Material:** 'sem restrições' ou a restrição correspondente (anexar notificação de carga restrita).\n- **Remetente:** Colocar a OM (ex: Rancho do GAP) e em 'obs' o nome da pessoa que entregou. Se não tiver OM, colocar o nome da pessoa. Se não tiver ninguém, 'PCAN-MN'.\n- **Destinatário:** Nome da pessoa ou a unidade de destino (ex: 'BABV').\n- **Quantidade:** Número de itens do mesmo remetente e destinatário.\n- **Tipo de embalagem:** Ex: 'caixa de papelão'.\n- **Compatibilidade:** Se a carga for grande, 'c-105'; se for pequena, 'c-95'. Não selecionar 'c-130' ou 'KC'.\n- **Descrição do volume:** O que é o item (ex: 'Ar condicionado'). Se for carga restrita, informar o número ONU.\n- **Peso:** Pese o volume e insira o valor.\n- **Finalização:** Clique em 'salvar mudanças', depois em 'inserir requisições' e coloque o número '2' para o volume ficar disponível.\n- **Recibo:** Clique em 'recibo' para imprimir, assinar, colocar seu nome e CPF, tirar uma cópia e pedir para o remetente assinar a sua via.",
+    "informacao": "- <strong>Prioridade:</strong> Geralmente 'carga não prevista' ou 'material do MAer no geral'.\n- <strong>Tipo de Material:</strong> 'sem restrições' ou a restrição correspondente (anexar notificação de carga restrita).\n- <strong>Remetente:</strong> Colocar a OM (ex: Rancho do GAP) e em 'obs' o nome da pessoa que entregou. Se não tiver OM, colocar o nome da pessoa. Se não tiver ninguém, 'PCAN-MN'.\n- <strong>Destinatário:</strong> Nome da pessoa ou a unidade de destino (ex: 'BABV').\n- <strong>Quantidade:</strong> Número de itens do mesmo remetente e destinatário.\n- <strong>Tipo de embalagem:</strong> Ex: 'caixa de papelão'.\n- <strong>Compatibilidade:</strong> Se a carga for grande, 'c-105'; se for pequena, 'c-95'. Não selecionar 'c-130' ou 'KC'.\n- <strong>Descrição do volume:</strong> O que é o item (ex: 'Ar condicionado'). Se for carga restrita, informar o número ONU.\n- <strong>Peso:</strong> Pese o volume e insira o valor.\n- <strong>Finalização:</strong> Clique em 'salvar mudanças', depois em 'inserir requisições' e coloque o número '2' para o volume ficar disponível.\n- <strong>Recibo:</strong> Clique em 'recibo' para imprimir, assinar, colocar seu nome e CPF, tirar uma cópia e pedir para o remetente assinar a sua via.",
     "imagem": ""
   },
   {
@@ -381,7 +381,7 @@
     "id": 55,
     "titulo": "SILOMS: Consulta e Disponibilização de Volume",
     "topico": "SILOMS: Tutoriais e Procedimentos",
-    "informacao": "- **Histórico:** Para saber onde um volume está, consulte-o e vá em 'histórico'.\n- **Tornar Disponível:** Se um volume está 'indisponível', vá em 'gerenciar volumes' > 'pesquisar volume' > 'volume lógico' > 'inserir requisições', coloque o número '2' ou um ponto e clique em salvar. Isso só funciona se o volume foi cadastrado no PCAN-MN e ainda não foi despachado.\n- **Localização:** Para saber onde um volume se encontra, consulte-o e procure pelo campo 'terminal onde se encontra'.",
+    "informacao": "- <strong>Histórico:</strong> Para saber onde um volume está, consulte-o e vá em 'histórico'.\n- <strong>Tornar Disponível:</strong> Se um volume está 'indisponível', vá em 'gerenciar volumes' > 'pesquisar volume' > 'volume lógico' > 'inserir requisições', coloque o número '2' ou um ponto e clique em salvar. Isso só funciona se o volume foi cadastrado no PCAN-MN e ainda não foi despachado.\n- <strong>Localização:</strong> Para saber onde um volume se encontra, consulte-o e procure pelo campo 'terminal onde se encontra'.",
     "imagem": ""
   },
   {
@@ -423,14 +423,14 @@
     "id": 61,
     "titulo": "Preenchimento do Livro de Ocorrências",
     "topico": "Rotina e Comunicação",
-    "informacao": "- **Identificação:** Basta colocar '3S MOURA' (sem necessidade de quadro, especialidade, etc).\n- **Empilhadeira:** Verificar com o operador se há pane na empilhadeira e relatar no campo específico. Preencher o campo 'abastecimento' caso ela tenha sido abastecida no dia.\n- **Fita de Palete:** Importante registrar quando está acabando.\n- **Saída de Aeronave com Carga:** Registrar toda saída (ex: 'saiu a aeronave c-95 no dia 25/10/2024 com destino BABV, com peso 60kg...').\n- **Ocorrências:** Registrar problemas, como a necessidade de fazer um manifesto a frio porque o volume estava com 'pane', 'em aberto' ou 'finalizado'. É bom registrar tudo que acontece para consultas futuras (ex: 'informo também que os volumes x foram entregues ao 2S FULANO do GLOG-MN').\n- **Salvamento:** Ir preenchendo e clicando em 'salvar'. Clicar em 'finalizar' envia o livro para o sistema.",
+    "informacao": "- <strong>Identificação:</strong> Basta colocar '3S MOURA' (sem necessidade de quadro, especialidade, etc).\n- <strong>Empilhadeira:</strong> Verificar com o operador se há pane na empilhadeira e relatar no campo específico. Preencher o campo 'abastecimento' caso ela tenha sido abastecida no dia.\n- <strong>Fita de Palete:</strong> Importante registrar quando está acabando.\n- <strong>Saída de Aeronave com Carga:</strong> Registrar toda saída (ex: 'saiu a aeronave c-95 no dia 25/10/2024 com destino BABV, com peso 60kg...').\n- <strong>Ocorrências:</strong> Registrar problemas, como a necessidade de fazer um manifesto a frio porque o volume estava com 'pane', 'em aberto' ou 'finalizado'. É bom registrar tudo que acontece para consultas futuras (ex: 'informo também que os volumes x foram entregues ao 2S FULANO do GLOG-MN').\n- <strong>Salvamento:</strong> Ir preenchendo e clicando em 'salvar'. Clicar em 'finalizar' envia o livro para o sistema.",
     "imagem": ""
   },
   {
     "id": 62,
     "titulo": "Rotina do Serviço do Conferente",
     "topico": "Rotina e Comunicação",
-    "informacao": "- **7h50:** Briefing em frente ao reembolsável com o superior de dia.\n- **Passagem de serviço:** Perguntar ao conferente que sai se há carga recebida e não conferida, ou carga para embarcar/chegar/sair.\n- **Mapa de Carga:** Fazer o mapa de carga.\n- **Refletores:** Ligar os refletores à noite e desligar de manhã (disjuntor na caixa quadrada na parede esquerda do armazém, parte externa).\n- **Informar próximo conferente:** Passar as informações sobre cargas previstas para embarque (aeronave e horário), preparando a carga e a documentação.\n- **Chave:** Entregar a chave para o próximo conferente.",
+    "informacao": "- <strong>7h50:</strong> Briefing em frente ao reembolsável com o superior de dia.\n- <strong>Passagem de serviço:</strong> Perguntar ao conferente que sai se há carga recebida e não conferida, ou carga para embarcar/chegar/sair.\n- <strong>Mapa de Carga:</strong> Fazer o mapa de carga.\n- <strong>Refletores:</strong> Ligar os refletores à noite e desligar de manhã (disjuntor na caixa quadrada na parede esquerda do armazém, parte externa).\n- <strong>Informar próximo conferente:</strong> Passar as informações sobre cargas previstas para embarque (aeronave e horário), preparando a carga e a documentação.\n- <strong>Chave:</strong> Entregar a chave para o próximo conferente.",
     "imagem": ""
   },
   {

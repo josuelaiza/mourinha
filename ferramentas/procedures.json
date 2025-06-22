@@ -45,10 +45,8 @@
     "id": 7,
     "titulo": "Transporte de Gás Pressurizado em Aeronaves",
     "topico": "Transporte de Materiais Perigosos",
-    "informacao": "O risco de explosão e vazamento de gás de botijas é menor em aeronaves não pressurizadas. Em aeronaves pressurizadas, as variações de pressão durante o voo podem aumentar o risco. No entanto, o transporte de gás pressurizado em qualquer tipo de aeronave deve seguir as regulamentações de materiais perigosos, como a IATA-DGR.
-
-* **Aeronaves Não Pressurizadas:** C-95 Bandeirantes, C-98 Caravan.
-* **Aeronave Pressurizada:** C-105 Amazonas (Arara).",
+    "informacao": "O risco de explosão e vazamento de gás de botijas é menor em aeronaves não pressurizadas. Em aeronaves pressurizadas, as variações de pressão durante o voo podem aumentar o risco. No entanto, o transporte de gás pressurizado em qualquer tipo de aeronave deve seguir as regulamentações de materiais perigosos, como a IATA-DGR. \n**Aeronaves Não Pressurizadas:** C-95 Bandeirantes, C-98 Caravan.
+**Aeronave Pressurizada:** C-105 Amazonas (Arara).",
     "imagem": ""
   },
   {

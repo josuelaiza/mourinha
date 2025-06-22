@@ -111,7 +111,7 @@
                 allProcedures = await response.json();
                 console.log("Procedimentos carregados:", allProcedures); // Log para verificar os dados
                 populateTopics();
-                displayProcedures(allProcedures);
+                displayProcedures(allProcedures, '');
             } catch (error) {
                 console.error("Erro ao carregar o arquivo procedures.json:", error);
                 const errorMessage = "Erro: Não foi possível carregar o arquivo 'procedures.json'. Se você estiver abrindo este arquivo HTML diretamente no seu navegador (usando 'file:///...'), esta é a causa provável do erro. Para que a página funcione, ela precisa ser executada a partir de um servidor web local (ex: usando a extensão 'Live Server' no VS Code).";
@@ -151,7 +151,29 @@
             });
         };
         
-        const displayProcedures = (procedures) => {
+        const getPreviewWithContext = (info, term) => {
+            if (!term) return info.substring(0, 100) + '...';
+
+            const normalizedInfo = normalizeString(info);
+            const normalizedTerm = normalizeString(term);
+            const index = normalizedInfo.indexOf(normalizedTerm);
+
+            if (index === -1) return info.substring(0, 100) + '...';
+
+            const start = Math.max(0, index - 50);
+            const end = Math.min(info.length, index + normalizedTerm.length + 50);
+
+            let preview = info.substring(start, end);
+            if (start > 0) preview = '...' + preview;
+            if (end < info.length) preview += '...';
+
+            const regex = new RegExp(term, 'gi');
+            preview = preview.replace(regex, (match) => `<span class="bg-yellow-500 text-black">${match}</span>`);
+
+            return preview;
+        };
+
+        const displayProcedures = (procedures, searchTerm = '') => {
             resultsContainer.innerHTML = '';
             if (procedures.length === 0) {
                 if (allProcedures.length > 0) {
@@ -162,15 +184,17 @@
             hideMessage();
             procedures.forEach(proc => {
                 const card = document.createElement('div');
-                card.className = 'procedure-card bg-gray-800 rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer';
+                card.className = 'procedure-card bg-gray-800 rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer relative';
                 card.dataset.id = proc.id;
                 const imageHtml = proc.imagem ? `<img src="${proc.imagem}" alt="${proc.titulo}" class="w-full h-40 object-cover" onerror="this.style.display='none'">` : '';
+                const preview = getPreviewWithContext(proc.informacao, searchTerm);
                 card.innerHTML = `
                     ${imageHtml}
-                    <div class="p-5">
+                    <div class="p-5 relative">
+                        <span class="absolute top-2 right-2 text-xs text-gray-400">${proc.id}</span>
                         <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-200 bg-blue-800">${proc.topico}</span>
-                        <h3 class="text-lg font-bold mt-3 text-white truncate">${proc.titulo}</h3>
-                        <p class="text-gray-400 text-sm mt-1 h-10 overflow-hidden">${proc.informacao}</p>
+                        <h3 class="text-lg font-bold mt-3 text-white">${proc.titulo}</h3>
+                        <p class="text-gray-400 text-sm mt-1 h-10 overflow-hidden">${preview}</p>
                     </div>
                 `;
                 resultsContainer.appendChild(card);
@@ -215,7 +239,7 @@
                 });
             }
             
-            displayProcedures(filteredProcedures);
+            displayProcedures(filteredProcedures, quickSearchTerm);
         };
 
         // --- Manipuladores de Eventos ---
@@ -250,7 +274,7 @@
             keywordInput.value = '';
             quickSearchInput.value = '';
             renderKeywordTags();
-            applyFilters();
+            displayProcedures(allProcedures, '');
         });
         
         resultsContainer.addEventListener('click', (e) => {

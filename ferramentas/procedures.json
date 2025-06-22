@@ -1,0 +1,450 @@
+[
+  {
+    "id": 1,
+    "titulo": "Conceitos Fundamentais: Manifesto e Volume",
+    "topico": "Informações Gerais",
+    [span_0](start_span)"informacao": "No serviço, os termos mais comuns são 'Manifesto' e 'Volume'.[span_0](end_span) [span_1](start_span)O Manifesto é um número que representa um ou mais volumes, funcionando como um código de rastreio para cargas expedidas (enviadas para outra localidade).[span_1](end_span) [span_2](start_span)Já o Volume se refere a cada caixa individual dentro de um manifesto.[span_2](end_span) [span_3](start_span)É importante notar que, ocasionalmente, um volume pode ser 'desmembrado', ou seja, pode consistir em vários itens ou caixas com a mesma numeração de volume.[span_3](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 2,
+    "titulo": "Registro e Arquivamento de Documentos",
+    "topico": "Informações Gerais",
+    [span_4](start_span)"informacao": "Todo documento recebido e assinado deve ser guardado na pasta do conferente.[span_4](end_span) [span_5](start_span)Ao final do serviço, todos os documentos devem ser escaneados e, em seguida, juntados com o livro e o mapa de carga para serem entregues na seção ao 1S Djalma.[span_5](end_span) [span_6](start_span)Existe um checklist que deve ser verificado antes de ir embora para garantir que nenhuma tarefa foi esquecida.[span_6](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 3,
+    "titulo": "Presença Obrigatória na Movimentação de Cargas",
+    "topico": "Informações Gerais",
+    [span_7](start_span)"informacao": "É obrigatória a presença do conferente para conferir toda carga que embarca ou chega.[span_7](end_span) [span_8](start_span)É necessário obter a assinatura de quem envia ou recebe a carga, sempre contando os volumes e, se possível, verificando a etiqueta de cada um.[span_8](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 4,
+    "titulo": "Diferença de Envio: Aéreo vs. Terrestre",
+    "topico": "Informações Gerais",
+    [span_9](start_span)"informacao": "O envio por manifesto é exclusivo para cargas transportadas por aeronave.[span_9](end_span) [span_10](start_span)Para transporte terrestre, o envio deve ser feito por recibo.[span_10](end_span) [span_11](start_span)A exceção é o tambor de óleo com destino ao CINDACTA IV, que é transportado por via terrestre, mas exige um manifesto.[span_11](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 5,
+    "titulo": "Procedimento de Expedição de Carga Aérea",
+    "topico": "Informações Pré Embarque",
+    [span_12](start_span)"informacao": "Para expedir uma carga por aeronave, devem ser impressas 3 vias do manifesto, todas assinadas pelo conferente.[span_12](end_span) [span_13](start_span)Uma via fica com o conferente (com a assinatura do mecânico), outra com o mecânico, e a terceira com o recebedor no destino.[span_13](end_span) [span_14](start_span)O mecânico deve ser orientado a entregar a via ao recebedor no destino.[span_14](end_span) [span_15](start_span)Se houver cargas para diferentes localidades na mesma aeronave (ex: Natal e Belém), devem ser feitas 3 vias do manifesto para cada destino.[span_15](end_span) [span_16](start_span)A carga só deve ser marcada como 'expedida' no sistema Siloms após o embarque e a decolagem da aeronave, e com a assinatura do mecânico já coletada.[span_16](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 6,
+    "titulo": "Leitura do Quadro de Voo (QMC)",
+    "topico": "Informações Gerais",
+    [span_17](start_span)"informacao": "O QMC (Quadro de Voo) apresenta os horários em formato Zulu.[span_17](end_span) [span_18](start_span)Para saber o horário local, é preciso subtrair 4 horas.[span_18](end_span) [span_19](start_span)Por exemplo, 1110Z (Zulu) corresponde a 7h10min local.[span_19](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 7,
+    "titulo": "Transporte de Gás Pressurizado em Aeronaves",
+    "topico": "Transporte de Materiais Perigosos",
+    [span_20](start_span)"informacao": "O risco de explosão e vazamento de gás de botijas é menor em aeronaves não pressurizadas.[span_20](end_span) [span_21](start_span)Em aeronaves pressurizadas, as variações de pressão durante o voo podem aumentar o risco.[span_21](end_span) [span_22](start_span)No entanto, o transporte de gás pressurizado em qualquer tipo de aeronave deve seguir as regulamentações de materiais perigosos, como a IATA-DGR.[span_22](end_span)[span_23](start_span)\n\n* **Aeronaves Não Pressurizadas:** C-95 Bandeirantes, C-98 Caravan.[span_23](end_span)[span_24](start_span)\n* **Aeronave Pressurizada:** C-105 Amazonas (Arara).[span_24](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 8,
+    "titulo": "Instrução de Embalagem 200 (IATA-DGR)",
+    "topico": "Transporte de Materiais Perigosos",
+    [span_25](start_span)"informacao": "A instrução de embalagem 200 do Regulamento de Mercadorias Perigosas (IATA-DGR) se refere ao transporte aéreo de gases comprimidos e liquefeitos, como o R22.[span_25](end_span) [span_26](start_span)Ela detalha o tipo de recipiente, material de embalagem, resistência do cilindro, métodos de fechamento, proteção contra vazamentos e limites de pressão para garantir o transporte seguro.[span_26](end_span) [span_27](start_span)As embalagens devem ser cilindros ou contêineres aprovados, testados e certificados.[span_27](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 9,
+    "titulo": "Segurança e Controle de Acesso",
+    "topico": "Segurança",
+    [span_28](start_span)"informacao": "O portão do PCAN deve ser mantido fechado e trancado, sendo aberto apenas para a passagem de veículos.[span_28](end_span) [span_29](start_span)A chave da 'gaiola' de cargas fica com o supervisor de dia.[span_29](end_span) [span_30](start_span)Esta gaiola é usada para armazenar cargas já farejadas que aguardam embarque no dia seguinte ou de madrugada, evitando que sejam comprometidas ou sabotadas.[span_30](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 10,
+    "titulo": "Uso de EPI",
+    "topico": "Segurança",
+    [span_31](start_span)"informacao": "Ao conferir o recebimento e envio de cargas próximo a aeronaves, é obrigatório o uso de EPI (Equipamento de Proteção Individual) e colete refletor.[span_31](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 11,
+    "titulo": "Comunicação e Passagem de Serviço",
+    "topico": "Rotina e Comunicação",
+    [span_32](start_span)"informacao": "É importante perguntar ao conferente que está saindo se há cargas que chegaram e não foram conferidas por ele, e se ele as recebeu no sistema.[span_32](end_span) [span_33](start_span)Também se deve perguntar sobre cargas previstas para sair, para programação e preparação da carga e do recibo.[span_33](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 12,
+    "titulo": "Armazenamento de Cargas Recém-Chegadas",
+    "topico": "Procedimentos de Armazenagem",
+    [span_34](start_span)"informacao": "Itens que acabaram de chegar no PCAN-MN para serem cadastrados devem, após o cadastro do volume no sistema, ser movidos para o armazém e alocados em sua respectiva área de rota, não devendo permanecer na secretaria.[span_34](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 13,
+    "titulo": "Guia de Movimentação de Material (GMM)",
+    "topico": "Informações Gerais",
+    [span_35](start_span)[span_36](start_span)"informacao": "A GMM (Guia de Movimentação de Material) é um documento que acompanha o material e contém informações sobre os itens dentro da caixa, sendo preenchida antes da criação do volume no sistema.[span_35](end_span)[span_36](end_span) [span_37](start_span)Ela formaliza o transporte e o recebimento, garantindo o controle e a rastreabilidade do material.[span_37](end_span) [span_38](start_span)A GMM contém todos os dados necessários para cadastrar um novo volume, como informações do remetente, destinatário, peso e se a carga é perigosa.[span_38](end_span) [span_39](start_span)Mesmo com a GMM, é importante pesar a carga e confirmar o destino com o remetente.[span_39](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 14,
+    "titulo": "Prioridades do Conferente",
+    "topico": "Rotina e Comunicação",
+    [span_40](start_span)"informacao": "A prioridade do conferente é atender aeronaves e realizar atendimentos gerais fora do expediente.[span_40](end_span) [span_41](start_span)O manuseio de cargas terrestres é responsabilidade do pessoal da seção, mas o conferente pode auxiliar se estiver desocupado.[span_41](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 15,
+    "titulo": "Organização e Limpeza da Secretaria",
+    "topico": "Rotina e Comunicação",
+    [span_42](start_span)"informacao": "A secretaria deve ser mantida sempre limpa e organizada.[span_42](end_span) [span_43](start_span)Não é permitido deixar o ar condicionado ligado durante a noite toda nem deixar restos de comida na sala.[span_43](end_span) [span_44](start_span)O conferente deve, em tese, coordenar a equipe para manter a organização e a limpeza.[span_44](end_span) [span_45](start_span)A coleta de lixo é coordenada pela seção e realizada pela SCOAM às segundas, quartas e sextas, às 10h.[span_45](end_span)",
+    "imagem": ""
+  },
+  {
+    "id": 16,
+    "titulo": "Organização do Armazém",
+    "topico": "Procedimentos de Armazenagem",
+    [span_46](start_span)"informacao": "O armazém deve ser mantido limpo e organizado.[span_46](end_span) [span_47](start_span)É responsabilidade do pessoal do fim de semana manter a organização.[span_47](end_span) O conferente deve gerenciar e coordenar com o operador para que os equipamentos estejam sempre organizados, não deixando objetos como fitas, copos e garrafas sobre eles.",
+    "imagem": ""
+  },
+  {
+    "id": 17,
+    "titulo": "Situações Críticas: Suspeita de Irregularidade na Carga",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Em caso de suspeita de irregularidade com a carga, como vazamentos, o conferente pode abrir o volume para verificação. É recomendável gravar um vídeo ou chamar um superior para testemunhar o procedimento. Se faltar um volume, a situação deve ser comunicada à seção ou ao suboficial para que orientem sobre o procedimento no sistema.",
+    "imagem": ""
+  },
+  {
+    "id": 18,
+    "titulo": "Recebimento de Carga Fora do Horário",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Conforme orientação do chefe do CAN, não se deve receber carga fora do horário de expediente ou nos finais de semana sem autorização prévia dele. Se alguém insistir na entrega, deve-se ligar para o Sub Renaldo ou para o chefe do CAN. Se a informação sobre a chegada da carga fora do expediente for comunicada em grupo, é preciso confirmar se o chefe do CAN está ciente. Cargas recebidas fora do expediente devem ser deixadas nas duas carretas ou na carreta à esquerda, dentro do armazém, nunca sobre o Loader ou nas áreas de rota. É necessário tirar foto da carga e do manifesto e enviar no grupo para que o pessoal do expediente seguinte esteja ciente.",
+    "imagem": ""
+  },
+  {
+    "id": 19,
+    "titulo": "Cadastro de Volume Sem Remetente Presente",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Em teoria, todo item que chega para cadastro de volume precisa da assinatura do remetente. Caso não haja remetente para assinar, o correto é criar um novo volume, mas é preciso falar com um superior antes. Se não houver remetente, é possível registrar como remetente 'PCAN-MN'.",
+    "imagem": ""
+  },
+  {
+    "id": 20,
+    "titulo": "Áreas de Armazenagem: 'MANAUS' vs 'NORTE'",
+    "topico": "Procedimentos de Armazenagem",
+    "informacao": "Na área 'MANAUS' ficam as cargas que serão apenas retiradas, como as do GLOG-MN, ou seja, não são cargas que irão voar. Cargas que irão voar para a região Norte devem ficar na área 'NORTE'.",
+    "imagem": ""
+  },
+  {
+    "id": 21,
+    "titulo": "Compatibilidade de Carga com Passageiros",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "Existe um livro na sala que informa se um material é compatível com passageiros (se pode ir em voo com passageiros ou apenas em aeronave de carga). A consulta a este livro é feita pelo pessoal da seção. Alguns materiais podem ir com passageiros militares, mas não com passageiros civis.",
+    "imagem": ""
+  },
+  {
+    "id": 22,
+    "titulo": "Procedimento para Carga Restrita",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "Carga restrita necessita de notificação. São necessárias 3 cópias da notificação: uma vai no volume, outra é entregue ao mecânico, e a terceira é grampeada junto ao recibo assinado que fica com o conferente. O modelo de notificação de carga restrita está disponível na seção.",
+    "imagem": "imagens conferente/noticargarestrita.jpg"
+  },
+  {
+    "id": 23,
+    "titulo": "Procedimento para Carga Perigosa",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "A pessoa que traz uma carga perigosa deve fornecer também a ficha de notificação de carga perigosa. Caso não traga, é função do conferente providenciar e colocar a ficha na carga. Toda carga recebida deve ser verificada quanto à sua periculosidade. Para se resguardar, pode-se criar um modelo de declaração para o entregador assinar, afirmando que a carga não possui material perigoso.",
+    "imagem": ""
+  },
+  {
+    "id": 24,
+    "titulo": "Transporte de Gás Refrigerante R22 (ONU 1018)",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "O transporte do gás refrigerante R22 (código ONU 1018) é proibido com passageiros. No entanto, se estiver em 'quantidade limitada' (Ltda) e cumprir a instrução de embalagem 200, pode ser transportado em aeronave com passageiros, desde que a embalagem não exceda 75kg. É possível transportar múltiplas embalagens de 75kg, respeitando o limite de peso da aeronave. Em aeronaves de carga (sem passageiros), o limite por embalagem sobe para 150kg e não é obrigatório seguir a instrução 200, embora critérios menos rigorosos ainda se apliquem. Antes de despachar, é essencial confirmar o procedimento com a seção, que precisa estar ciente do embarque de carga perigosa. A etiqueta de notificação de carga perigosa deve ser afixada na carga, e uma via entregue ao mecânico e outra grampeada no recibo.",
+    "imagem": ""
+  },
+  {
+    "id": 25,
+    "titulo": "Comunicação de Orientações sobre Cargas",
+    "topico": "Rotina e Comunicação",
+    "informacao": "Qualquer orientação ou informação referente a uma carga deve ser registrada com um aviso na própria carga e comunicada no grupo. Exemplo: Se uma carga chega e o supervisor de dia informa que ela seguirá para São Gabriel da Cachoeira, mas o envio não ocorrerá durante o seu turno, deve-se imprimir uma folha com essa informação e afixá-la na carga. É importante obter o máximo de detalhes possíveis, como o conteúdo da carga, o motivo do envio, em qual aeronave irá e o contato da pessoa que deu a informação.",
+    "imagem": ""
+  },
+  {
+    "id": 26,
+    "titulo": "Devolução de Equipamentos da Aeronave",
+    "topico": "Informações Pré Embarque",
+    "informacao": "Caso o PCAN não tenha equipamentos (pallets, fitas, etc.) em quantidade suficiente para devolver à aeronave, será necessário desmontar o pallet e devolver o equipamento para que a aeronave retorne à sua Unidade Aérea com a dotação correta. Se a aeronave não tiver equipamentos para troca, o PCAN deverá incluir o equipamento como um volume no manifesto de carga via SILOMS-MT, tornando o PCAN de destino responsável pelo retorno do equipamento à origem.",
+    "imagem": ""
+  },
+  {
+    "id": 27,
+    "titulo": "Proibição de Embarque Sem Etiqueta",
+    "topico": "Informações Pré Embarque",
+    "informacao": "Não se pode embarcar carga que não tenha etiqueta com o volume registrado no sistema. Tudo que sai do PCAN deve estar devidamente registrado.",
+    "imagem": ""
+  },
+  {
+    "id": 28,
+    "titulo": "Inspeção por Faro",
+    "topico": "Informações Pré Embarque",
+    "informacao": "Toda carga que vai embarcar em aeronave precisa passar pelo faro. O acionamento do faro é responsabilidade do supervisor do CAN. A inspeção ocorre, em teoria, 1 hora antes da decolagem, o que significa que a carga e o conferente devem estar no local com antecedência. Cargas levadas após o faro ter sido realizado exigirão novo acionamento, o que pode atrasar o voo e gerar punição para o conferente. Para cargas destinadas ao interior do Amazonas, a inspeção por faro nem sempre é realizada, e o conferente será avisado quando for necessária.",
+    "imagem": ""
+  },
+  {
+    "id": 29,
+    "titulo": "Checklist de Atividades Pré-Embarque",
+    "topico": "Informações Pré Embarque",
+    "informacao": "Sempre que houver carga para sair:\n- Separar os volumes (função do operador e auxiliar, mas o conferente deve conferir).\n- Preparar o manifesto ou recibo.\n- Imprimir as vias.\n- Levar a carga para o faro.\n- Colocar EPI e colete refletor.\n- Se a aeronave for a C-105 Arara, levar a carga 2 horas antes do voo, pois geralmente transporta muita carga e pode haver atrasos.\n- Se o voo for pela manhã, preparar o pallet e o manifesto na noite anterior.\n- Embarcar a carga e pegar a assinatura do Mecânico ou do Load-Master (no caso da C-105 Arara, a assinatura é do Load-Master).\n- Após a decolagem, clicar em 'expedir' no sistema.\n- Guardar o recibo assinado na pasta do conferente.",
+    "imagem": ""
+  },
+  {
+    "id": 30,
+    "titulo": "Procedimento Pós-Desembarque",
+    "topico": "Informações Pós Desembarque",
+    "informacao": "Sempre que houver carga para receber:\n1.  Receber fisicamente a carga.\n2.  Conferir os volumes e escrever 'recebido' no manifesto (recibo) que foi entregue.\n3.  Guardar o recibo na pasta do conferente.\n4.  Receber os volumes no sistema.\n5.  Colocar os volumes na área de rota correta.\nEste procedimento deve ser feito tanto dentro quanto fora do expediente e não deve ser deixado para o conferente do dia seguinte.",
+    "imagem": ""
+  },
+  {
+    "id": 31,
+    "titulo": "Situação: Necessidade de Embarque Urgente de Itens de um Pallet Não Conferido",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Caso não dê tempo de conferir todos os volumes de um pallet recém-chegado e seja preciso retirar alguns itens para embarque imediato, é possível retirar os volumes necessários e criar um 'manifesto a frio' (pois os volumes ainda não foram recebidos no sistema e não podem ser adicionados a um manifesto comum). Assim que houver tempo, o manifesto a frio deve ser 'esquentado'. É ideal colocar um aviso no pallet, como 'Não mexa nesta carga sem a supervisão do conferente 3S Moura, pois a mesma ainda não foi totalmente conferida', e tirar uma foto como prova.",
+    "imagem": ""
+  },
+  {
+    "id": 32,
+    "titulo": "Coleta de Dados no Recebimento de Carga",
+    "topico": "Informações Pós Desembarque",
+    "informacao": "Toda carga recebida deve ter um recibo com o nome, CPF, telefone e e-mail da pessoa que entregou. É importante tirar foto da carga e salvar em uma pasta ou drive do dia de serviço para consultas futuras.",
+    "imagem": ""
+  },
+  {
+    "id": 33,
+    "titulo": "Armazenamento de Carga Recebida Fora do Expediente ou Não Conferida",
+    "topico": "Procedimentos de Armazenagem",
+    "informacao": "Carga que chega no final de semana ou após o expediente deve ficar sobre uma das duas carretas ou na do armazém. Deve-se tirar uma foto e enviar no grupo para que o pessoal do dia seguinte fique ciente. Itens não conferidos e não recebidos no sistema não devem ser colocados nas áreas de rota do armazém.",
+    "imagem": ""
+  },
+  {
+    "id": 34,
+    "titulo": "Conferência de Carga na Chegada",
+    "topico": "Informações Pós Desembarque",
+    "informacao": "Ao receber uma carga (terrestre ou aérea), a via do manifesto destinada ao recebedor deve estar assinada e com os dados (CPF, telefone, e-mail) do entregador. O conferente escreve 'recebido' na sua via após a conferência. Se não houver tempo para conferir tudo, deve-se escrever 'recebido e não conferido' e arquivar na pasta para conferência posterior. Se houver volumes faltando, a seção ou o suboficial devem ser informados. Não é possível receber apenas alguns volumes de um mesmo manifesto no sistema.",
+    "imagem": ""
+  },
+  {
+    "id": 35,
+    "titulo": "Situação: Carga Chega, Mas Não Foi Expedida no Sistema na Origem",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Se uma carga chega ao PCAN-MN, mas no sistema consta como 'seleção prévia' em vez de 'expedida', significa que o conferente na origem (ex: BABE) não clicou em 'expedir' após a decolagem. Isso impede o recebimento no sistema. Se, além disso, o volume precisar ser enviado para outro destino (ex: BAPV), não será possível adicioná-lo a um novo manifesto, pois ele ainda consta na origem. A solução é criar um 'manifesto a frio' adicionando os volumes manualmente. Esta ocorrência deve ser relatada no livro, com foto da carga e print da tela do sistema. Antes de criar o manifesto a frio, deve-se informar a situação ao suboficial ou à seção para confirmar se o procedimento é esse ou se eles contatarão a origem para expedir a carga no sistema. Se o envio for terrestre, deve-se criar um 'recibo a frio'.",
+    "imagem": ""
+  },
+  {
+    "id": 36,
+    "titulo": "Situação: Carga Expedida, Mas Não Recebida no Sistema no Destino",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Se uma pessoa do GLOG-MN vier buscar uma carga no PCAN-MN e o manifesto (origem BABE, destino PCAN-MN) constar como 'expedido' no sistema, significa que o conferente que a recebeu fisicamente não a recebeu no sistema. Para o sistema, é como se a carga ainda estivesse em trânsito. A solução é conferir o volume no armazém e, se estiver tudo OK, entrar no manifesto no sistema e receber todos os volumes. Depois disso, será possível enviar a carga via recibo para o GLOG-MN.",
+    "imagem": ""
+  },
+  {
+    "id": 37,
+    "titulo": "Regra Geral para Transporte de Equipamentos com Fluidos (ICA 4-2 - 4.5)",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "Inspecionar junto ao remetente pontos de vazamento de fluido (mangueiras, drenagem, conexões, tubulações). Certificar-se da ausência de vazamentos de óleo, combustível ou outros fluidos. Tubulações desconectadas devem estar secas, fechadas com tampões à prova de infiltração e mantidas em seus lugares.",
+    "imagem": ""
+  },
+  {
+    "id": 38,
+    "titulo": "Transporte de Viaturas e Equipamentos com Motores a Combustão Interna",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "- Tanques drenados até o possível. O combustível residual não deve exceder 1/4 da capacidade total.\n- Tampas dos tanques fechadas hermeticamente. Inspecionar para garantir ausência de vazamentos.",
+    "imagem": ""
+  },
+  {
+    "id": 39,
+    "titulo": "Transporte de Equipamentos Aeronáuticos com Fluidos",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "- Solicitante deve providenciar embalagem apropriada.\n- Motor deve ser embalado para prevenir vazamentos, com proteção de áreas sensíveis e uso de bases coletoras com material absorvente.\n- Evitar contato direto com o piso da aeronave (usar pranchas de madeira, cavaletes, calços).\n- Transportar drenado e sempre na vertical.",
+    "imagem": ""
+  },
+  {
+    "id": 40,
+    "titulo": "Transporte de Combustível, PCL, GLP",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "- O conferente deve cobrar a **Notificação de Carga Restrita** (preenchida pelo solicitante/remetente com Nº ONU e descrição do material).\n- **Tambores:** Embarque apenas em aeronave de carga. Seguir instruções do manual de cargas perigosas (DGR-IATA). Tambores vazios são considerados inflamáveis devido ao risco de vapores/explosões.\n- **Botijão de gás (GLP, UN 1075):** Transporte aéreo proibido com passageiros. Autorizado na FAB apenas nas aeronaves H-36, H-60, C-95, C-105 (esta última não pressurizada). Máximo de 13 kg por botijão. Temperatura interna da aeronave não deve ultrapassar 60°C. Voo abaixo de 10.000 pés de altitude. Empilhamento permitido apenas com estabilidade garantida.",
+    "imagem": ""
+  },
+  {
+    "id": 41,
+    "titulo": "Transporte de Material Bélico",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "- Seguir manual de cargas perigosas (DGR-IATA).\n- Conferente deve cobrar a **Notificação de Carga Restrita** (preenchida pelo solicitante).\n- Não deve permanecer nos PCAN/TTL por segurança. Em caso de pernoite sem armazenamento adequado, requerer **guarda armada**.\n- Segregação feita **apenas por militar especialista em armamento** (presença obrigatória no carregamento/descarregamento).\n- Material não pertencente ao Comando da Aeronáutica: solicitar instruções ao CTLA.",
+    "imagem": ""
+  },
+  {
+    "id": 42,
+    "titulo": "Transporte de Baterias",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "- **Baterias de Chumbo Ácido não blindadas (fora da embalagem original):** Transportar em caixa de madeira com substância absorvente/higroscópica (serragem), sempre na **vertical**.\n- **Baterias de Lítio ou outros tipos:** Consultar o DGR.",
+    "imagem": ""
+  },
+  {
+    "id": 43,
+    "titulo": "Transporte de Perecíveis/Rancho",
+    "topico": "Transporte de Materiais Perigosos",
+    "informacao": "- Receber e embarcar com **iminência da decolagem** para evitar atrasos e danos.\n- Carga deve chegar com no **mínimo 2 horas de antecedência** na área de paletização; o descumprimento impede o embarque.\n- **Material congelado:** Acondicionado em vasilhames térmicos para evitar danos ao piso por descongelamento.\n- Embalagem adequada é responsabilidade do remetente/solicitante.",
+    "imagem": ""
+  },
+  {
+    "id": 44,
+    "titulo": "Procedimento de Passagem de Serviço do Conferente (Livro)",
+    "topico": "Rotina e Comunicação",
+    "informacao": "1. Verificar se foi digitalizado.\n2. Verificar se a documentação (recebida/expedida) consta fisicamente no livro.\n3. Verificar preenchimento correto de manifestos/recibos/notas de Carga Perigosa (Dados do conferente, transportador, recebedor, e da missão).\n4. Verificar se manifestos e recibos foram finalizados no SILOMS.\n5. Verificar se cargas recebidas (especialmente poucos volumes) foram: recebidas, conferidas, colocadas na rota e finalizadas no SILOMS.\n*Observação:* Manifestos volumosos recebidos fora do expediente/finais de semana podem ser processados pela equipe de expediente/seção no próximo horário útil.",
+    "imagem": ""
+  },
+  {
+    "id": 45,
+    "titulo": "Organização Setorial: Secretaria e Armazém",
+    "topico": "Procedimentos de Armazenagem",
+    "informacao": "**1 - DA SECRETARIA:**\n- Manter limpa e organizada: Mesas organizadas, sem restos de alimentos, varrer e passar pano.\n- Recolher lixo (SCOAM recolhe 2ª, 4ª e 6ª às 10:00 hs - coordenar com OPO/Sup CAN).\n- Material recebido para transporte deve ser **imediatamente colocado no armazém/rota** (não permanecer na secretaria).\n\n**2 - DO ARMAZÉM:**\n- Manter limpo e organizado.\n- **Carga não conferida:** Armazenar em local específico (carretas de paletes/rampas internas). **NUNCA** colocar na rota sem recebimento/conferência/procedimentos SILOMS.",
+    "imagem": ""
+  },
+  {
+    "id": 46,
+    "titulo": "SILOMS: Acesso ao Sistema",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "Para acessar o Siloms, o caminho é: sti > Logística > transporte. O acesso deve ser solicitado no GLOG ao SO Carlos Alberto. Para o sistema de livro online, o caminho é: bamn > sistemas > internos > livro online > conferente de carga, e o acesso é solicitado via mensagem para o número 92984294048.",
+    "imagem": ""
+  },
+  {
+    "id": 47,
+    "titulo": "SILOMS: Tratamento de Destinos Externos (Ex: COARI)",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "A localidade COARI é considerada 'externa' no sistema, com o código de destino '000'. Como o sistema não tem um código específico para COARI, no campo de observações do manifesto deve-se registrar: 'PCAN-MN para DECO-KO (COARI/AM)' e inserir um comentário no volume para que, ao consultarem, saibam o destino real.",
+    "imagem": ""
+  },
+  {
+    "id": 48,
+    "titulo": "Logística de Rota: Destino do Volume vs. Destino do Manifesto",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "Um volume tem um destino final, mas nem sempre vai diretamente para lá. Por exemplo, um volume com origem PCAN-MN e destino PCAN-RJ pode ser enviado primeiro para a BABR (Base Aérea de Brasília). Nesse caso, o conferente do PCAN-MN cria um manifesto com destino BABR e adiciona o volume de destino PCAN-RJ. O conferente em Brasília, ao ver o destino final do volume, criará um novo manifesto de Brasília para o Rio de Janeiro. É importante diferenciar o destino do volume (destino final) e o destino do manifesto (destino do voo).",
+    "imagem": ""
+  },
+  {
+    "id": 49,
+    "titulo": "Procedimento para Aeronave com Múltiplos Destinos",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "Se uma aeronave leva cargas para dois lugares diferentes (ex: sai de PV, vai para MN e depois para BV), a forma correta é criar dois manifestos separados: um com destino MN e os volumes de MN, e outro com destino BV e os volumes de BV. A opção incorreta, porém comum, é criar um único manifesto com todos os volumes. Neste caso, o conferente de MN terá que receber todos os volumes no sistema, retirar fisicamente do palete apenas os que ficam em MN, e depois criar um novo manifesto de MN para BV para os volumes que seguirão viagem na aeronave. Isso exige receber todos os volumes no sistema primeiro para poder adicioná-los ao novo manifesto.",
+    "imagem": ""
+  },
+  {
+    "id": 50,
+    "titulo": "SILOMS: Consultas de Manifesto e Volume",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "No Siloms, a aba 'MANIFESTO' > 'gerenciar manifestos' permite consultar os manifestos. A aba 'VOLUME' > 'gerenciar volumes' permite consultar os volumes. Na aba 'gerenciar preparação' ficam os manifestos em aberto, que ainda não foram expedidos. Em 'manifesto em trânsito' estão os manifestos já expedidos e voando para o destino.",
+    "imagem": "Consulta/Cadas"
+  },
+  {
+    "id": 51,
+    "titulo": "SILOMS: Recebimento de Volumes de um Manifesto",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "Para receber os volumes de um manifesto: vá em 'gerenciar manifestos', insira o número do manifesto, selecione todos os volumes e clique em 'receber'. Este procedimento só deve ser feito após a conferência física da carga. Se deixar de receber algum volume, o sistema o considerará como 'faltante', e ele ficará indisponível para ser adicionado em outro manifesto. Caso isso ocorra, é preciso consultar a seção ou o Sub sobre o procedimento.",
+    "imagem": ""
+  },
+  {
+    "id": 52,
+    "titulo": "Cadastro de Volume: Impressão de Recibo",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "Ao cadastrar um volume, além da etiqueta para a caixa, deve-se imprimir um recibo em duas vias. Uma via, com a assinatura do conferente, fica com o remetente como prova de entrega. A outra via, com a assinatura do remetente, fica com o conferente. O caminho para imprimir é: 'gerenciar volumes' > (coloca o número do volume) > 'volume logístico' > 'recibo'.",
+    "imagem": ""
+  },
+  {
+    "id": 53,
+    "titulo": "Tutorial de Cadastro de Volume",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "- **Prioridade:** Geralmente 'carga não prevista' ou 'material do MAer no geral'.\n- **Tipo de Material:** 'sem restrições' ou a restrição correspondente (anexar notificação de carga restrita).\n- **Remetente:** Colocar a OM (ex: Rancho do GAP) e em 'obs' o nome da pessoa que entregou. Se não tiver OM, colocar o nome da pessoa. Se não tiver ninguém, 'PCAN-MN'.\n- **Destinatário:** Nome da pessoa ou a unidade de destino (ex: 'BABV').\n- **Quantidade:** Número de itens do mesmo remetente e destinatário.\n- **Tipo de embalagem:** Ex: 'caixa de papelão'.\n- **Compatibilidade:** Se a carga for grande, 'c-105'; se for pequena, 'c-95'. Não selecionar 'c-130' ou 'KC'.\n- **Descrição do volume:** O que é o item (ex: 'Ar condicionado'). Se for carga restrita, informar o número ONU.\n- **Peso:** Pese o volume e insira o valor.\n- **Finalização:** Clique em 'salvar mudanças', depois em 'inserir requisições' e coloque o número '2' para o volume ficar disponível.\n- **Recibo:** Clique em 'recibo' para imprimir, assinar, colocar seu nome e CPF, tirar uma cópia e pedir para o remetente assinar a sua via.",
+    "imagem": ""
+  },
+  {
+    "id": 54,
+    "titulo": "SILOMS: Alterar Dados do Volume",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "Para alterar destino, peso, dimensões e restrições de um volume, o caminho é: Divisão de Operações > Dados do Volume > (coloca o número e clica em atualizar) > clica no volume, altera o que precisar e clica em confirmar.",
+    "imagem": ""
+  },
+  {
+    "id": 55,
+    "titulo": "SILOMS: Consulta e Disponibilização de Volume",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "- **Histórico:** Para saber onde um volume está, consulte-o e vá em 'histórico'.\n- **Tornar Disponível:** Se um volume está 'indisponível', vá em 'gerenciar volumes' > 'pesquisar volume' > 'volume lógico' > 'inserir requisições', coloque o número '2' ou um ponto e clique em salvar. Isso só funciona se o volume foi cadastrado no PCAN-MN e ainda não foi despachado.\n- **Localização:** Para saber onde um volume se encontra, consulte-o e procure pelo campo 'terminal onde se encontra'.",
+    "imagem": ""
+  },
+  {
+    "id": 56,
+    "titulo": "SILOMS: Envio por Recibo",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "O envio por recibo gera duas vias: uma fica com o conferente (assinada por ele e pelo transportador, com nome completo, telefone, cpf e e-mail deste), e a outra fica com o transportador (com o nome do conferente, CPF funcional e telefone). Para gerar o recibo, pesquise o volume tirando os 4 últimos dígitos para aparecerem todos os volumes relacionados. Se os volumes estiverem em páginas diferentes, será necessário gerar um recibo para cada página. Toda carga na área de rota 'Manaus' é sempre enviada por recibo.",
+    "imagem": ""
+  },
+  {
+    "id": 57,
+    "titulo": "Envio por Recibo (A Frio)",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Quando um problema no sistema impede a geração de um recibo normal, deve-se fazer um 'recibo a frio'. O modelo fica na área de trabalho do PC. Deve-se preencher os campos e usar o número sequencial de recibo, que fica em uma pasta azul.",
+    "imagem": ""
+  },
+  {
+    "id": 58,
+    "titulo": "Envio por Manifesto (A Frio)",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Ao fazer um 'manifesto a frio' (manual, por pane no sistema ou outro motivo), deve-se usar o número sequencial ao último utilizado, que fica em uma pasta azul. Este número deve ser anotado no caderno seguido da localidade (ex: 244 BARCELOS). Às vezes, será necessário 'esquentar' um manifesto frio, ou seja, lançá-lo no sistema quando este voltar a funcionar.",
+    "imagem": ""
+  },
+  {
+    "id": 59,
+    "titulo": "Envio Manifesto Terrestre (Externo)",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "Se o destino do manifesto for 'CINDACTA IV' ou outra unidade que não tenha CAN, deve-se selecionar em 'destino' a opção 'Un. Externa' ANTES de clicar em 'novo manifesto'. Depois de clicar em novo manifesto, selecione 'terrestre' em 'aeronave' e coloque em 'Obs' o destino, como 'DESTINO CINDACTA IV'. Este procedimento é obrigatório para cargas de tambor contendo combustível (diesel) para o CINDACTA IV.",
+    "imagem": ""
+  },
+  {
+    "id": 60,
+    "titulo": "Situação: Destino Final é Diferente do CAN de Destino",
+    "topico": "Situações Críticas e Soluções",
+    "informacao": "Se chegar material do exército cujo destinatário final é no RJ, como o exército não tem CAN, o destino do volume deve ser o CAN mais próximo do destinatário, que no caso é o CTLA. O CTLA então ligará para o destinatário ir buscar. É crucial ter as informações de contato do destinatário (nome completo, celular, e-mail, CPF) e inseri-las na descrição e nas observações do volume.",
+    "imagem": ""
+  },
+  {
+    "id": 61,
+    "titulo": "Preenchimento do Livro de Ocorrências",
+    "topico": "Rotina e Comunicação",
+    "informacao": "- **Identificação:** Basta colocar '3S MOURA' (sem necessidade de quadro, especialidade, etc).\n- **Empilhadeira:** Verificar com o operador se há pane na empilhadeira e relatar no campo específico. Preencher o campo 'abastecimento' caso ela tenha sido abastecida no dia.\n- **Fita de Palete:** Importante registrar quando está acabando.\n- **Saída de Aeronave com Carga:** Registrar toda saída (ex: 'saiu a aeronave c-95 no dia 25/10/2024 com destino BABV, com peso 60kg...').\n- **Ocorrências:** Registrar problemas, como a necessidade de fazer um manifesto a frio porque o volume estava com 'pane', 'em aberto' ou 'finalizado'. É bom registrar tudo que acontece para consultas futuras (ex: 'informo também que os volumes x foram entregues ao 2S FULANO do GLOG-MN').\n- **Salvamento:** Ir preenchendo e clicando em 'salvar'. Clicar em 'finalizar' envia o livro para o sistema.",
+    "imagem": ""
+  },
+  {
+    "id": 62,
+    "titulo": "Rotina do Serviço do Conferente",
+    "topico": "Rotina e Comunicação",
+    "informacao": "- **7h50:** Briefing em frente ao reembolsável com o superior de dia.\n- **Passagem de serviço:** Perguntar ao conferente que sai se há carga recebida e não conferida, ou carga para embarcar/chegar/sair.\n- **Mapa de Carga:** Fazer o mapa de carga.\n- **Refletores:** Ligar os refletores à noite e desligar de manhã (disjuntor na caixa quadrada na parede esquerda do armazém, parte externa).\n- **Informar próximo conferente:** Passar as informações sobre cargas previstas para embarque (aeronave e horário), preparando a carga e a documentação.\n- **Chave:** Entregar a chave para o próximo conferente.",
+    "imagem": ""
+  },
+  {
+    "id": 63,
+    "titulo": "Cancelamento de Manifesto",
+    "topico": "SILOMS: Tutoriais e Procedimentos",
+    "informacao": "Se uma carga não voar, o manifesto deve ser cancelado. ANTES de cancelar, é preciso remover os volumes do manifesto (ir no manifesto, selecionar todos os volumes e clicar em remover). Depois, ir em 'manifesto em preparação', clicar no manifesto e depois em 'cancelar manifesto', inserindo o motivo (ex: voo cancelado).",
+    "imagem": ""
+  },
+  {
+    "id": 64,
+    "titulo": "Digitalização e Arquivamento de Documentos",
+    "topico": "Rotina e Comunicação",
+    "informacao": "Após imprimir o livro, junte todos os documentos conforme a folha na parede. Ao final, o sistema perguntará se é MULTI ou UNICA; escolha MULTI para criar um único documento com todas as páginas e coloque na pasta da equipe de SV. Para digitalizar, use o pen drive: conecte-o, aguarde o reconhecimento pela impressora, clique em digitalizar, renomeie o arquivo para identificação e depois coloque o pen drive no PC.",
+    "imagem": ""
+  }
+]

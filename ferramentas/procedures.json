@@ -3,35 +3,36 @@
     "id": 1,
     "titulo": "Conceitos Fundamentais: Manifesto e Volume",
     "topico": "Informações Gerais",
-    "informacao": "No serviço, os termos mais comuns são 'Manifesto' e 'Volume'. O Manifesto é um número que representa um ou mais volumes, funcionando como um código de rastreio para cargas expedidas (enviadas para outra localidade). Já o Volume se refere a cada caixa individual dentro de um manifesto. É importante notar que, ocasionalmente, um volume pode ser 'desmembrado', ou seja, pode consistir em vários itens ou caixas com a mesma numeração de volume.",
+    "informacao": "No serviço, os termos mais comuns são 'Manifesto' e 'Volume'.\nO 'Manifesto' é um documento que reúne toda a carga (conjunto de volumes) embarcada ou desembarcada em uma determinada aeronave com um destino específico.\nCada manifesto possui um número único, funcionando como um código de rastreio das cargas expedidas (enviadas para outra localidade).\nJá o 'Volume' representa cada caixa individual, com um destino final específico.\nÀs vezes, um volume pode ser 'desmembrado', ou seja, conter vários itens ou caixas que compartilham a mesma numeração de volume, mudando apenas o dígito final.\nTanto o manifesto quanto o volume possuem destinos, mas nem sempre são os mesmos: o <strong>destino do manifesto</strong> é o destino da aeronave, enquanto o <strong>destino do volume</strong> é o local onde o destinatário receberá a carga.\nPor exemplo: uma aeronave parte de Manaus com destino a Brasília, levando um volume cujo destino final é o Rio de Janeiro.\nNeste caso, o <strong>destino do manifesto</strong> é Brasília, e o <strong>destino do volume</strong> é o Rio de Janeiro.\nO volume foi até Brasília, mesmo não sendo seu destino final, porque Brasília está mais próxima do Rio de Janeiro do que Manaus.\nAssim, quando houver um voo de Brasília para o Rio de Janeiro, esse volume será incluído em um novo manifesto cujo destino coincidirá com o destino do volume.",
     "imagem": ""
   },
   {
     "id": 2,
     "titulo": "Registro e Arquivamento de Documentos",
     "topico": "Informações Gerais",
-    "informacao": "Todo documento recebido e assinado deve ser guardado na pasta do conferente. Ao final do serviço, todos os documentos devem ser escaneados e, em seguida, juntados com o livro e o mapa de carga para serem entregues na seção ao 1S Djalma. Existe um checklist que deve ser verificado antes de ir embora para garantir que nenhuma tarefa foi esquecida.",
+    "informacao": "Todo documento recebido e assinado deve ser guardado na pasta do conferente. Ao final do serviço, todos os documentos devem ser escaneados e, em seguida, juntados com o livro e o mapa de carga para serem entregues na seção ao 1S Djalma. Existe um checklist colado na parede ao lado da mesa do conferente que deve ser verificado antes de ir embora para garantir que nenhuma tarefa foi esquecida.",
     "imagem": ""
   },
   {
     "id": 3,
     "titulo": "Presença Obrigatória na Movimentação de Cargas",
     "topico": "Informações Gerais",
-    "informacao": "É obrigatória a presença do conferente para conferir toda carga que embarca ou chega. É necessário obter a assinatura de quem envia ou recebe a carga, sempre contando os volumes e, se possível, verificando a etiqueta de cada um.",
+    "informacao": "É obrigatória a presença do conferente para conferir toda carga que embarca ou desembarca. É necessário obter a assinatura de quem envia ou recebe a carga, sempre contando os volumes e, se possível, verificando a etiqueta de cada um.",
     "imagem": ""
   },
   {
     "id": 4,
     "titulo": "Diferença de Envio: Aéreo vs. Terrestre",
     "topico": "Informações Gerais",
-    "informacao": "O envio por manifesto é exclusivo para cargas transportadas por aeronave. Para transporte terrestre, o envio deve ser feito por recibo. A exceção é o tambor de óleo com destino ao CINDACTA IV, que é transportado por via terrestre, mas exige um manifesto.",
+    "informacao": "O envio por 'manifesto' ocorre sempre que a carga ainda não está em seu destino final, ou seja, ela será encaminhada para outra localidade por meio de transporte, geralmente aéreo.\nJá o envio por 'recibo' é utilizado quando a carga já chegou ao seu destino final e o destinatário comparece para retirá-la; nesse caso, a carga é entregue junto com o recibo.\nMuitos pensam que envio por manifesto é apenas para aeronave, quando na verdade pode ser por via terrestre também, mesmo que seja raro. Por exemplo, carga com destino CINDACTA IV (que fica em Manaus) é transportada do PCAN-MN via terrestre por meio de manifesto, e não recibo."
+,
     "imagem": ""
   },
   {
     "id": 5,
     "titulo": "Procedimento de Expedição de Carga Aérea",
     "topico": "Informações Pré Embarque",
-    "informacao": "Para expedir uma carga por aeronave, devem ser impressas 3 vias do manifesto, todas assinadas pelo conferente. Uma via fica com o conferente (com a assinatura do mecânico), outra com o mecânico, e a terceira com o recebedor no destino. O mecânico deve ser orientado a entregar a via ao recebedor no destino. Se houver cargas para diferentes localidades na mesma aeronave (ex: Natal e Belém), devem ser feitas 3 vias do manifesto para cada destino. A carga só deve ser marcada como 'expedida' no sistema Siloms após o embarque e a decolagem da aeronave, e com a assinatura do mecânico já coletada.",
+    "informacao": "Para expedir uma carga (seja por meio aéreo, seja por meio terrestre), devem ser impressas 3 vias do manifesto, todas assinadas pelo conferente. Uma via fica com o conferente (com a assinatura do Mecânico ou Load-Master), outra com o mecânico, e a terceira com o recebedor no destino. O mecânico deve ser orientado a entregar a via ao recebedor no destino. Se houver cargas para diferentes localidades na mesma aeronave (ex: Natal e Belém), devem ser feitas 3 vias do manifesto para cada destino. A carga só deve ser marcada como 'expedida' no sistema Siloms após o embarque e a decolagem da aeronave, e com a assinatura do mecânico já coletada.",
     "imagem": ""
   },
   {
@@ -73,7 +74,7 @@
     "id": 11,
     "titulo": "Comunicação e Passagem de Serviço",
     "topico": "Rotina e Comunicação",
-    "informacao": "É importante perguntar ao conferente que está saindo se há cargas que chegaram e não foram conferidas por ele, e se ele as recebeu no sistema. Também se deve perguntar sobre cargas previstas para sair, para programação e preparação da carga e do recibo.",
+    "informacao": "É importante perguntar ao conferente que está saindo se há cargas que chegaram e não foram conferidas por ele, e se ele as recebeu no sistema. Também se deve perguntar sobre cargas previstas para sair, para programação e preparação da carga e do recibo/manifesto.",
     "imagem": ""
   },
   {
@@ -115,14 +116,14 @@
     "id": 17,
     "titulo": "Situações Críticas: Suspeita de Irregularidade na Carga",
     "topico": "Situações Críticas e Soluções",
-    "informacao": "Em caso de suspeita de irregularidade com a carga, como vazamentos, o conferente pode abrir o volume para verificação. É recomendável gravar um vídeo ou chamar um superior para testemunhar o procedimento. Se faltar um volume, a situação deve ser comunicada à seção ou ao suboficial para que orientem sobre o procedimento no sistema.",
+    "informacao": "Em caso de suspeita de irregularidade com a carga, como vazamentos, o conferente pode abrir o volume para verificação. É recomendável gravar um vídeo ou chamar um superior para testemunhar o procedimento.",
     "imagem": ""
   },
   {
     "id": 18,
     "titulo": "Recebimento de Carga Fora do Horário",
     "topico": "Situações Críticas e Soluções",
-    "informacao": "Conforme orientação do chefe do CAN, não se deve receber carga fora do horário de expediente ou nos finais de semana sem autorização prévia dele. Se alguém insistir na entrega, deve-se ligar para o Sub Renaldo ou para o chefe do CAN. Se a informação sobre a chegada da carga fora do expediente for comunicada em grupo, é preciso confirmar se o chefe do CAN está ciente. Cargas recebidas fora do expediente devem ser deixadas nas duas carretas ou na carreta à esquerda, dentro do armazém, nunca sobre o Loader ou nas áreas de rota. É necessário tirar foto da carga e do manifesto e enviar no grupo para que o pessoal do expediente seguinte esteja ciente.",
+    "informacao": "Conforme orientação do chefe do CAN, não se deve receber carga fora do horário de expediente ou nos finais de semana sem autorização prévia dele. Se alguém insistir na entrega, deve-se ligar para o Sub Renaldo ou para o chefe do CAN. Se a informação sobre a chegada da carga fora do expediente for comunicada em grupo, é preciso confirmar se o chefe do CAN está ciente. Cargas recebidas fora do expediente devem ser deixadas nas duas carretas ou na carreta à esquerda, dentro do armazém, nunca sobre o Loader ou nas áreas de rota. É necessário tirar foto da carga e do manifesto e enviar no grupo para que o pessoal do expediente e os próximos conferentes fiquem cientes.",
     "imagem": ""
   },
   {
@@ -136,14 +137,14 @@
     "id": 20,
     "titulo": "Áreas de Armazenagem: 'MANAUS' vs 'NORTE'",
     "topico": "Procedimentos de Armazenagem",
-    "informacao": "Na área 'MANAUS' ficam as cargas que serão apenas retiradas, como as do GLOG-MN, ou seja, não são cargas que irão voar. Cargas que irão voar para a região Norte devem ficar na área 'NORTE'.",
+    "informacao": "Na área 'MANAUS' ficam as cargas que serão retiradas apenas, como as do GLOG-MN, ou seja, não são cargas que irão voar. Cargas que irão voar para a região Norte devem ficar na área 'NORTE'.",
     "imagem": ""
   },
   {
     "id": 21,
     "titulo": "Compatibilidade de Carga com Passageiros",
     "topico": "Transporte de Materiais Perigosos",
-    "informacao": "Existe um livro na sala que informa se um material é compatível com passageiros (se pode ir em voo com passageiros ou apenas em aeronave de carga). A consulta a este livro é feita pelo pessoal da seção. Alguns materiais podem ir com passageiros militares, mas não com passageiros civis.",
+    "informacao": "Existe um livro na sala que informa se um material é compatível com passageiros (se pode ir em voo com passageiros ou apenas em aeronave de carga). A consulta a este livro é feita pelo pessoal da seção. Alguns materiais podem ir com passageiros militares, mas não com passageiros civis. Apenas o 1S Djalma, o 1S Glaucio e o SO Renaldo tem o curso de cargas perigosas, isto é, somente eles podem dizer se uma carga com restrição pode ou não ir com passageiros.",
     "imagem": ""
   },
   {
@@ -445,6 +446,13 @@
     "titulo": "Digitalização e Arquivamento de Documentos",
     "topico": "Rotina e Comunicação",
     "informacao": "Após imprimir o livro, junte todos os documentos conforme a folha na parede. Ao final, o sistema perguntará se é MULTI ou UNICA; escolha MULTI para criar um único documento com todas as páginas e coloque na pasta da equipe de SV. Para digitalizar, use o pen drive: conecte-o, aguarde o reconhecimento pela impressora, clique em digitalizar, renomeie o arquivo para identificação e depois coloque o pen drive no PC.",
+    "imagem": ""
+  },
+  {
+    "id": 65,
+    "titulo": "Volume Faltante",
+    "topico": "Informações Pós Desembarque",
+    "informacao": "Ao receber uma carga e perceber que está faltando um volume que consta na relação dos volumes do manifesto, a situação deve ser comunicada à seção ou ao suboficial para que orientem quanto ao procedimento no sistema SILOMS. Além disso, é importante relatar essa falta no próprio manifesto desse volume faltante. E o mais importante, não receba esse volume no SILOMS, receba apenas os que de fato chegaram ao PCAN-MN.",
     "imagem": ""
   }
 ]

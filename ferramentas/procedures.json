@@ -233,9 +233,9 @@
   },
   {
     "id": 34,
-    "titulo": "Conferência de Carga na Chegada",
+    "titulo": "Conferência de Carga na Chegada / Volume Faltante",
     "topico": "Informações Pós Desembarque",
-    "informacao": "Ao receber uma carga (terrestre ou aérea), a via do manifesto destinada ao recebedor deve estar assinada e com os dados (CPF, telefone, e-mail) do entregador. O conferente escreve 'recebido' na sua via após a conferência. Se não houver tempo para conferir tudo, deve-se escrever 'recebido e não conferido' e arquivar na pasta para conferência posterior. Se houver volumes faltando, a seção ou o suboficial devem ser informados. Não é possível receber apenas alguns volumes de um mesmo manifesto no sistema.",
+    "informacao": "Ao receber uma carga (terrestre ou aérea), a via do manifesto destinada ao recebedor deve estar assinada e com os dados (CPF, telefone, e-mail) do entregador. O conferente escreve 'recebido' na sua via após a conferência. Se não houver tempo para conferir tudo, deve-se escrever 'recebido e não conferido' e arquivar na pasta para conferência posterior. Se observar que está faltando um volume que consta na relação dos volumes do manifesto, a situação deve ser comunicada à seção ou ao suboficial para que orientem quanto ao procedimento no sistema SILOMS. Além disso, é importante relatar essa falta no próprio manifesto desse volume faltante. E o mais importante, não receba esse volume no SILOMS, receba apenas os que de fato chegaram ao PCAN-MN.",
     "imagem": ""
   },
   {
@@ -446,13 +446,6 @@
     "titulo": "Digitalização e Arquivamento de Documentos",
     "topico": "Rotina e Comunicação",
     "informacao": "Após imprimir o livro, junte todos os documentos conforme a folha na parede. Ao final, o sistema perguntará se é MULTI ou UNICA; escolha MULTI para criar um único documento com todas as páginas e coloque na pasta da equipe de SV. Para digitalizar, use o pen drive: conecte-o, aguarde o reconhecimento pela impressora, clique em digitalizar, renomeie o arquivo para identificação e depois coloque o pen drive no PC.",
-    "imagem": ""
-  },
-  {
-    "id": 65,
-    "titulo": "Volume Faltante",
-    "topico": "Informações Pós Desembarque",
-    "informacao": "Ao receber uma carga e perceber que está faltando um volume que consta na relação dos volumes do manifesto, a situação deve ser comunicada à seção ou ao suboficial para que orientem quanto ao procedimento no sistema SILOMS. Além disso, é importante relatar essa falta no próprio manifesto desse volume faltante. E o mais importante, não receba esse volume no SILOMS, receba apenas os que de fato chegaram ao PCAN-MN.",
     "imagem": ""
   }
 ]

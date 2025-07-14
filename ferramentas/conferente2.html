@@ -365,7 +365,13 @@
 
         const renderTable = (data, globalTerm = '', colTerms = {}) => {
             codesTableBody.innerHTML = '';
-            let hasResults = false;
+            
+            if (!data || data.length === 0) {
+                tableNoResults.classList.remove('hidden');
+                return;
+            }
+            
+            tableNoResults.classList.add('hidden');
             
             data.forEach(rowData => {
                 const tr = document.createElement('tr');
@@ -384,10 +390,7 @@
 
                 tr.innerHTML = highlightedCells.join('');
                 codesTableBody.appendChild(tr);
-                hasResults = true;
             });
-
-            tableNoResults.classList.toggle('hidden', !hasResults);
         };
         
         const filterTable = () => {

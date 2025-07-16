@@ -13,7 +13,7 @@
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #111827; color: #d1d5db; }
-        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #1f2937; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
@@ -31,9 +31,9 @@
 
         <header class="text-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-white">Base de Conhecimento do Conferente</h1>
-            <div class="flex justify-center items-center gap-4 mt-4">
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
                 <p class="text-gray-400">Encontre rapidamente informações e procedimentos importantes.</p>
-                <button id="open-table-modal-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500">
+                <button id="open-table-modal-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500 w-full sm:w-auto">
                     Consultar Código de Unidade
                 </button>
             </div>
@@ -91,17 +91,19 @@
     
     <div id="table-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
         <div class="bg-gray-800 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] flex flex-col table-modal-enter">
-             <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-white">Consulta de Códigos de Unidade</h2>
-                <button id="table-modal-close-btn" class="text-gray-400 hover:text-white transition">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+             <div class="p-4 border-b border-gray-700 flex-shrink-0">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Consulta de Códigos de Unidade</h2>
+                    <button id="table-modal-close-btn" class="text-gray-400 hover:text-white transition">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
             </div>
-            <div class="p-4">
-                 <input type="text" id="table-global-search" placeholder="Pesquisar em toda a tabela..." class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 transition mb-4">
+            <div class="p-4 flex-shrink-0">
+                 <input type="text" id="table-global-search" placeholder="Pesquisar em toda a tabela..." class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 transition">
             </div>
-            <div class="overflow-auto px-4 pb-4">
-                <table id="codes-table" class="w-full text-sm text-left text-gray-400 table-fixed">
+            <div class="overflow-x-auto px-4 pb-4">
+                <table id="codes-table" class="w-full min-w-[900px] text-sm text-left text-gray-400 table-fixed">
                     <thead class="text-xs text-gray-300 uppercase bg-gray-700 sticky top-0">
                         <tr>
                             <th scope="col" class="px-3 py-3">Cod.</th>
@@ -185,7 +187,6 @@
             }
         };
         
-        // --- FUNÇÃO DE DESTAQUE ATUALIZADA ---
         const highlightText = (text, term) => {
             const originalText = text.toString();
             if (!term) return originalText;
@@ -202,9 +203,7 @@
             }
 
             while (startIndex !== -1) {
-                // Adiciona o trecho do texto original antes do match
                 result += originalText.substring(lastIndex, startIndex);
-                // Adiciona o trecho correspondente do texto original, agora destacado
                 const matchedText = originalText.substring(startIndex, startIndex + normalizedTerm.length);
                 result += `<mark>${matchedText}</mark>`;
                 
@@ -212,7 +211,6 @@
                 startIndex = normalizedText.indexOf(normalizedTerm, lastIndex);
             }
 
-            // Adiciona o restante do texto original
             result += originalText.substring(lastIndex);
             return result;
         };
@@ -263,7 +261,6 @@
             if (start > 0) preview = '...' + preview;
             if (end < info.length) preview += '...';
             
-            // Usa a nova função de highlight
             return highlightText(preview, term);
         };
 
@@ -405,7 +402,6 @@
                 
                 const highlightedCells = rowData.map((cellData, index) => {
                     let cellHTML = cellData;
-                    // Aplica o highlight para cada filtro
                     cellHTML = highlightText(cellHTML, colTerms[index]);
                     cellHTML = highlightText(cellHTML, globalTerm);
                     

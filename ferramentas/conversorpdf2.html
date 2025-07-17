@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor Markdown para PDF | Ajustado V2</title>
+<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+<link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+<link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap)" rel="stylesheet">
+
+<script src="[https://cdn.jsdelivr.net/npm/marked/marked.min.js](https://cdn.jsdelivr.net/npm/marked/marked.min.js)"></script>
+<script src="[https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js](https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js)"></script>
+
+<style>
+    /* --- Reset Básico e Fontes --- */
+    :root {
+        --primary-color: #7c3aed; /* Roxo */
+        --secondary-color: #10b981; /* Verde */
+        --background-color: #f8fafc; /* Fundo quase branco */
+        --surface-color: #ffffff; /* Cor de superfície (cards) */
+        --text-color: #1e293b; /* Texto escuro */
+        --muted-text-color: #64748b; /* Texto mais claro */
+        --border-color: #e2e8f0;
+        --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --border-radius: 0.75rem; /* 12px */
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        line-height: 1.6;
+    }
+
+    /* --- Cabeçalho e Rodapé --- */
+    header {
+        text-align: center;
+        padding: 2rem 1rem;
+        background-color: var(--surface-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    header h1 {
+        color: var(--primary-color);
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    header p {
+        color: var(--muted-text-color);
+        max-width: 600px;
+        margin: 0.5rem auto 0;
+    }
+
+    footer {
+        text-align: center;
+        padding: 2rem 1rem;
+        margin-top: 2rem;
+        color: var(--muted-text-color);
+        font-size: 0.9rem;
+    }
+
+    /* --- Container Principal --- */
+    .container {
+        max-width: 1400px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    /* --- Painel do Editor --- */
+    .editor-panel {
+        display: flex;
+        gap: 2rem;
+        min-height: 60vh;
+    }
+
+    .input-section, .output-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .input-section h2, .output-section h2, .saved-documents-panel h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    #markdown-input {
+        flex-grow: 1;
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        font-family: monospace;
+        font-size: 1rem;
+        line-height: 1.5;
+        background-color: var(--surface-color);
+        resize: vertical;
+        box-shadow: var(--shadow);
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    #markdown-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+    }
+
+    /* --- Painel de Visualização --- */
+    #html-output {
+        flex-grow: 1;
+        background-color: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 1rem 1.5rem;
+        overflow-y: auto;
+        box-shadow: var(--shadow);
+    }
+
+    #html-output .placeholder {
+        color: var(--muted-text-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+    }
+
+    /* --- Botões --- */
+    .main-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #6d28d9;
+    }
+
+    .btn-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #059669;
+    }
+
+    /* --- Painel de Documentos Salvos --- */
+    .saved-documents-panel {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background-color: var(--surface-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+    }
+
+    #saved-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .saved-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background-color: var(--background-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        transition: box-shadow 0.3s, border-color 0.3s;
+    }
+
+    .saved-item:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .item-title {
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-right: 1rem;
+    }
+
+    .item-actions button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        color: var(--muted-text-color);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .item-actions button:hover {
+        background-color: #e2e8f0;
+        color: var(--text-color);
+    }
+
+    .item-actions svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* --- Estilização do Conteúdo Gerado (PROSE) --- */
+    .prose {
+        color: var(--text-color);
+        font-size: 16px; /* Base font size for PDF */
+    }
+    .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+        margin-top: 1.5em;
+        margin-bottom: 1em;
+        font-weight: 700;
+    }
+    .prose h1 { font-size: 2em; }
+    .prose h2 { font-size: 1.5em; }
+    .prose h3 { font-size: 1.25em; }
+    .prose p { margin-bottom: 1em; }
+    .prose strong { font-weight: 700; }
+    .prose em { font-style: italic; }
+    .prose ul, .prose ol { padding-left: 1.5em; margin-bottom: 1em; }
+    .prose li { margin-bottom: 0.5em; }
+    .prose a { color: var(--primary-color); text-decoration: none; }
+    .prose a:hover { text-decoration: underline; }
+    .prose blockquote {
+        border-left: 4px solid var(--border-color);
+        padding-left: 1em;
+        margin-left: 0;
+        color: var(--muted-text-color);
+        font-style: italic;
+    }
+    .prose code {
+        background-color: #e2e8f0;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+    .prose pre {
+        background-color: #1e293b;
+        color: #e2e8f0;
+        padding: 1em;
+        border-radius: var(--border-radius);
+        overflow-x: auto;
+    }
+    .prose pre code {
+        background: none;
+        padding: 0;
+    }
+    .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1em;
+    }
+    .prose th, .prose td {
+        border: 1px solid var(--border-color);
+        padding: 0.5em 1em;
+        text-align: left;
+    }
+    .prose th {
+        background-color: #f1f5f9;
+        font-weight: 600;
+    }
+    .prose tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+
+    /* --- AJUSTES DE CSS PARA MELHORAR A QUEBRA DE PÁGINA NO PDF --- */
+    /* Estas regras são usadas pelo html2pdf.js para gerar um PDF melhor */
+    .prose table, .prose pre, .prose blockquote, .prose img {
+        page-break-inside: avoid; /* Evita que esses elementos sejam cortados ao meio */
+        margin-top: 1em;
+        margin-bottom: 1em;
+    }
+    .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+        page-break-after: avoid; /* Evita uma quebra de página logo após um título */
+        page-break-before: avoid; /* Evita uma quebra de página imediatamente antes de um título */
+    }
+    .prose ul, .prose ol {
+        page-break-inside: avoid;
+    }
+    .prose li {
+        break-inside: avoid; /* Tenta evitar quebras de linha dentro de um item da lista (pode não funcionar em todos os casos) */
+    }
+    .prose p {
+        orphans: 2; /* Define o número mínimo de linhas de um parágrafo que devem aparecer na parte inferior de uma página */
+        widows: 2; /* Define o número mínimo de linhas de um parágrafo que devem aparecer na parte superior de uma página */
+    }
+
+
+    /* --- Responsividade --- */
+    @media (max-width: 900px) {
+        .editor-panel {
+            flex-direction: column;
+        }
+        header h1 {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+</head>
+<body>
+<header>
+    <h1>Conversor Markdown Pro</h1>
+    <p>Cole seu texto gerado por IA, visualize-o formatado e salve em PDF ou no seu navegador.</p>
+</header>
+
+<main class="container">
+    <div class="editor-panel">
+        <div class="input-section">
+            <h2>Seu Texto (Markdown)</h2>
+            <textarea id="markdown-input" placeholder="Cole seu texto aqui... Exemplo: **Isso ficará em negrito!**"></textarea>
+            <div class="main-actions">
+                <button id="save-btn" class="btn btn-primary">
+                    <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
+                    Salvar no Navegador
+                </button>
+                <button id="pdf-btn" class="btn btn-secondary">
+                    <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/><path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.658-.877.37-.198.816-.22 1.224-.07c.41.152.743.472.936.925.195.446.25.954.06 1.412-.19.458-.49.835-.88 1.146a6.82 6.82 0 0 1-1.142 1.011c-.445.304-.84.62-1.12.923-.21.228-.393.448-.51.664-.119.216-.186.416-.156.617.02.192.09.37.207.536a.57.57 0 0 0 .57.293c.225-.004.415-.086.592-.222.177-.135.297-.3.37-.473l-1.036-1.036-.018.018.001.002a.5.5 0 0 1 .706-.707l1.414 1.414.002.002.018.018a.5.5 0 0 1-.707.706l-1.035-1.035a.83.83 0 0 0-.34-.194.515.515 0 0 0-.435.158c-.145.145-.22.34-.214.536.006.195.06.375.168.524.108.149.25.27.413.358.21.117.453.18.72.18.273 0 .52-.062.732-.188.212-.126.381-.296.494-.512.112-.217.17-.46.158-.707-.012-.247-.08-.48-.19-.686a2.062 2.062 0 0 0-.44-.611 1.48 1.48 0 0 0-.655-.42c-.28-.095-.562-.14-.833-.132-.271.008-.533.056-.76.145-.227.089-.43.218-.598.386-.167.168-.29.374-.356.599-.067.225-.08.46-.017.676.062.216.182.404.346.55.164.146.363.243.574.285.21.042.42.04.617-.007l-1.147 1.147a.5.5 0 0 1-.708-.707l1.147-1.147-.024-.015c-.218-.135-.41-.305-.556-.51a1.27 1.27 0 0 1-.13-1.015c.033-.25.158-.485.342-.69.184-.205.42-.353.69-.44.27-.087.56-.11.833-.062.273.047.525.16.732.332.207.172.36.398.46.667.1.268.14.56.086.845-.054.285-.164.546-.32.772a7.41 7.41 0 0 1-1.195 1.44c-.21.175-.43.34-.655.49-.224.15-.45.285-.67.404-.22.119-.433.227-.63.324-.197.096-.38.18-.546.252a.81.81 0 0 1-.438.11z"/></svg>
+                    Baixar PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="output-section">
+            <h2>Visualização</h2>
+            <div id="html-output" class="prose">
+                <p class="placeholder">A visualização formatada aparecerá aqui.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="saved-documents-panel">
+        <h2>Documentos Salvos</h2>
+        <div id="saved-list">
+            </div>
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2025 - Criado com ❤️ para facilitar sua vida.</p>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Seleção de Elementos do DOM ---
+        const markdownInput = document.getElementById('markdown-input');
+        const htmlOutput = document.getElementById('html-output');
+        const saveBtn = document.getElementById('save-btn');
+        const pdfBtn = document.getElementById('pdf-btn');
+        const savedList = document.getElementById('saved-list');
+
+        const PLACEHOLDER_TEXT = '<p class="placeholder">A visualização formatada aparecerá aqui.</p>';
+
+        // --- Função Principal de Conversão ---
+        const convertMarkdown = () => {
+            const markdownText = markdownInput.value;
+            if (markdownText.trim() === '') {
+                htmlOutput.innerHTML = PLACEHOLDER_TEXT;
+            } else {
+                // Utiliza a biblioteca 'marked' para converter
+                htmlOutput.innerHTML = marked.parse(markdownText);
+            }
+        };
+
+        // --- Download como PDF com Ajustes ---
+        const downloadPDF = () => {
+            const contentToPrint = htmlOutput.innerHTML;
+            if (contentToPrint === PLACEHOLDER_TEXT || markdownInput.value.trim() === '') {
+                alert('Não há conteúdo para converter para PDF.');
+                return;
+            }
+
+            // Clonamos o elemento para não afetar a visualização na tela
+            const element = htmlOutput.cloneNode(true);
+
+            const now = new Date();
+            const filename = `documento-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}.pdf`;
+
+            // Opções de PDF ajustadas para melhor layout e quebra de página
+            const opt = {
+                margin:       0.33, // Reduzindo as margens para aproximadamente 1/3 do original (considerando o original como 1 polegada)
+                filename:     filename,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+                pagebreak:    { mode: ['css', 'legacy'] } // Usa o modo 'css' para respeitar as regras de quebra de página que definimos
+            };
+
+            // Utiliza a biblioteca html2pdf para gerar o arquivo
+            html2pdf().set(opt).from(element).save();
+        };
+
+        // --- Funções de Armazenamento Local (localStorage) ---
+
+        const getSavedDocuments = () => {
+            return JSON.parse(localStorage.getItem('markdown_docs')) || [];
+        };
+
+        const saveDocuments = (docs) => {
+            localStorage.setItem('markdown_docs', JSON.stringify(docs));
+        };
+
+        const renderSavedDocuments = () => {
+            const docs = getSavedDocuments();
+            savedList.innerHTML = '';
+
+            if (docs.length === 0) {
+                savedList.innerHTML = '<p style="color: var(--muted-text-color);">Nenhum documento salvo ainda.</p>';
+                return;
+            }
+
+            docs.forEach(doc => {
+                const item = document.createElement('div');
+                item.className = 'saved-item';
+                item.setAttribute('data-id', doc.id);
+
+                item.innerHTML = `
+                    <span class="item-title" title="Carregar: ${doc.title}">${doc.title}</span>
+                    <div class="item-actions">
+                        <button class="edit-btn" title="Editar Nome">
+                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.5 3.793 12.207 1.5l-1 1zM1 13.5l1.5-1.5L4 13.5 2.5 15H1v-1.5z"/></svg>
+                        </button>
+                        <button class="delete-btn" title="Excluir Documento">
+                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                        </button>
+                    </div>
+                `;
+                savedList.appendChild(item);
+            });
+        };
+
+        const saveCurrentDocument = () => {
+            const content = markdownInput.value;
+            if (content.trim() === '') {
+                alert('Não há conteúdo para salvar.');
+                return;
+            }
+
+            const title = prompt('Digite um nome para este documento:', 'Novo Documento');
+            if (!title || title.trim() === '') {
+                return;
+            }
+
+            const docs = getSavedDocuments();
+            const newDoc = {
+                id: Date.now().toString(),
+                title: title.trim(),
+                content: content
+            };
+
+            docs.push(newDoc);
+            saveDocuments(docs);
+            renderSavedDocuments();
+            alert(`Documento "${newDoc.title}" salvo com sucesso!`);
+        };
+
+        const handleSavedListClick = (e) => {
+            const docId = e.target.closest('.saved-item')?.getAttribute('data-id');
+            if (!docId) return;
+
+            const docs = getSavedDocuments();
+            const docToActOn = docs.find(doc => doc.id === docId);
+
+            // Ação de Carregar
+            if (e.target.closest('.item-title')) {
+                markdownInput.value = docToActOn.content;
+                convertMarkdown();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // Ação de Editar
+            if (e.target.closest('.edit-btn')) {
+                const newTitle = prompt('Digite o novo nome para o documento:', docToActOn.title);
+                if (newTitle && newTitle.trim() !== '') {
+                    docToActOn.title = newTitle.trim();
+                    saveDocuments(docs);
+                    renderSavedDocuments();
+                }
+            }
+
+            // Ação de Excluir
+            if (e.target.closest('.delete-btn')) {
+                if (confirm(`Tem certeza que deseja excluir o documento "${docToActOn.title}"?`)) {
+                    const updatedDocs = docs.filter(doc => doc.id !== docId);
+                    saveDocuments(updatedDocs);
+                    renderSavedDocuments();
+                }
+            }
+        };
+
+        // --- Event Listeners ---
+        markdownInput.addEventListener('input', convertMarkdown);
+        saveBtn.addEventListener('click', saveCurrentDocument);
+        pdfBtn.addEventListener('click', downloadPDF);
+        savedList.addEventListener('click', handleSavedListClick);
+
+        // --- Inicialização ---
+        renderSavedDocuments();
+        convertMarkdown(); // Roda uma vez para limpar o placeholder se houver algo no textarea
+    });
+</script>
+</body>
+</html>

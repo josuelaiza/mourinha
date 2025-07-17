@@ -1,0 +1,297 @@
+/* --- Reset Básico e Fontes --- */
+:root {
+    --primary-color: #7c3aed; /* Roxo */
+    --secondary-color: #10b981; /* Verde */
+    --background-color: #f8fafc; /* Fundo quase branco */
+    --surface-color: #ffffff; /* Cor de superfície (cards) */
+    --text-color: #1e293b; /* Texto escuro */
+    --muted-text-color: #64748b; /* Texto mais claro */
+    --border-color: #e2e8f0;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --border-radius: 0.75rem; /* 12px */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+/* --- Cabeçalho e Rodapé --- */
+header {
+    text-align: center;
+    padding: 2rem 1rem;
+    background-color: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+header h1 {
+    color: var(--primary-color);
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+header p {
+    color: var(--muted-text-color);
+    max-width: 600px;
+    margin: 0.5rem auto 0;
+}
+
+footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    margin-top: 2rem;
+    color: var(--muted-text-color);
+    font-size: 0.9rem;
+}
+
+/* --- Container Principal --- */
+.container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* --- Painel do Editor --- */
+.editor-panel {
+    display: flex;
+    gap: 2rem;
+    min-height: 60vh;
+}
+
+.input-section, .output-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-section h2, .output-section h2, .saved-documents-panel h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+#markdown-input {
+    flex-grow: 1;
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-family: monospace;
+    font-size: 1rem;
+    line-height: 1.5;
+    background-color: var(--surface-color);
+    resize: vertical;
+    box-shadow: var(--shadow);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#markdown-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+
+/* --- Painel de Visualização --- */
+#html-output {
+    flex-grow: 1;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem 1.5rem;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+}
+
+#html-output .placeholder {
+    color: var(--muted-text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+}
+
+/* --- Botões --- */
+.main-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #6d28d9;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+.btn-secondary:hover {
+    background-color: #059669;
+}
+
+/* --- Painel de Documentos Salvos --- */
+.saved-documents-panel {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background-color: var(--surface-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+#saved-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.saved-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.saved-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.item-title {
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 1rem;
+}
+
+.item-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: var(--muted-text-color);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.item-actions button:hover {
+    background-color: #e2e8f0;
+    color: var(--text-color);
+}
+
+.item-actions svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* --- Estilização do Conteúdo Gerado (PROSE) --- */
+.prose {
+    color: var(--text-color);
+}
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    margin-top: 1.5em;
+    margin-bottom: 1em;
+    font-weight: 700;
+}
+.prose h1 { font-size: 2em; }
+.prose h2 { font-size: 1.5em; }
+.prose h3 { font-size: 1.25em; }
+.prose p { margin-bottom: 1em; }
+.prose strong { font-weight: 700; }
+.prose em { font-style: italic; }
+.prose ul, .prose ol { padding-left: 1.5em; margin-bottom: 1em; }
+.prose li { margin-bottom: 0.5em; }
+.prose a { color: var(--primary-color); text-decoration: none; }
+.prose a:hover { text-decoration: underline; }
+.prose blockquote {
+    border-left: 4px solid var(--border-color);
+    padding-left: 1em;
+    margin-left: 0;
+    color: var(--muted-text-color);
+    font-style: italic;
+}
+.prose code {
+    background-color: #e2e8f0;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-family: monospace;
+}
+.prose pre {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    padding: 1em;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+}
+.prose pre code {
+    background: none;
+    padding: 0;
+}
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+}
+.prose th, .prose td {
+    border: 1px solid var(--border-color);
+    padding: 0.5em 1em;
+}
+.prose th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+}
+.prose tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+/* --- Responsividade --- */
+@media (max-width: 900px) {
+    .editor-panel {
+        flex-direction: column;
+    }
+    header h1 {
+        font-size: 2rem;
+    }
+}

@@ -3,453 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base de Conhecimento - Conferente</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <title>Editor Markdown para PDF</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #d1d5db; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1f2937; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        .modal-enter, .table-modal-enter { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        mark { background-color: #facc15; color: #111827; padding: 0 2px; border-radius: 2px;}
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="antialiased">
+<body>
 
-    <div class="container mx-auto p-4 md:p-8">
+    <header>
+        <h1>Conversor Markdown Pro</h1>
+        <p>Cole seu texto gerado por IA, visualize-o formatado e salve em PDF ou no seu navegador.</p>
+    </header>
 
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-white">Base de Conhecimento do Conferente</h1>
-            <div class="flex justify-center items-center gap-4 mt-4">
-                <p class="text-gray-400">Encontre rapidamente informações e procedimentos importantes.</p>
-                <button id="open-table-modal-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500">
-                    Consultar Código de Unidade
-                </button>
-            </div>
-        </header>
-
-        <div class="bg-gray-800 p-6 rounded-xl shadow-lg mb-8">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="quick-search-input" class="block text-sm font-medium text-gray-300 mb-2">Pesquisa Rápida de Procedimentos</label>
-                    <input type="text" id="quick-search-input" placeholder="Digite para filtrar procedimentos..." class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 transition">
-                </div>
-                <div>
-                    <label for="keyword-input" class="block text-sm font-medium text-gray-300 mb-2">Filtrar por Palavras-Chave (tecle Enter)</label>
-                    <input type="text" id="keyword-input" placeholder="Adicione palavras-chave uma a uma..." class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 transition">
-                    <div id="keyword-tags-container" class="flex flex-wrap gap-2 mt-3">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="border-t border-gray-700 pt-6">
-                <label class="block text-sm font-medium text-gray-300 mb-2">Filtrar por Tópicos</label>
-                <div id="topic-filters-container" class="flex flex-wrap gap-x-6 gap-y-3 items-center">
-                    <span class="text-gray-500">Carregando tópicos...</span>
+    <main class="container">
+        <div class="editor-panel">
+            <div class="input-section">
+                <h2>Seu Texto (Markdown)</h2>
+                <textarea id="markdown-input" placeholder="Cole seu texto aqui... Exemplo: **Isso ficará em negrito!**"></textarea>
+                <div class="main-actions">
+                    <button id="save-btn" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
+                        Salvar no Navegador
+                    </button>
+                    <button id="pdf-btn" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/><path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.658-.877.37-.198.816-.22 1.224-.07c.41.152.743.472.936.925.195.446.25.954.06 1.412-.19.458-.49.835-.88 1.146a6.82 6.82 0 0 1-1.142 1.011c-.445.304-.84.62-1.12.923-.21.228-.393.448-.51.664-.119.216-.186.416-.156.617.02.192.09.37.207.536a.57.57 0 0 0 .57.293c.225-.004.415-.086.592-.222.177-.135.297-.3.37-.473l-1.036-1.036-.018.018.001.002a.5.5 0 0 1 .706-.707l1.414 1.414.002.002.018.018a.5.5 0 0 1-.707.706l-1.035-1.035a.83.83 0 0 0-.34-.194.515.515 0 0 0-.435.158c-.145.145-.22.34-.214.536.006.195.06.375.168.524.108.149.25.27.413.358.21.117.453.18.72.18.273 0 .52-.062.732-.188.212-.126.381-.296.494-.512.112-.217.17-.46.158-.707-.012-.247-.08-.48-.19-.686a2.062 2.062 0 0 0-.44-.611 1.48 1.48 0 0 0-.655-.42c-.28-.095-.562-.14-.833-.132-.271.008-.533.056-.76.145-.227.089-.43.218-.598.386-.167.168-.29.374-.356.599-.067.225-.08.46-.017.676.062.216.182.404.346.55.164.146.363.243.574.285.21.042.42.04.617-.007l-1.147 1.147a.5.5 0 0 1-.708-.707l1.147-1.147-.024-.015c-.218-.135-.41-.305-.556-.51a1.27 1.27 0 0 1-.13-1.015c.033-.25.158-.485.342-.69.184-.205.42-.353.69-.44.27-.087.56-.11.833-.062.273.047.525.16.732.332.207.172.36.398.46.667.1.268.14.56.086.845-.054.285-.164.546-.32.772a7.41 7.41 0 0 1-1.195 1.44c-.21.175-.43.34-.655.49-.224.15-.45.285-.67.404-.22.119-.433.227-.63.324-.197.096-.38.18-.546.252a.81.81 0 0 1-.438.11z"/></svg>
+                        Baixar PDF
+                    </button>
                 </div>
             </div>
 
-            <div class="mt-6 text-right">
-                <button id="clear-filters-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-red-500">
-                    Limpar Filtros
-                </button>
+            <div class="output-section">
+                <h2>Visualização</h2>
+                <div id="html-output" class="prose">
+                    <p class="placeholder">A visualização formatada aparecerá aqui.</p>
+                </div>
             </div>
         </div>
 
-        <main id="results-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        </main>
-        
-        <div id="message-container" class="text-center py-16 hidden">
-            <p class="text-xl text-gray-400"></p>
+        <div class="saved-documents-panel">
+            <h2>Documentos Salvos</h2>
+            <div id="saved-list">
+                </div>
         </div>
-    </div>
+    </main>
 
-    <div id="modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div id="modal-content" class="bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-enter relative">
-            <div class="p-6 md:p-8">
-                <button id="modal-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-                <h2 id="modal-title" class="text-2xl font-bold text-white mb-2"></h2>
-                <span id="modal-topic" class="inline-block bg-blue-600 text-white text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full mb-4"></span>
-                <div id="modal-image-container" class="my-4"><img id="modal-image" src="" alt="Imagem do Procedimento" class="max-w-full h-auto rounded-lg mx-auto"></div>
-                <div id="modal-info" class="text-gray-300 leading-relaxed prose prose-invert max-w-none"></div>
-            </div>
-        </div>
-    </div>
+    <footer>
+        <p>&copy; 2025 - Criado com ❤️ para facilitar sua vida.</p>
+    </footer>
     
-    <div id="table-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-gray-800 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] flex flex-col table-modal-enter">
-             <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-white">Consulta de Códigos de Unidade</h2>
-                <button id="table-modal-close-btn" class="text-gray-400 hover:text-white transition">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="p-4">
-                 <input type="text" id="table-global-search" placeholder="Pesquisar em toda a tabela..." class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 transition mb-4">
-            </div>
-            <div class="overflow-auto px-4 pb-4">
-                <table id="codes-table" class="w-full text-sm text-left text-gray-400">
-                    <thead class="text-xs text-gray-300 uppercase bg-gray-700 sticky top-0">
-                        <tr>
-                            <th scope="col" class="px-3 py-3">Cod.</th>
-                            <th scope="col" class="px-3 py-3">Sigla</th>
-                            <th scope="col" class="px-3 py-3">PTC</th>
-                            <th scope="col" class="px-3 py-3">Bairro</th>
-                            <th scope="col" class="px-3 py-3">Município</th>
-                            <th scope="col" class="px-3 py-3">UF</th>
-                            <th scope="col" class="px-3 py-3">Tipo</th>
-                        </tr>
-                        <tr class="bg-gray-700">
-                           <th class="p-1"><input type="text" data-col="0" class="table-col-filter w-full bg-gray-600 border-gray-500 text-white rounded p-1.5 text-xs" placeholder="Filtrar..."></th>
-                           <th class="p-1"><input type="text" data-col="1" class="table-col-filter w-full bg-gray-600 border-gray-500 text-white rounded p-1.5 text-xs" placeholder="Filtrar..."></th>
-                           <th class="p-1"><input type="text" data-col="2" class="table-col-filter w-full bg-gray-600 border-gray-500 text-white rounded p-1.5 text-xs" placeholder="Filtrar..."></th>
-                           <th class="p-1"><input type="text" data-col="3" class="table-col-filter w-full bg-gray-600 border-gray-500 text-white rounded p-1.5 text-xs" placeholder="Filtrar..."></th>
-                           <th class="p-1"><input type="text" data-col="4" class="table-col-filter w-full bg-gray-600 border-gray-500 text-white rounded p-1.5 text-xs" placeholder="Filtrar..."></th>
-                           <th class="p-1"><input type="text" data-col="5" class="table-col-filter w-full bg-gray-600 border-gray-500 text-white rounded p-1.5 text-xs" placeholder="Filtrar..."></th>
-                           <th class="p-1"><input type="text" data-col="6" class="table-col-filter w-full bg-gray-600 border-gray-500 text-white rounded p-1.5 text-xs" placeholder="Filtrar..."></th>
-                        </tr>
-                    </thead>
-                    <tbody id="codes-table-body">
-                        </tbody>
-                </table>
-                 <p id="table-no-results" class="text-center py-8 text-lg text-gray-500 hidden">Nenhum resultado encontrado.</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- Seletores de Elementos ---
-        const quickSearchInput = document.getElementById('quick-search-input');
-        const keywordInput = document.getElementById('keyword-input');
-        const keywordTagsContainer = document.getElementById('keyword-tags-container');
-        const topicFiltersContainer = document.getElementById('topic-filters-container');
-        const resultsContainer = document.getElementById('results-container');
-        const messageContainer = document.getElementById('message-container');
-        const clearFiltersBtn = document.getElementById('clear-filters-btn');
-        const modal = document.getElementById('modal');
-        const modalCloseBtn = document.getElementById('modal-close-btn');
-
-        // --- Seletores para Modal da Tabela ---
-        const openTableModalBtn = document.getElementById('open-table-modal-btn');
-        const tableModal = document.getElementById('table-modal');
-        const tableModalCloseBtn = document.getElementById('table-modal-close-btn');
-        const codesTableBody = document.getElementById('codes-table-body');
-        const tableGlobalSearch = document.getElementById('table-global-search');
-        const tableColFilters = document.querySelectorAll('.table-col-filter');
-        const tableNoResults = document.getElementById('table-no-results');
-
-        // --- Gerenciamento de Estado ---
-        let allProcedures = [];
-        let allCodesData = [];
-        let activeKeywordFilters = new Set();
-        const normalizeString = (str) => str ? str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : '';
-
-        // --- Carregamento de Dados ---
-        const initializeApp = async () => {
-            // Carrega dados dos cards de procedimentos
-            try {
-                const response = await fetch('procedures.json');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}.`);
-                allProcedures = await response.json();
-                populateTopics();
-                displayProcedures(allProcedures, '');
-            } catch (error) {
-                console.error("Erro ao carregar o arquivo procedures.json:", error);
-                const errorMessage = "Aviso: Não foi possível carregar o arquivo 'procedures.json' dos cards. A busca e filtros de procedimentos podem não funcionar. Verifique se o arquivo está na mesma pasta e o servidor local está ativo.";
-                showMessage(errorMessage);
-            }
-            
-            // Carrega dados da tabela de códigos
-            try {
-                const response = await fetch('codigos.json');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}.`);
-                allCodesData = await response.json();
-                renderTable(allCodesData); // Renderiza a tabela inicial
-            } catch (error) {
-                console.error("Erro ao carregar o arquivo codigos.json:", error);
-                codesTableBody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-red-400">Falha ao carregar os dados das unidades. Verifique se o arquivo 'codigos.json' existe e está acessível.</td></tr>`;
-            }
-        };
-
-        // --- Renderização da Interface (Cards) ---
-        const populateTopics = () => {
-            if (!allProcedures || allProcedures.length === 0) {
-                topicFiltersContainer.innerHTML = '<span class="text-gray-500">Nenhum tópico encontrado.</span>';
-                return;
-            }
-            const topics = [...new Set(allProcedures.map(p => p.topico))].sort((a, b) => a.localeCompare(b));
-            topicFiltersContainer.innerHTML = '';
-            topics.forEach(topic => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'flex items-center';
-                const checkboxId = `topic-${topic.replace(/\s+/g, '-')}`;
-                wrapper.innerHTML = `<input type="checkbox" id="${checkboxId}" value="${topic}" class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-600 cursor-pointer"><label for="${checkboxId}" class="ml-2 text-sm text-gray-300 cursor-pointer">${topic}</label>`;
-                topicFiltersContainer.appendChild(wrapper);
-                wrapper.querySelector('input').addEventListener('change', applyFilters);
-            });
-        };
-        
-        const renderKeywordTags = () => {
-            keywordTagsContainer.innerHTML = '';
-            activeKeywordFilters.forEach(keyword => {
-                const tag = document.createElement('span');
-                tag.className = 'flex items-center bg-blue-600 text-white text-sm font-medium pl-3 pr-2 py-1 rounded-full';
-                tag.innerHTML = `${keyword}<button class="remove-tag-btn ml-2 text-blue-200 hover:text-white" data-keyword="${keyword}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>`;
-                keywordTagsContainer.appendChild(tag);
-            });
-        };
-        
-        const getPreviewWithContext = (info, term) => {
-            if (!info) return '';
-            if (!term) return info.substring(0, 100) + (info.length > 100 ? '...' : '');
-
-            const normalizedInfo = normalizeString(info);
-            const normalizedTerm = normalizeString(term);
-            const index = normalizedInfo.indexOf(normalizedTerm);
-
-            if (index === -1) return info.substring(0, 100) + (info.length > 100 ? '...' : '');
-
-            const start = Math.max(0, index - 50);
-            const end = Math.min(info.length, index + normalizedTerm.length + 50);
-
-            let preview = info.substring(start, end);
-            if (start > 0) preview = '...' + preview;
-            if (end < info.length) preview += '...';
-            
-            const regex = new RegExp(term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-            return preview.replace(regex, (match) => `<mark>${match}</mark>`);
-        };
-
-        const displayProcedures = (procedures, searchTerm = '') => {
-            resultsContainer.innerHTML = '';
-            if (procedures.length === 0) {
-                if (allProcedures.length > 0) {
-                    showMessage("Nenhum procedimento encontrado com os filtros aplicados.");
-                }
-                return;
-            }
-            hideMessage();
-            procedures.forEach(proc => {
-                const card = document.createElement('div');
-                card.className = 'procedure-card bg-gray-800 rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer relative';
-                card.dataset.id = proc.id;
-                const imageHtml = proc.imagem ? `<img src="${proc.imagem}" alt="${proc.titulo}" class="w-full h-40 object-cover" onerror="this.style.display='none'">` : '';
-                const preview = getPreviewWithContext(proc.informacao, searchTerm);
-                card.innerHTML = `${imageHtml}<div class="p-5 relative"><span class="absolute top-2 right-2 text-xs text-gray-400">${proc.id}</span><span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-200 bg-blue-800">${proc.topico}</span><h3 class="text-lg font-bold mt-3 text-white">${proc.titulo}</h3><p class="text-gray-400 text-sm mt-1 h-12 overflow-hidden">${preview}</p></div>`;
-                resultsContainer.appendChild(card);
-            });
-        };
-
-        const showMessage = (text) => {
-            messageContainer.querySelector('p').textContent = text;
-            messageContainer.classList.remove('hidden');
-            resultsContainer.classList.add('hidden');
-        };
-
-        const hideMessage = () => {
-            messageContainer.classList.add('hidden');
-            resultsContainer.classList.remove('hidden');
-        };
-
-        // --- Lógica de Filtros (Cards) ---
-        const applyFilters = () => {
-            const quickSearchTerm = quickSearchInput.value.trim();
-            const normalizedQuickTerm = normalizeString(quickSearchTerm);
-            const selectedTopics = [...document.querySelectorAll('#topic-filters-container input:checked')].map(cb => cb.value);
-            let filteredProcedures = allProcedures;
-
-            if (normalizedQuickTerm) {
-                filteredProcedures = filteredProcedures.filter(proc => normalizeString(proc.titulo).includes(normalizedQuickTerm) || normalizeString(proc.informacao).includes(normalizedQuickTerm));
-            }
-            if (selectedTopics.length > 0) {
-                filteredProcedures = filteredProcedures.filter(proc => selectedTopics.includes(proc.topico));
-            }
-            if (activeKeywordFilters.size > 0) {
-                activeKeywordFilters.forEach(keyword => {
-                    const normalizedKeyword = normalizeString(keyword);
-                    filteredProcedures = filteredProcedures.filter(proc => normalizeString(proc.titulo).includes(normalizedKeyword) || normalizeString(proc.informacao).includes(normalizedKeyword));
-                });
-            }
-            displayProcedures(filteredProcedures, quickSearchTerm);
-        };
-        
-        // --- Manipuladores de Eventos (Cards) ---
-        quickSearchInput.addEventListener('input', applyFilters);
-
-        keywordInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const keyword = keywordInput.value.trim();
-                if (keyword) {
-                    activeKeywordFilters.add(keyword);
-                    renderKeywordTags();
-                    applyFilters();
-                    keywordInput.value = '';
-                }
-            }
-        });
-
-        keywordTagsContainer.addEventListener('click', (e) => {
-            const removeBtn = e.target.closest('.remove-tag-btn');
-            if (removeBtn) {
-                activeKeywordFilters.delete(removeBtn.dataset.keyword);
-                renderKeywordTags();
-                applyFilters();
-            }
-        });
-        
-        clearFiltersBtn.addEventListener('click', () => {
-            activeKeywordFilters.clear();
-            document.querySelectorAll('#topic-filters-container input:checked').forEach(cb => cb.checked = false);
-            keywordInput.value = '';
-            quickSearchInput.value = '';
-            renderKeywordTags();
-            if(allProcedures.length > 0) displayProcedures(allProcedures, '');
-        });
-        
-        resultsContainer.addEventListener('click', (e) => {
-            const card = e.target.closest('.procedure-card');
-            if (card) showModal(card.dataset.id);
-        });
-
-        // --- Modal de Detalhes (Cards) ---
-        const showModal = (id) => {
-            const procedure = allProcedures.find(p => p.id == id);
-            if (!procedure) return;
-            document.getElementById('modal-title').textContent = procedure.titulo;
-            document.getElementById('modal-topic').textContent = procedure.topico;
-            document.getElementById('modal-info').innerHTML = procedure.informacao.replace(/\n/g, '<br>');
-            const imgContainer = document.getElementById('modal-image-container');
-            const img = document.getElementById('modal-image');
-            img.src = ''; 
-            imgContainer.classList.add('hidden');
-            if (procedure.imagem) {
-                img.src = procedure.imagem;
-                img.alt = `Imagem para ${procedure.titulo}`;
-                imgContainer.classList.remove('hidden');
-                img.onerror = () => { imgContainer.classList.add('hidden'); };
-            }
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        };
-
-        const hideModal = () => {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        };
-
-        modalCloseBtn.addEventListener('click', hideModal);
-        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
-        
-        // --- Lógica da Tabela de Códigos ---
-        const highlightText = (text, term) => {
-            if (!term) return text;
-            const safeTerm = term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-            const regex = new RegExp(safeTerm, 'gi');
-            return text.toString().replace(regex, `<mark>${'$&'}</mark>`);
-        };
-
-        const renderTable = (data, globalTerm = '', colTerms = {}) => {
-            codesTableBody.innerHTML = '';
-            
-            if (!data || data.length === 0) {
-                tableNoResults.classList.remove('hidden');
-                return;
-            }
-            
-            tableNoResults.classList.add('hidden');
-            
-            data.forEach(rowData => {
-                const tr = document.createElement('tr');
-                tr.className = 'bg-gray-800 border-b border-gray-700 hover:bg-gray-700';
-                
-                const highlightedCells = rowData.map((cellData, index) => {
-                    let cellHTML = cellData;
-                    if (colTerms[index]) {
-                         cellHTML = highlightText(cellHTML, colTerms[index]);
-                    }
-                    if (globalTerm) {
-                        cellHTML = highlightText(cellHTML, globalTerm);
-                    }
-                    return `<td class="px-3 py-2">${cellHTML}</td>`;
-                });
-
-                tr.innerHTML = highlightedCells.join('');
-                codesTableBody.appendChild(tr);
-            });
-        };
-        
-        const filterTable = () => {
-            const globalSearchTerm = tableGlobalSearch.value;
-            const normalizedGlobalTerm = normalizeString(globalSearchTerm);
-            
-            const colSearchTerms = {};
-            const normalizedColTerms = {};
-            tableColFilters.forEach(input => {
-                const col = input.dataset.col;
-                const term = input.value;
-                if(term) {
-                    colSearchTerms[col] = term;
-                    normalizedColTerms[col] = normalizeString(term);
-                }
-            });
-
-            let filteredData = allCodesData.filter(row => {
-                const globalMatch = !normalizedGlobalTerm || row.some(cell => normalizeString(cell).includes(normalizedGlobalTerm));
-                
-                const colMatch = Object.keys(normalizedColTerms).every(col => {
-                    const cellValue = row[col];
-                    return !normalizedColTerms[col] || normalizeString(cellValue).includes(normalizedColTerms[col]);
-                });
-
-                return globalMatch && colMatch;
-            });
-            
-            renderTable(filteredData, globalSearchTerm, colSearchTerms);
-        };
-        
-        // --- Manipuladores de Eventos (Tabela) ---
-        tableGlobalSearch.addEventListener('input', filterTable);
-        tableColFilters.forEach(input => input.addEventListener('input', filterTable));
-
-        const showTableModal = () => {
-            tableModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        };
-
-        const hideTableModal = () => {
-            tableModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        };
-
-        openTableModalBtn.addEventListener('click', showTableModal);
-        tableModalCloseBtn.addEventListener('click', hideTableModal);
-        tableModal.addEventListener('click', (e) => { if (e.target === tableModal) hideTableModal(); });
-
-        document.addEventListener('keydown', (e) => { 
-            if (e.key === 'Escape') {
-                hideModal(); 
-                hideTableModal();
-            }
-        });
-
-        // --- Carregamento Inicial ---
-        initializeApp();
-    });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

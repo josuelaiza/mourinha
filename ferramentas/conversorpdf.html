@@ -421,7 +421,6 @@ Visite [OpenAI](https://openai.com) para mais informações."></textarea>
         </div>
 
         <div class="button-group">
-            <button class="btn-primary" onclick="previewPDF()">📄 Visualizar PDF</button>
             <button class="btn-success" onclick="downloadPDF()">⬇️ Baixar PDF</button>
             <button class="btn-secondary" onclick="saveDocument()">💾 Salvar Documento</button>
         </div>
@@ -631,7 +630,6 @@ Visite [OpenAI](https://openai.com) para mais informações."></textarea>
                 return;
             }
 
-            const htmlContent = marked.parse(markdownText);
             const doc = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
@@ -640,31 +638,31 @@ Visite [OpenAI](https://openai.com) para mais informações."></textarea>
                 floatPrecision: 16
             });
 
-            // Configurações de margem e layout
+            // Configurações de página e layout
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
-            const margin = 20;
+            const margin = 25;
             const maxWidth = pageWidth - 2 * margin;
             let currentY = margin;
-
-            // Parse do HTML para texto simples e aplicação de estilos
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = htmlContent;
-            
-            const elements = Array.from(tempDiv.children);
             let pageNumber = 1;
 
-            // Adicionar número da página
+            // Configurações de fonte padrão
+            const defaultFont = 'helvetica';
+            const defaultFontSize = 12;
+            const lineHeight = 6;
+
+            // Função para adicionar número da página
             function addPageNumber() {
                 doc.setFontSize(10);
+                doc.setFont(defaultFont, 'normal');
                 doc.setTextColor(100);
                 doc.text(`Página ${pageNumber}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
                 pageNumber++;
             }
 
-            // Função para quebrar linha se necessário
-            function checkNewPage(additionalHeight = 20) {
-                if (currentY + additionalHeight > pageHeight - margin) {
+            // Função para verificar se precisa de nova página
+            function checkNewPage(additionalHeight = 15) {
+                if (currentY + additionalHeight > pageHeight - 30) {
                     addPageNumber();
                     doc.addPage();
                     currentY = margin;
@@ -673,113 +671,137 @@ Visite [OpenAI](https://openai.com) para mais informações."></textarea>
                 return false;
             }
 
-            for (const element of elements) {
-                const tagName = element.tagName.toLowerCase();
-                const text = element.textContent.trim();
-
-                if (!text) continue;
-
-                checkNewPage();
-
-                // Configurar fonte e tamanho baseado no elemento
-                doc.setTextColor(0);
+            // Função para processar texto markdown em elementos
+            function processMarkdownText(text) {
+                // Dividir o texto em linhas
+                const lines = text.split('\n');
                 
-                switch (tagName) {
-                    case 'h1':
-                        doc.setFontSize(20);
-                        doc.setFont('helvetica', 'bold');
-                        currentY += 10;
-                        break;
-                    case 'h2':
-                        doc.setFontSize(16);
-                        doc.setFont('helvetica', 'bold');
-                        currentY += 8;
-                        break;
-                    case 'h3':
-                        doc.setFontSize(14);
-                        doc.setFont('helvetica', 'bold');
-                        currentY += 6;
-                        break;
-                    case 'h4':
-                    case 'h5':
-                    case 'h6':
-                        doc.setFontSize(12);
-                        doc.setFont('helvetica', 'bold');
-                        currentY += 5;
-                        break;
-                    case 'blockquote':
-                        doc.setFontSize(11);
-                        doc.setFont('helvetica', 'italic');
-                        doc.setTextColor(100);
-                        break;
-                    case 'pre':
-                    case 'code':
-                        doc.setFontSize(10);
-                        doc.setFont('courier', 'normal');
-                        break;
-                    default:
-                        doc.setFontSize(11);
-                        doc.setFont('helvetica', 'normal');
-                }
-
-                // Quebrar texto em múltiplas linhas se necessário
-                const lines = doc.splitTextToSize(text, maxWidth);
-                
-                // Verificar se todas as linhas cabem na página
-                const totalHeight = lines.length * (doc.getLineHeight() / doc.internal.scaleFactor);
-                checkNewPage(totalHeight);
-
-                // Adicionar texto
                 for (let i = 0; i < lines.length; i++) {
-                    if (checkNewPage()) {
-                        // Se mudou de página, reconfigurar o estilo
-                        switch (tagName) {
-                            case 'h1':
-                                doc.setFontSize(20);
-                                doc.setFont('helvetica', 'bold');
-                                break;
-                            case 'h2':
-                                doc.setFontSize(16);
-                                doc.setFont('helvetica', 'bold');
-                                break;
-                            case 'h3':
-                                doc.setFontSize(14);
-                                doc.setFont('helvetica', 'bold');
-                                break;
-                            case 'h4':
-                            case 'h5':
-                            case 'h6':
-                                doc.setFontSize(12);
-                                doc.setFont('helvetica', 'bold');
-                                break;
-                            case 'blockquote':
-                                doc.setFontSize(11);
-                                doc.setFont('helvetica', 'italic');
-                                doc.setTextColor(100);
-                                break;
-                            case 'pre':
-                            case 'code':
-                                doc.setFontSize(10);
-                                doc.setFont('courier', 'normal');
-                                break;
-                            default:
-                                doc.setFontSize(11);
-                                doc.setFont('helvetica', 'normal');
-                        }
-                    }
+                    const line = lines[i].trim();
                     
-                    doc.text(lines[i], margin, currentY);
-                    currentY += doc.getLineHeight() / doc.internal.scaleFactor;
-                }
+                    if (!line && i < lines.length - 1) {
+                        // Linha vazia - adicionar espaço
+                        currentY += lineHeight;
+                        continue;
+                    }
 
-                // Espaçamento após o elemento
-                currentY += tagName.startsWith('h') ? 8 : 5;
+                    if (!line) continue;
+
+                    checkNewPage();
+
+                    // Reset para configurações padrão
+                    doc.setFont(defaultFont, 'normal');
+                    doc.setFontSize(defaultFontSize);
+                    doc.setTextColor(0);
+                    
+                    let fontSize = defaultFontSize;
+                    let fontWeight = 'normal';
+                    let textColor = 0;
+                    let extraSpacing = 0;
+                    let processedText = line;
+
+                    // Detectar e processar diferentes tipos de markdown
+                    if (line.startsWith('# ')) {
+                        // H1
+                        processedText = line.substring(2);
+                        fontSize = 18;
+                        fontWeight = 'bold';
+                        extraSpacing = 8;
+                    } else if (line.startsWith('## ')) {
+                        // H2
+                        processedText = line.substring(3);
+                        fontSize = 16;
+                        fontWeight = 'bold';
+                        extraSpacing = 6;
+                    } else if (line.startsWith('### ')) {
+                        // H3
+                        processedText = line.substring(4);
+                        fontSize = 14;
+                        fontWeight = 'bold';
+                        extraSpacing = 4;
+                    } else if (line.startsWith('#### ')) {
+                        // H4
+                        processedText = line.substring(5);
+                        fontSize = 13;
+                        fontWeight = 'bold';
+                        extraSpacing = 3;
+                    } else if (line.startsWith('##### ') || line.startsWith('###### ')) {
+                        // H5/H6
+                        processedText = line.replace(/^#+\s/, '');
+                        fontSize = 12;
+                        fontWeight = 'bold';
+                        extraSpacing = 2;
+                    } else if (line.startsWith('> ')) {
+                        // Blockquote
+                        processedText = line.substring(2);
+                        fontSize = 11;
+                        fontWeight = 'italic';
+                        textColor = 80;
+                    } else if (line.startsWith('- ') || line.startsWith('* ') || line.match(/^\d+\.\s/)) {
+                        // Lista
+                        if (line.startsWith('- ') || line.startsWith('* ')) {
+                            processedText = '• ' + line.substring(2);
+                        } else {
+                            processedText = line; // Manter numeração original
+                        }
+                        fontSize = defaultFontSize;
+                    } else if (line.startsWith('```') || line.startsWith('`')) {
+                        // Código - pular as linhas de código por enquanto para simplificar
+                        continue;
+                    }
+
+                    // Aplicar configurações de fonte
+                    doc.setFontSize(fontSize);
+                    doc.setFont(defaultFont, fontWeight);
+                    doc.setTextColor(textColor);
+
+                    // Processar texto inline (negrito, itálico)
+                    processedText = processedText
+                        .replace(/\*\*(.*?)\*\*/g, '$1') // Remover markdown de negrito
+                        .replace(/\*(.*?)\*/g, '$1')     // Remover markdown de itálico
+                        .replace(/`(.*?)`/g, '$1')       // Remover markdown de código inline
+                        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Remover links, manter texto
+
+                    // Quebrar texto em múltiplas linhas se necessário
+                    const splitText = doc.splitTextToSize(processedText, maxWidth);
+                    
+                    // Verificar se todas as linhas cabem na página atual
+                    const totalHeight = splitText.length * lineHeight + extraSpacing;
+                    if (checkNewPage(totalHeight)) {
+                        // Reconfigurar fonte após mudança de página
+                        doc.setFontSize(fontSize);
+                        doc.setFont(defaultFont, fontWeight);
+                        doc.setTextColor(textColor);
+                    }
+
+                    // Adicionar espaçamento extra antes de títulos
+                    if (extraSpacing > 0) {
+                        currentY += extraSpacing;
+                    }
+
+                    // Adicionar o texto
+                    for (let j = 0; j < splitText.length; j++) {
+                        checkNewPage();
+                        doc.text(splitText[j], margin, currentY);
+                        currentY += lineHeight;
+                    }
+
+                    // Espaçamento após títulos
+                    if (extraSpacing > 0) {
+                        currentY += extraSpacing / 2;
+                    } else {
+                        currentY += 2; // Espaçamento mínimo entre linhas
+                    }
+                }
             }
+
+            // Processar todo o texto markdown
+            processMarkdownText(markdownText);
 
             // Adicionar número na última página
             addPageNumber();
 
-            // Download do PDF
+            // Fazer o download
             const fileName = document.getElementById('docName').value.trim() || 'documento';
             doc.save(`${fileName}.pdf`);
         }

@@ -1,791 +1,241 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conversor Markdown para PDF</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Markdown → PDF</title>
+  <style>
+    /* Reset básico */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { display: flex; height: 100vh; font-family: sans-serif; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
+    /* Sidebar */
+    #sidebar {
+      width: 250px; background: #2c3e50; color: white;
+      display: flex; flex-direction: column;
+    }
+    #sidebar h2 { padding: 1rem; }
+    #doc-list { flex: 1; overflow-y: auto; }
+    .doc-item {
+      padding: .5rem 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    }
+    .doc-item:hover, .doc-item.active { background: #34495e; }
+    .doc-item button { background: none; border: none; color: #e74c3c; cursor: pointer; }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            min-height: 100vh;
-        }
+    #new-doc-btn { margin: 1rem; padding: .5rem; background: #27ae60; border: none; color: white; cursor: pointer; border-radius: 4px; }
 
-        .panel {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+    /* Main */
+    #main {
+      flex: 1; display: flex; flex-direction: column; padding: 1rem;
+    }
+    #doc-name { font-size: 1.2rem; padding: .5rem; margin-bottom: .5rem; }
+    #markdown-input { flex: 1; width: 100%; padding: .5rem; font-family: monospace; resize: none; }
+    #controls { margin-top: .5rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+    #controls button {
+      flex: 1; padding: .7rem; border: none; border-radius: 4px;
+      cursor: pointer; font-weight: bold;
+    }
+    #save-btn { background: #2980b9; color: white; }
+    #preview-btn { background: #f39c12; color: white; }
+    #download-btn { background: #16a085; color: white; }
 
-        .panel-header {
-            background: linear-gradient(90deg, #4f46e5, #7c3aed);
-            color: white;
-            padding: 20px;
-            font-weight: 600;
-            font-size: 1.2em;
-        }
-
-        .editor-panel {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .document-controls {
-            padding: 15px;
-            border-bottom: 1px solid #e5e7eb;
-            background: #f9fafb;
-        }
-
-        .doc-input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .doc-input {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .doc-input:focus {
-            outline: none;
-            border-color: #4f46e5;
-        }
-
-        .btn {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #4f46e5;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #4338ca;
-            transform: translateY(-2px);
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #4b5563;
-        }
-
-        .documents-list {
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        .document-item {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            padding: 8px 12px;
-            border-bottom: 1px solid #f3f4f6;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .document-item:hover {
-            background: #f3f4f6;
-        }
-
-        .document-item.active {
-            background: #ede9fe;
-            border-color: #8b5cf6;
-        }
-
-        .document-name {
-            flex: 1;
-            font-size: 14px;
-        }
-
-        .document-actions {
-            display: flex;
-            gap: 5px;
-        }
-
-        .btn-small {
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-
-        textarea {
-            flex: 1;
-            padding: 20px;
-            border: none;
-            resize: none;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        textarea:focus {
-            outline: none;
-        }
-
-        .preview-panel {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .preview-controls {
-            padding: 15px;
-            border-bottom: 1px solid #e5e7eb;
-            background: #f9fafb;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .control-group label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #374151;
-        }
-
-        .control-input {
-            width: 80px;
-            padding: 6px 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 13px;
-        }
-
-        .preview-content {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background: #fefefe;
-        }
-
-        .markdown-content {
-            line-height: 1.8;
-            color: #1f2937;
-        }
-
-        .markdown-content h1 {
-            font-size: 2em;
-            margin: 20px 0 15px 0;
-            color: #111827;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 10px;
-        }
-
-        .markdown-content h2 {
-            font-size: 1.5em;
-            margin: 18px 0 12px 0;
-            color: #374151;
-        }
-
-        .markdown-content h3 {
-            font-size: 1.2em;
-            margin: 15px 0 10px 0;
-            color: #4b5563;
-        }
-
-        .markdown-content p {
-            margin: 10px 0;
-        }
-
-        .markdown-content ul, .markdown-content ol {
-            margin: 10px 0;
-            padding-left: 30px;
-        }
-
-        .markdown-content li {
-            margin: 5px 0;
-        }
-
-        .markdown-content code {
-            background: #f3f4f6;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        .markdown-content pre {
-            background: #1f2937;
-            color: #f9fafb;
-            padding: 15px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 15px 0;
-        }
-
-        .markdown-content blockquote {
-            border-left: 4px solid #6b7280;
-            padding-left: 15px;
-            margin: 15px 0;
-            color: #6b7280;
-            font-style: italic;
-        }
-
-        .pdf-preview-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            padding: 20px;
-        }
-
-        .pdf-preview-modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pdf-preview-content {
-            background: white;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .pdf-preview-header {
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .pdf-preview-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .pdf-page {
-            background: white;
-            border: 1px solid #d1d5db;
-            margin-bottom: 20px;
-            position: relative;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 210mm;
-            min-height: 297mm;
-            max-width: 100%;
-            transform-origin: top left;
-        }
-
-        .pdf-page-header {
-            background: #f3f4f6;
-            padding: 8px 15px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #6b7280;
-            border-bottom: 1px solid #e5e7eb;
-            height: 30px;
-            box-sizing: border-box;
-        }
-
-        .pdf-page-content {
-            padding: 20mm;
-            height: calc(297mm - 30px);
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-            font-size: 12pt;
-            line-height: 1.6;
-            overflow: hidden;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #6b7280;
-            padding: 5px;
-        }
-
-        .close-btn:hover {
-            color: #374151;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                grid-template-columns: 1fr;
-                gap: 15px;
-                padding: 10px;
-            }
-
-            .panel-header {
-                padding: 15px;
-                font-size: 1.1em;
-            }
-
-            .preview-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .control-group {
-                justify-content: space-between;
-            }
-
-            .control-input {
-                width: 100px;
-            }
-
-            textarea {
-                padding: 15px;
-                font-size: 16px;
-            }
-
-            .pdf-preview-content {
-                width: 95%;
-                max-height: 95%;
-            }
-
-            .pdf-page-content {
-                padding: 15px;
-                min-height: 500px;
-            }
-        }
-    </style>
+    /* Modal Preview */
+    #preview-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center;
+      overflow: auto; padding: 2rem;
+    }
+    #preview-content {
+      background: white; padding: 1rem; border-radius: 8px;
+      max-width: 95%; max-height: 95%; overflow: auto;
+    }
+    .pdf-page {
+      width: 794px; height: 1123px; /* A4 @96dpi */
+      margin: 1rem auto; padding: 40px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3); position: relative;
+      background: white;
+      page-break-after: always;
+    }
+    .page-label {
+      position: absolute; top: 10px; right: 20px; font-size: .9rem; color: #555;
+    }
+    /* adapta para mobile: escala para caber */
+    @media (max-width: 850px) {
+      .pdf-page { transform: scale(0.6); transform-origin: top center; }
+    }
+    @media (max-width: 550px) {
+      .pdf-page { transform: scale(0.45); }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Editor Panel -->
-        <div class="panel editor-panel">
-            <div class="panel-header">
-                📝 Editor Markdown
-            </div>
-            
-            <div class="document-controls">
-                <div class="doc-input-group">
-                    <input type="text" class="doc-input" id="docName" placeholder="Nome do documento">
-                    <button class="btn btn-success" onclick="saveDocument()">💾 Salvar</button>
-                </div>
-                
-                <div class="documents-list" id="documentsList">
-                    <!-- Documents will be listed here -->
-                </div>
-            </div>
-
-            <textarea id="markdownInput" placeholder="Digite seu texto em Markdown aqui...
-
-Exemplo:
-# Título Principal
-
-## Subtítulo
-
-Este é um parágrafo com **texto em negrito** e *texto em itálico*.
-
-### Lista:
-- Item 1
-- Item 2
-- Item 3
-
-```javascript
-console.log('Código de exemplo');
-```
-
-> Esta é uma citação
-
-[Link exemplo](https://example.com)"></textarea>
-        </div>
-
-        <!-- Preview Panel -->
-        <div class="panel preview-panel">
-            <div class="panel-header">
-                👁️ Visualização
-            </div>
-            
-            <div class="preview-controls">
-                <button class="btn btn-primary" onclick="showPdfPreview()">📄 Visualizar PDF</button>
-                <button class="btn btn-success" onclick="downloadPdf()">⬇️ Baixar PDF</button>
-            </div>
-
-            <div class="preview-content" id="previewContent">
-                <div class="markdown-content" id="markdownOutput">
-                    Comece digitando no editor para ver a prévia aqui...
-                </div>
-            </div>
-        </div>
+  <div id="sidebar">
+    <h2>Meus Docs</h2>
+    <div id="doc-list"></div>
+    <button id="new-doc-btn">+ Novo Documento</button>
+  </div>
+  <div id="main">
+    <input id="doc-name" placeholder="Nome do documento">
+    <textarea id="markdown-input" placeholder="Cole seu Markdown aqui..."></textarea>
+    <div id="controls">
+      <button id="save-btn">Salvar</button>
+      <button id="preview-btn">Visualizar PDF</button>
+      <button id="download-btn">Baixar PDF</button>
     </div>
+  </div>
 
-    <!-- PDF Preview Modal -->
-    <div class="pdf-preview-modal" id="pdfPreviewModal">
-        <div class="pdf-preview-content">
-            <div class="pdf-preview-header">
-                <h3>📄 Prévia do PDF</h3>
-                <button class="close-btn" onclick="closePdfPreview()">&times;</button>
-            </div>
-            <div class="pdf-preview-body" id="pdfPreviewBody">
-                <!-- PDF pages will be rendered here -->
-            </div>
-        </div>
-    </div>
+  <!-- Modal de preview -->
+  <div id="preview-modal">
+    <div id="preview-content"></div>
+  </div>
 
-    <script>
-        // In-memory storage (replaces localStorage)
-        let documents = {};
-        let currentDocId = null;
+  <!-- Dependências -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <script>
+    // ===== Gestão de storage =====
+    const STORAGE_KEY = 'markdownDocs';
+    let docs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let currentId = null;
 
-        // Initialize
-        document.getElementById('markdownInput').addEventListener('input', updatePreview);
-        
-        updatePreview();
-        updateDocumentsList();
+    const docListEl = document.getElementById('doc-list');
+    const nameInput = document.getElementById('doc-name');
+    const mdInput = document.getElementById('markdown-input');
+    const saveBtn = document.getElementById('save-btn');
+    const previewBtn = document.getElementById('preview-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const newDocBtn = document.getElementById('new-doc-btn');
+    const previewModal = document.getElementById('preview-modal');
+    const previewContent = document.getElementById('preview-content');
 
-        function updatePreview() {
-            const markdown = document.getElementById('markdownInput').value;
-            const html = marked.parse(markdown);
-            
-            const output = document.getElementById('markdownOutput');
-            output.innerHTML = html;
+    function renderDocList() {
+      docListEl.innerHTML = '';
+      docs.forEach(doc => {
+        const div = document.createElement('div');
+        div.className = 'doc-item' + (doc.id === currentId ? ' active' : '');
+        div.innerHTML = `<span>${doc.name}</span>
+          <button title="Excluir" onclick="deleteDoc('${doc.id}')">✕</button>`;
+        div.onclick = () => selectDoc(doc.id);
+        docListEl.appendChild(div);
+      });
+    }
+
+    function selectDoc(id) {
+      currentId = id;
+      const doc = docs.find(d=> d.id===id);
+      nameInput.value = doc.name;
+      mdInput.value = doc.markdown;
+      renderDocList();
+    }
+
+    function saveCurrent() {
+      const name = nameInput.value.trim() || 'Sem título';
+      const markdown = mdInput.value;
+      if (!currentId) {
+        currentId = Date.now().toString();
+        docs.push({ id: currentId, name, markdown });
+      } else {
+        const doc = docs.find(d=> d.id===currentId);
+        doc.name = name; doc.markdown = markdown;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
+      renderDocList();
+      alert('Documento salvo!');
+    }
+
+    function newDoc() {
+      currentId = null;
+      nameInput.value = '';
+      mdInput.value = '';
+      renderDocList();
+    }
+
+    function deleteDoc(id) {
+      if (!confirm('Confirma exclusão?')) return;
+      docs = docs.filter(d=> d.id!==id);
+      if (id === currentId) newDoc();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
+      renderDocList();
+    }
+
+    // ===== Preview & Download =====
+    function generatePagesContainer() {
+      // container temporário
+      const container = document.createElement('div');
+      container.style.background = '#eee'; // diferente do white
+      // converter markdown em HTML
+      const html = marked.parse(mdInput.value);
+      // fragmentar em páginas
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html;
+      // criar páginas ao encher altura
+      const pageHeight = 1123 - 80; // altura interna
+      let page = createPage();
+      container.appendChild(page);
+      let cursor = 0;
+
+      Array.from(wrapper.childNodes).forEach(node => {
+        page.content.appendChild(node.cloneNode(true));
+        // se ultrapassar:
+        if (page.content.scrollHeight > pageHeight) {
+          // remove último
+          page.content.removeChild(page.content.lastChild);
+          // nova página
+          page = createPage();
+          container.appendChild(page);
+          page.content.appendChild(node.cloneNode(true));
         }
+      });
+      return container;
+    }
 
-        function saveDocument() {
-            const name = document.getElementById('docName').value.trim();
-            const content = document.getElementById('markdownInput').value;
-            
-            if (!name) {
-                alert('Por favor, digite um nome para o documento.');
-                return;
-            }
+    function createPage() {
+      const page = document.createElement('div');
+      page.className = 'pdf-page';
+      const label = document.createElement('div');
+      label.className = 'page-label';
+      const idx = document.querySelectorAll('.pdf-page').length + 1;
+      label.textContent = `Página ${idx}`;
+      page.appendChild(label);
+      const content = document.createElement('div');
+      content.style.marginTop = '30px';
+      page.content = content;
+      page.appendChild(content);
+      return page;
+    }
 
-            const docId = Date.now().toString();
-            documents[docId] = {
-                id: docId,
-                name: name,
-                content: content,
-                createdAt: new Date()
-            };
+    function showPreview() {
+      previewContent.innerHTML = '';
+      const pages = generatePagesContainer();
+      previewContent.appendChild(pages);
+      previewModal.style.display = 'flex';
+    }
 
-            currentDocId = docId;
-            document.getElementById('docName').value = '';
-            updateDocumentsList();
-            alert('Documento salvo com sucesso!');
-        }
+    function closePreview() {
+      previewModal.style.display = 'none';
+      previewContent.innerHTML = '';
+    }
 
-        function loadDocument(docId) {
-            if (!documents[docId]) return;
-            
-            const doc = documents[docId];
-            document.getElementById('markdownInput').value = doc.content;
-            currentDocId = docId;
-            
-            updatePreview();
-            updateDocumentsList();
-        }
+    function downloadPDF() {
+      const pagesContainer = generatePagesContainer();
+      // usar html2pdf: mesmas dimensões
+      html2pdf().set({
+        margin:       10,
+        filename:     (nameInput.value.trim() || 'documento') + '.pdf',
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'pt', format: [794, 1123], orientation: 'portrait' }
+      }).from(pagesContainer).save();
+    }
 
-        function deleteDocument(docId) {
-            if (confirm('Tem certeza que deseja excluir este documento?')) {
-                delete documents[docId];
-                if (currentDocId === docId) {
-                    currentDocId = null;
-                    document.getElementById('markdownInput').value = '';
-                    updatePreview();
-                }
-                updateDocumentsList();
-            }
-        }
+    // ===== Eventos =====
+    saveBtn.onclick = saveCurrent;
+    newDocBtn.onclick = newDoc;
+    previewBtn.onclick = showPreview;
+    downloadBtn.onclick = downloadPDF;
+    previewModal.onclick = e => { if(e.target===previewModal) closePreview(); };
 
-        function updateDocumentsList() {
-            const list = document.getElementById('documentsList');
-            const docArray = Object.values(documents);
-            
-            if (docArray.length === 0) {
-                list.innerHTML = '<div style="padding: 15px; text-align: center; color: #6b7280;">Nenhum documento salvo</div>';
-                return;
-            }
-
-            list.innerHTML = docArray.map(doc => `
-                <div class="document-item ${doc.id === currentDocId ? 'active' : ''}" onclick="loadDocument('${doc.id}')">
-                    <div class="document-name">${doc.name}</div>
-                    <div class="document-actions">
-                        <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteDocument('${doc.id}')">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function createPdfPages(content) {
-            // Create a temporary container with exact PDF dimensions
-            const container = document.createElement('div');
-            container.style.position = 'absolute';
-            container.style.left = '-9999px';
-            container.style.width = '170mm'; // A4 width - margins (210mm - 40mm)
-            container.style.fontFamily = 'Arial, sans-serif';
-            container.style.fontSize = '12pt';
-            container.style.lineHeight = '1.6';
-            container.innerHTML = content;
-            document.body.appendChild(container);
-
-            const pages = [];
-            const maxHeight = 250; // Approximate height in mm for content area
-            let currentPageContent = '';
-            let currentHeight = 0;
-
-            // Split content into pages based on height
-            const elements = Array.from(container.children);
-            
-            for (const element of elements) {
-                const elementHeight = element.offsetHeight * 0.264583; // Convert px to mm
-                
-                if (currentHeight + elementHeight > maxHeight && currentPageContent) {
-                    pages.push(currentPageContent);
-                    currentPageContent = element.outerHTML;
-                    currentHeight = elementHeight;
-                } else {
-                    currentPageContent += element.outerHTML;
-                    currentHeight += elementHeight;
-                }
-            }
-            
-            if (currentPageContent) {
-                pages.push(currentPageContent);
-            }
-
-            document.body.removeChild(container);
-            return pages.length > 0 ? pages : [content];
-        }
-
-        function showPdfPreview() {
-            const markdown = document.getElementById('markdownInput').value;
-            if (!markdown.trim()) {
-                alert('Digite algum conteúdo antes de visualizar o PDF.');
-                return;
-            }
-
-            const html = marked.parse(markdown);
-            const pages = createPdfPages(html);
-            const previewBody = document.getElementById('pdfPreviewBody');
-            
-            // Calculate scale for mobile
-            const isMobile = window.innerWidth <= 768;
-            const scale = isMobile ? 0.4 : 0.6;
-            
-            previewBody.innerHTML = pages.map((pageContent, index) => `
-                <div class="pdf-page" style="transform: scale(${scale});">
-                    <div class="pdf-page-header">Página ${index + 1}</div>
-                    <div class="pdf-page-content">
-                        ${pageContent}
-                    </div>
-                </div>
-            `).join('');
-
-            document.getElementById('pdfPreviewModal').classList.add('active');
-        }
-
-        function closePdfPreview() {
-            document.getElementById('pdfPreviewModal').classList.remove('active');
-        }
-
-        function downloadPdf() {
-            const markdown = document.getElementById('markdownInput').value;
-            if (!markdown.trim()) {
-                alert('Digite algum conteúdo antes de baixar o PDF.');
-                return;
-            }
-
-            const html = marked.parse(markdown);
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            
-            // Set font and margins to match preview
-            pdf.setFont('helvetica');
-            pdf.setFontSize(12);
-            const margin = 20;
-            const pageWidth = 210 - (2 * margin);
-            const lineHeight = 6;
-            
-            // Convert HTML to text while preserving some formatting
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            
-            let yPos = margin;
-            let pageNum = 1;
-            
-            function addNewPageIfNeeded(requiredHeight) {
-                if (yPos + requiredHeight > 277) { // 297 - 20 margin
-                    pdf.addPage();
-                    yPos = margin;
-                    pageNum++;
-                }
-            }
-            
-            function processElement(element) {
-                const tagName = element.tagName?.toLowerCase();
-                const text = element.textContent || '';
-                
-                if (!text.trim()) return;
-                
-                switch(tagName) {
-                    case 'h1':
-                        addNewPageIfNeeded(lineHeight * 2);
-                        pdf.setFontSize(18);
-                        pdf.setFont('helvetica', 'bold');
-                        yPos += lineHeight;
-                        const h1Lines = pdf.splitTextToSize(text, pageWidth);
-                        h1Lines.forEach(line => {
-                            pdf.text(line, margin, yPos);
-                            yPos += lineHeight;
-                        });
-                        yPos += lineHeight;
-                        pdf.setFontSize(12);
-                        pdf.setFont('helvetica', 'normal');
-                        break;
-                        
-                    case 'h2':
-                        addNewPageIfNeeded(lineHeight * 1.5);
-                        pdf.setFontSize(14);
-                        pdf.setFont('helvetica', 'bold');
-                        yPos += lineHeight * 0.5;
-                        const h2Lines = pdf.splitTextToSize(text, pageWidth);
-                        h2Lines.forEach(line => {
-                            pdf.text(line, margin, yPos);
-                            yPos += lineHeight;
-                        });
-                        yPos += lineHeight * 0.5;
-                        pdf.setFontSize(12);
-                        pdf.setFont('helvetica', 'normal');
-                        break;
-                        
-                    case 'h3':
-                        addNewPageIfNeeded(lineHeight);
-                        pdf.setFontSize(12);
-                        pdf.setFont('helvetica', 'bold');
-                        const h3Lines = pdf.splitTextToSize(text, pageWidth);
-                        h3Lines.forEach(line => {
-                            pdf.text(line, margin, yPos);
-                            yPos += lineHeight;
-                        });
-                        pdf.setFont('helvetica', 'normal');
-                        break;
-                        
-                    case 'p':
-                        const pLines = pdf.splitTextToSize(text, pageWidth);
-                        pLines.forEach(line => {
-                            addNewPageIfNeeded(lineHeight);
-                            pdf.text(line, margin, yPos);
-                            yPos += lineHeight;
-                        });
-                        yPos += lineHeight * 0.3;
-                        break;
-                        
-                    case 'li':
-                        addNewPageIfNeeded(lineHeight);
-                        const liLines = pdf.splitTextToSize('• ' + text, pageWidth - 5);
-                        liLines.forEach(line => {
-                            pdf.text(line, margin + 5, yPos);
-                            yPos += lineHeight;
-                        });
-                        break;
-                        
-                    default:
-                        if (text.trim()) {
-                            const defaultLines = pdf.splitTextToSize(text, pageWidth);
-                            defaultLines.forEach(line => {
-                                addNewPageIfNeeded(lineHeight);
-                                pdf.text(line, margin, yPos);
-                                yPos += lineHeight;
-                            });
-                        }
-                }
-            }
-            
-            // Process all elements
-            Array.from(tempDiv.children).forEach(processElement);
-            
-            const filename = currentDocId && documents[currentDocId] 
-                ? documents[currentDocId].name + '.pdf'
-                : 'documento.pdf';
-            
-            pdf.save(filename);
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('pdfPreviewModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closePdfPreview();
-            }
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey || e.metaKey) {
-                if (e.key === 's') {
-                    e.preventDefault();
-                    if (document.getElementById('docName').value.trim()) {
-                        saveDocument();
-                    }
-                }
-            }
-        });
-    </script>
+    // inicialização
+    renderDocList();
+  </script>
 </body>
 </html>

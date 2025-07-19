@@ -3,599 +3,734 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor Markdown para PDF | Corrigido</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+    <title>Conversor Markdown para PDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root {
-            --primary-color: #7c3aed;
-            --secondary-color: #10b981;
-            --background-color: #f8fafc;
-            --surface-color: #ffffff;
-            --text-color: #1e293b;
-            --muted-text-color: #64748b;
-            --border-color: #e2e8f0;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --border-radius: 0.75rem;
-            --pdf-font-size: 16px;
-            --pdf-margin: 20mm;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            min-height: 100vh;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.2em;
+        }
+
+        .editor-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .document-controls {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .doc-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .doc-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .doc-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .documents-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .document-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .document-item:hover {
+            background: #f3f4f6;
+        }
+
+        .document-item.active {
+            background: #ede9fe;
+            border-color: #8b5cf6;
+        }
+
+        .document-name {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        textarea {
+            flex: 1;
+            padding: 20px;
+            border: none;
+            resize: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
             line-height: 1.6;
         }
 
-        header {
-            text-align: center;
-            padding: 2rem 1rem;
-            background-color: var(--surface-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-        header h1 { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); }
-        header p { max-width: 600px; margin: 0.5rem auto 0; color: var(--muted-text-color); }
-
-        .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
-        footer { text-align: center; padding: 2rem 1rem; margin-top: 2rem; color: var(--muted-text-color); font-size: 0.9rem; }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            align-items: flex-start;
-        }
-
-        .editor-section { display: flex; flex-direction: column; min-height: 65vh; }
-        
-        #markdown-input {
-            flex-grow: 1;
-            width: 100%;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-family: monospace;
-            font-size: 1rem;
-            background-color: var(--surface-color);
-            resize: vertical;
-            box-shadow: var(--shadow);
-        }
-        #markdown-input:focus {
+        textarea:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
         }
 
-        .controls-panel {
-            background-color: var(--surface-color);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 2rem;
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
         }
 
-        .control-group { margin-bottom: 2rem; }
-        .control-group:last-child { margin-bottom: 0; }
-        .control-group h3 { font-size: 1.1rem; margin-bottom: 1rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; }
-        .control-group .btn-group { display: flex; flex-direction: column; gap: 0.75rem; }
-        
-        .config-item { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-        .config-item label { font-weight: 500; color: var(--muted-text-color); font-size: 0.9rem;}
-        .config-item input { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.5rem;}
-        
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-            padding: 0.75rem 1.5rem; border: none; border-radius: var(--border-radius);
-            font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center;
+        .preview-controls {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .control-input {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .preview-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fefefe;
+        }
+
+        .markdown-content {
+            line-height: 1.8;
+            color: #1f2937;
+        }
+
+        .markdown-content h1 {
+            font-size: 2em;
+            margin: 20px 0 15px 0;
+            color: #111827;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .markdown-content h2 {
+            font-size: 1.5em;
+            margin: 18px 0 12px 0;
+            color: #374151;
+        }
+
+        .markdown-content h3 {
+            font-size: 1.2em;
+            margin: 15px 0 10px 0;
+            color: #4b5563;
+        }
+
+        .markdown-content p {
+            margin: 10px 0;
+        }
+
+        .markdown-content ul, .markdown-content ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+
+        .markdown-content li {
+            margin: 5px 0;
+        }
+
+        .markdown-content code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .markdown-content pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .markdown-content blockquote {
+            border-left: 4px solid #6b7280;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .pdf-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .pdf-preview-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pdf-preview-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-preview-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pdf-preview-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .pdf-page {
+            background: white;
+            border: 1px solid #d1d5db;
+            margin-bottom: 20px;
             position: relative;
-            z-index: 1;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-        .btn svg { width: 18px; height: 18px; }
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { background-color: #6d28d9; }
-        .btn-secondary { background-color: var(--secondary-color); color: white; }
-        .btn-secondary:hover { background-color: #059669; }
-        .btn-tertiary { background-color: #334155; color: white; }
-        .btn-tertiary:hover { background-color: #1e293b; }
-
-        #preview-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000; display: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        #preview-modal {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 95%; max-width: 1200px;
-            height: 90vh;
-            background-color: var(--background-color);
-            border-radius: var(--border-radius);
-            z-index: 1001;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            display: none; flex-direction: column;
-        }
-        #preview-modal.fullscreen {
-            width: 100%; height: 100%; top: 0; left: 0; border-radius: 0; transform: none; max-width: 100%;
+        .pdf-page-header {
+            background: #f3f4f6;
+            padding: 8px 15px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border-color);
-            background-color: var(--surface-color); flex-shrink: 0;
-            border-radius: var(--border-radius) var(--border-radius) 0 0;
-        }
-        .modal-header h4 { font-size: 1.2rem; color: var(--primary-color); margin-right: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-        .modal-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
-        .modal-actions button { background: none; border: none; cursor: pointer; padding: 0.5rem; line-height: 0; }
-        .modal-actions button svg { width: 22px; height: 22px; color: var(--muted-text-color); }
-        .modal-actions button:hover svg { color: var(--text-color); }
-
-        .modal-body { flex-grow: 1; overflow: auto; padding: 1.5rem; }
-
-        #pdf-preview-content-wrapper {
-            display: flex; justify-content: center;
-        }
-        #pdf-preview-content {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 1.5rem; transform-origin: top center; transition: transform 0.2s;
+        .pdf-page-content {
+            padding: 20px;
+            min-height: 600px;
         }
 
-        .page-container { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-        .page-number-indicator { font-size: 0.8rem; color: var(--muted-text-color); font-weight: 500; }
-
-        .page-preview {
-            background-color: white;
-            width: 21cm;
-            height: 29.7cm;
-            box-shadow: 0 0 10px rgba(0,0,0,0.15);
-            padding: var(--pdf-margin);
-            overflow: hidden;
-            font-size: var(--pdf-font-size);
-            position: relative;
-            page-break-after: always;
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 5px;
         }
 
-        .prose { color: var(--text-color); line-height: 1.6; word-wrap: break-word; }
-        .prose > :first-child { margin-top: 0 !important; }
-        .prose h1, .prose h2, .prose h3 { margin-top: 1.5em; margin-bottom: 1em; font-weight: 700; page-break-after: avoid;}
-        .prose h1 { font-size: 2em; } .prose h2 { font-size: 1.5em; } .prose h3 { font-size: 1.25em; }
-        .prose p { margin-bottom: 1em; } .prose strong { font-weight: 700; } .prose em { font-style: italic; }
-        .prose ul, .prose ol { padding-left: 1.5em; margin-bottom: 1em; } .prose li { margin-bottom: 0.5em; }
-        .prose a { color: var(--primary-color); text-decoration: none; } .prose a:hover { text-decoration: underline; }
-        .prose blockquote, .prose pre, .prose table, .prose img { page-break-inside: avoid; }
-        .prose blockquote { border-left: 4px solid var(--border-color); padding-left: 1em; margin: 0 0 1em 0; color: var(--muted-text-color); font-style: italic; }
-        .prose code { background-color: #f1f5f9; padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; font-size: 0.9em; border: 1px solid var(--border-color);}
-        .prose pre { background-color: #1e293b; color: #e2e8f0; padding: 1em; border-radius: 0.5rem; overflow-x: auto; }
-        .prose pre code { background: none; padding: 0; border: none; }
-        .prose table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
-        .prose th, .prose td { border: 1px solid var(--border-color); padding: 0.5em 1em; text-align: left; }
-        .prose th { background-color: #f1f5f9; font-weight: 600; }
-
-        .saved-documents-panel { margin-top: 3rem; padding: 1.5rem; background-color: var(--surface-color); border-radius: var(--border-radius); box-shadow: var(--shadow); }
-        .saved-documents-panel h2 { font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; }
-        #saved-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .saved-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: var(--background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); }
-        .item-title { font-weight: 500; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 1rem; }
-        .item-actions button { background: none; border: none; cursor: pointer; padding: 0.5rem; color: var(--muted-text-color); }
-        .item-actions button:hover { background-color: #e2e8f0; color: var(--text-color); border-radius: 50%;}
-
-        @media (max-width: 1024px) {
-            .main-grid { grid-template-columns: 1fr; }
-            .controls-panel { position: static; }
+        .close-btn:hover {
+            color: #374151;
         }
-        @media (max-width: 480px) {
-            header h1 { font-size: 2rem; }
-            .modal-header { padding: 0.5rem 1rem; }
-            .modal-header h4 { font-size: 1rem; }
-            .modal-actions button svg { width: 20px; height: 20px; }
-            .modal-body { padding: 1rem 0.5rem; }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 10px;
+            }
+
+            .panel-header {
+                padding: 15px;
+                font-size: 1.1em;
+            }
+
+            .preview-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                justify-content: space-between;
+            }
+
+            .control-input {
+                width: 100px;
+            }
+
+            textarea {
+                padding: 15px;
+                font-size: 16px;
+            }
+
+            .pdf-preview-content {
+                width: 95%;
+                max-height: 95%;
+            }
+
+            .pdf-page-content {
+                padding: 15px;
+                min-height: 500px;
+            }
         }
     </style>
 </head>
 <body>
-
-    <header>
-        <h1>Conversor Markdown Pro</h1>
-        <p>Cole seu texto, ajuste o visual, visualize em páginas e salve em PDF com perfeição.</p>
-    </header>
-
-    <main class="container">
-        <div class="main-grid">
-            <div class="editor-section">
-                <h2>Seu Texto (Markdown)</h2>
-                <textarea id="markdown-input" placeholder="Cole seu texto aqui..."></textarea>
+    <div class="container">
+        <!-- Editor Panel -->
+        <div class="panel editor-panel">
+            <div class="panel-header">
+                📝 Editor Markdown
             </div>
             
-            <aside class="controls-panel">
-                <div class="control-group">
-                    <h3>Visualização</h3>
-                    <div class="btnGroup">
-                        <button id="preview-raw-btn" class="btn btn-tertiary">Visualização Simples</button>
-                        <button id="preview-pdf-btn" class="btn btn-tertiary">Visualização Paginada (PDF)</button>
-                    </div>
+            <div class="document-controls">
+                <div class="doc-input-group">
+                    <input type="text" class="doc-input" id="docName" placeholder="Nome do documento">
+                    <button class="btn btn-success" onclick="saveDocument()">💾 Salvar</button>
                 </div>
+                
+                <div class="documents-list" id="documentsList">
+                    <!-- Documents will be listed here -->
+                </div>
+            </div>
 
+            <textarea id="markdownInput" placeholder="Digite seu texto em Markdown aqui...
+
+Exemplo:
+# Título Principal
+
+## Subtítulo
+
+Este é um parágrafo com **texto em negrito** e *texto em itálico*.
+
+### Lista:
+- Item 1
+- Item 2
+- Item 3
+
+```javascript
+console.log('Código de exemplo');
+```
+
+> Esta é uma citação
+
+[Link exemplo](https://example.com)"></textarea>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="panel preview-panel">
+            <div class="panel-header">
+                👁️ Visualização
+            </div>
+            
+            <div class="preview-controls">
                 <div class="control-group">
-                    <h3>Configurações do PDF</h3>
-                    <div class="config-item">
-                        <label for="font-size-input">Tamanho da Fonte (px)</label>
-                        <input type="number" id="font-size-input" min="8" max="32" value="16">
-                    </div>
-                    <div class="config-item">
-                        <label for="margin-input">Margens (mm)</label>
-                        <input type="number" id="margin-input" min="5" max="50" value="20">
-                    </div>
-                    <button id="save-config-btn" class="btn btn-primary" style="width: 100%;">Salvar Configurações</button>
+                    <label for="fontSize">Tamanho da Fonte:</label>
+                    <input type="number" id="fontSize" class="control-input" value="14" min="8" max="24">
                 </div>
                 
                 <div class="control-group">
-                    <h3>Ações Finais</h3>
-                    <div class="btn-group">
-                        <button id="pdf-btn" class="btn btn-secondary">Baixar PDF</button>
-                        <button id="save-btn" class="btn btn-primary">Salvar no Navegador</button>
-                    </div>
+                    <label for="marginSize">Margem (mm):</label>
+                    <input type="number" id="marginSize" class="control-input" value="20" min="5" max="50">
                 </div>
-            </aside>
-        </div>
+                
+                <button class="btn btn-primary" onclick="showPdfPreview()">📄 Visualizar PDF</button>
+                <button class="btn btn-success" onclick="downloadPdf()">⬇️ Baixar PDF</button>
+            </div>
 
-        <div class="saved-documents-panel">
-            <h2>Documentos Salvos</h2>
-            <div id="saved-list"></div>
-        </div>
-    </main>
-
-    <div id="preview-overlay"></div>
-    <div id="preview-modal">
-        <div class="modal-header">
-            <h4 id="modal-title">Pré-visualização</h4>
-            <div class="modal-actions">
-                <button id="fullscreen-btn" title="Tela Cheia">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/></svg>
-                </button>
-                <button id="close-modal-btn" title="Fechar">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
+            <div class="preview-content" id="previewContent">
+                <div class="markdown-content" id="markdownOutput">
+                    Comece digitando no editor para ver a prévia aqui...
+                </div>
             </div>
         </div>
-        <div class="modal-body" id="modal-body-content">
-            </div>
     </div>
-    
-    <footer>
-        <p>© 2025 - Criado com ❤️ para facilitar sua vida.</p>
-    </footer>
-    
+
+    <!-- PDF Preview Modal -->
+    <div class="pdf-preview-modal" id="pdfPreviewModal">
+        <div class="pdf-preview-content">
+            <div class="pdf-preview-header">
+                <h3>📄 Prévia do PDF</h3>
+                <button class="close-btn" onclick="closePdfPreview()">&times;</button>
+            </div>
+            <div class="pdf-preview-body" id="pdfPreviewBody">
+                <!-- PDF pages will be rendered here -->
+            </div>
+        </div>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const markdownInput = document.getElementById('markdown-input');
-            const saveBtn = document.getElementById('save-btn');
-            const pdfBtn = document.getElementById('pdf-btn');
-            const savedList = document.getElementById('saved-list');
-            const previewRawBtn = document.getElementById('preview-raw-btn');
-            const previewPdfBtn = document.getElementById('preview-pdf-btn');
-            const saveConfigBtn = document.getElementById('save-config-btn');
-            const fontSizeInput = document.getElementById('font-size-input');
-            const marginInput = document.getElementById('margin-input');
+        // In-memory storage (replaces localStorage)
+        let documents = {};
+        let currentDocId = null;
 
-            const previewOverlay = document.getElementById('preview-overlay');
-            const previewModal = document.getElementById('preview-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalBody = document.getElementById('modal-body-content');
-            const closeModalBtn = document.getElementById('close-modal-btn');
-            const fullscreenBtn = document.getElementById('fullscreen-btn');
+        // Initialize
+        document.getElementById('markdownInput').addEventListener('input', updatePreview);
+        document.getElementById('fontSize').addEventListener('change', updatePreview);
+        document.getElementById('marginSize').addEventListener('change', updatePreview);
+        
+        updatePreview();
+        updateDocumentsList();
 
-            let isPaginatedPreviewOpen = false;
+        function updatePreview() {
+            const markdown = document.getElementById('markdownInput').value;
+            const html = marked.parse(markdown);
+            const fontSize = document.getElementById('fontSize').value;
+            const margin = document.getElementById('marginSize').value;
             
-            const openModal = () => {
-                previewOverlay.style.display = 'block';
-                previewModal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            };
-            const closeModal = () => {
-                previewOverlay.style.display = 'none';
-                previewModal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-                previewModal.classList.remove('fullscreen');
-                isPaginatedPreviewOpen = false;
-                window.removeEventListener('resize', scalePreviewToFit);
-                if (document.fullscreenElement) {
-                    document.exitFullscreen();
-                }
-            };
+            const output = document.getElementById('markdownOutput');
+            output.innerHTML = html;
+            output.style.fontSize = fontSize + 'px';
+            output.style.margin = margin + 'px';
+        }
+
+        function saveDocument() {
+            const name = document.getElementById('docName').value.trim();
+            const content = document.getElementById('markdownInput').value;
             
-            const toggleFullscreen = () => {
-                if (!document.fullscreenElement) {
-                    previewModal.requestFullscreen().catch(err => {
-                        alert(`Erro ao entrar em tela cheia: ${err.message}`);
-                    });
-                    previewModal.classList.add('fullscreen');
-                } else {
-                    document.exitFullscreen();
-                    previewModal.classList.remove('fullscreen');
-                }
-            };
-            document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement) {
-                    previewModal.classList.remove('fullscreen');
-                }
-                scalePreviewToFit();
-            });
-
-            const applySavedConfig = () => {
-                const config = JSON.parse(localStorage.getItem('pdf_config')) || { fontSize: 16, margin: 20 };
-                fontSizeInput.value = config.fontSize;
-                marginInput.value = config.margin;
-                document.documentElement.style.setProperty('--pdf-font-size', `${config.fontSize}px`);
-                document.documentElement.style.setProperty('--pdf-margin', `${config.margin}mm`);
-            };
-
-            const saveConfig = () => {
-                const config = { fontSize: fontSizeInput.value, margin: marginInput.value };
-                localStorage.setItem('pdf_config', JSON.stringify(config));
-                applySavedConfig();
-                alert('Configurações salvas!');
-            };
-
-            const showRawPreview = () => {
-                isPaginatedPreviewOpen = false;
-                modalTitle.textContent = 'Pré-visualização Simples';
-                const markdownText = markdownInput.value;
-                const rawHtml = marked.parse(markdownText || '### Nenhum conteúdo para visualizar.');
-                modalBody.innerHTML = `<div class="prose" style="font-size: var(--pdf-font-size); max-width: 800px; margin: auto;">${rawHtml}</div>`;
-                openModal();
-            };
-            
-            const scalePreviewToFit = () => {
-                if (!isPaginatedPreviewOpen) return;
-                const content = document.getElementById('pdf-preview-content');
-                const wrapper = document.getElementById('pdf-preview-content-wrapper');
-                if (!content || !wrapper) return;
-
-                const wrapperWidth = wrapper.clientWidth;
-                const contentWidth = content.offsetWidth;
-                
-                if (contentWidth > wrapperWidth) {
-                    const scale = (wrapperWidth / contentWidth) * 0.98;
-                    content.style.transform = `scale(${scale})`;
-                } else {
-                    content.style.transform = 'scale(1)';
-                }
-            };
-
-            const showPdfPreview = () => {
-                modalTitle.textContent = 'Pré-visualização Paginada';
-                const markdownText = markdownInput.value;
-                if (markdownText.trim() === '') {
-                    modalBody.innerHTML = '<p>Nenhum conteúdo para visualizar.</p>';
-                    openModal();
-                    return;
-                }
-
-                modalBody.innerHTML = `<div id="pdf-preview-content-wrapper"><div id="pdf-preview-content"></div></div>`;
-                const previewContent = document.getElementById('pdf-preview-content');
-
-                const stagingArea = document.createElement('div');
-                stagingArea.className = 'prose';
-                stagingArea.style.opacity = '0';
-                stagingArea.style.position = 'absolute';
-                stagingArea.style.width = `calc(21cm - 2 * ${marginInput.value}mm)`;
-                stagingArea.style.fontSize = `${fontSizeInput.value}px`;
-                stagingArea.style.lineHeight = '1.6';
-                stagingArea.innerHTML = marked.parse(markdownText);
-                document.body.appendChild(stagingArea);
-
-                const pageHeightPx = (29.7 * 37.795) - (2 * marginInput.value * 3.7795); // A4 height in pixels minus margins
-                let pageCounter = 1;
-                let currentPage = createNewPage(pageCounter);
-                previewContent.appendChild(currentPage.container);
-                let currentHeight = 0;
-
-                const splitContentIntoPages = (node, pageDiv) => {
-                    if (node.nodeType === Node.TEXT_NODE) {
-                        const words = node.textContent.split(' ');
-                        let tempText = '';
-                        for (const word of words) {
-                            const testText = tempText + (tempText ? ' ' : '') + word;
-                            const testSpan = document.createElement('span');
-                            testSpan.style.visibility = 'hidden';
-                            testSpan.textContent = testText;
-                            document.body.appendChild(testSpan);
-                            const height = testSpan.offsetHeight;
-                            document.body.removeChild(testSpan);
-
-                            if (currentHeight + height > pageHeightPx) {
-                                const span = document.createElement('span');
-                                span.textContent = tempText;
-                                pageDiv.appendChild(span);
-                                pageCounter++;
-                                currentPage = createNewPage(pageCounter);
-                                previewContent.appendChild(currentPage.container);
-                                pageDiv = currentPage.proseDiv;
-                                currentHeight = 0;
-                                tempText = word;
-                            } else {
-                                tempText = testText;
-                            }
-                        }
-                        if (tempText) {
-                            const span = document.createElement('span');
-                            span.textContent = tempText;
-                            pageDiv.appendChild(span);
-                            currentHeight += getElementHeight(span);
-                        }
-                    } else if (node.nodeType === Node.ELEMENT_NODE) {
-                        const clone = node.cloneNode(false);
-                        pageDiv.appendChild(clone);
-                        const height = getElementHeight(clone);
-                        if (currentHeight + height > pageHeightPx && height < pageHeightPx) {
-                            pageDiv.removeChild(clone);
-                            pageCounter++;
-                            currentPage = createNewPage(pageCounter);
-                            previewContent.appendChild(currentPage.container);
-                            pageDiv = currentPage.proseDiv;
-                            currentHeight = 0;
-                            pageDiv.appendChild(clone);
-                            currentHeight = height;
-                        } else {
-                            currentHeight += height;
-                        }
-                        node.childNodes.forEach(child => splitContentIntoPages(child, clone));
-                    }
-                };
-
-                Array.from(stagingArea.childNodes).forEach(node => splitContentIntoPages(node, currentPage.proseDiv));
-                document.body.removeChild(stagingArea);
-
-                openModal();
-                isPaginatedPreviewOpen = true;
-                setTimeout(scalePreviewToFit, 100);
-                window.addEventListener('resize', scalePreviewToFit);
-            };
-
-            function createNewPage(pageNumber) {
-                const container = document.createElement('div');
-                container.className = 'page-container';
-                
-                const numberIndicator = document.createElement('h3');
-                numberIndicator.className = 'page-number-indicator';
-                numberIndicator.textContent = `Página ${pageNumber}`;
-                
-                const page = document.createElement('div');
-                page.className = 'page-preview';
-                
-                const proseDiv = document.createElement('div');
-                proseDiv.className = 'prose';
-                page.appendChild(proseDiv);
-
-                container.appendChild(numberIndicator);
-                container.appendChild(page);
-
-                return { container, proseDiv };
+            if (!name) {
+                alert('Por favor, digite um nome para o documento.');
+                return;
             }
 
-            function getElementHeight(el) {
-                const clone = el.cloneNode(true);
-                clone.style.position = 'absolute';
-                clone.style.visibility = 'hidden';
-                document.body.appendChild(clone);
-                const height = clone.offsetHeight;
-                document.body.removeChild(clone);
-                return height;
+            const docId = Date.now().toString();
+            documents[docId] = {
+                id: docId,
+                name: name,
+                content: content,
+                fontSize: document.getElementById('fontSize').value,
+                margin: document.getElementById('marginSize').value,
+                createdAt: new Date()
+            };
+
+            currentDocId = docId;
+            document.getElementById('docName').value = '';
+            updateDocumentsList();
+            alert('Documento salvo com sucesso!');
+        }
+
+        function loadDocument(docId) {
+            if (!documents[docId]) return;
+            
+            const doc = documents[docId];
+            document.getElementById('markdownInput').value = doc.content;
+            document.getElementById('fontSize').value = doc.fontSize;
+            document.getElementById('marginSize').value = doc.margin;
+            currentDocId = docId;
+            
+            updatePreview();
+            updateDocumentsList();
+        }
+
+        function deleteDocument(docId) {
+            if (confirm('Tem certeza que deseja excluir este documento?')) {
+                delete documents[docId];
+                if (currentDocId === docId) {
+                    currentDocId = null;
+                    document.getElementById('markdownInput').value = '';
+                    updatePreview();
+                }
+                updateDocumentsList();
+            }
+        }
+
+        function updateDocumentsList() {
+            const list = document.getElementById('documentsList');
+            const docArray = Object.values(documents);
+            
+            if (docArray.length === 0) {
+                list.innerHTML = '<div style="padding: 15px; text-align: center; color: #6b7280;">Nenhum documento salvo</div>';
+                return;
             }
 
-            const downloadPDF = () => {
-                const markdownText = markdownInput.value;
-                if (markdownText.trim() === '') {
-                    alert('Não há conteúdo para converter para PDF.');
-                    return;
-                }
+            list.innerHTML = docArray.map(doc => `
+                <div class="document-item ${doc.id === currentDocId ? 'active' : ''}" onclick="loadDocument('${doc.id}')">
+                    <div class="document-name">${doc.name}</div>
+                    <div class="document-actions">
+                        <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteDocument('${doc.id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function createPdfPages(html, fontSize, margin) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            tempDiv.style.fontSize = fontSize + 'px';
+            tempDiv.style.lineHeight = '1.8';
+            tempDiv.style.visibility = 'hidden';
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.width = '520px'; // A4 width minus margins
+            document.body.appendChild(tempDiv);
+
+            const pages = [];
+            const pageHeight = 700; // Approximate A4 height minus margins
+            let currentPage = '';
+            let currentHeight = 0;
+
+            const elements = tempDiv.children;
+            for (let i = 0; i < elements.length; i++) {
+                const element = elements[i];
+                const elementHeight = element.offsetHeight;
                 
-                const element = document.createElement('div');
-                element.style.width = '21cm';
-                element.style.padding = `${marginInput.value}mm`;
-                element.style.fontSize = `${fontSizeInput.value}px`;
-                element.style.lineHeight = '1.6';
-                element.style.backgroundColor = 'white';
+                if (currentHeight + elementHeight > pageHeight && currentPage) {
+                    pages.push(currentPage);
+                    currentPage = element.outerHTML;
+                    currentHeight = elementHeight;
+                } else {
+                    currentPage += element.outerHTML;
+                    currentHeight += elementHeight;
+                }
+            }
 
-                const proseEl = document.createElement('div');
-                proseEl.className = 'prose';
-                proseEl.innerHTML = marked.parse(markdownText);
-                element.appendChild(proseEl);
+            if (currentPage) {
+                pages.push(currentPage);
+            }
 
-                const now = new Date();
-                const filename = `documento-${now.toISOString().slice(0,10)}.pdf`;
-                const marginMm = parseFloat(marginInput.value) || 20;
+            document.body.removeChild(tempDiv);
+            return pages.length > 0 ? pages : [html];
+        }
 
-                const opt = {
-                    margin: marginMm / 25.4, // Convert mm to inches
-                    filename: filename,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css'], avoid: ['h1', 'h2', 'h3', 'p', 'li'] }
-                };
-                html2pdf().set(opt).from(element).save();
-            };
+        function showPdfPreview() {
+            const markdown = document.getElementById('markdownInput').value;
+            if (!markdown.trim()) {
+                alert('Digite algum conteúdo antes de visualizar o PDF.');
+                return;
+            }
 
-            const getSavedDocuments = () => JSON.parse(localStorage.getItem('markdown_docs')) || [];
-            const saveDocuments = (docs) => localStorage.setItem('markdown_docs', JSON.stringify(docs));
-
-            const renderSavedDocuments = () => {
-                const docs = getSavedDocuments();
-                savedList.innerHTML = docs.length === 0 ? '<p style="color: var(--muted-text-color);">Nenhum documento salvo ainda.</p>' : '';
-                docs.forEach(doc => {
-                    const item = document.createElement('div');
-                    item.className = 'saved-item';
-                    item.dataset.id = doc.id;
-                    item.innerHTML = `<span class="item-title" title="Carregar: ${doc.title}">${doc.title}</span><div class="item-actions"><button class="edit-btn" title="Editar Nome"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.5 3.793 12.207 1.5zM1 13.5l1.5-1.5L4 13.5 2.5 15H1z"/></svg></button><button class="delete-btn" title="Excluir"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button></div>`;
-                    savedList.appendChild(item);
-                });
-            };
-
-            const saveCurrentDocument = () => {
-                const content = markdownInput.value;
-                if (content.trim() === '') { alert('Não há conteúdo para salvar.'); return; }
-                const title = prompt('Digite um nome para este documento:', 'Novo Documento');
-                if (!title || title.trim() === '') return;
-                const docs = getSavedDocuments();
-                const newDoc = { id: Date.now().toString(), title: title.trim(), content };
-                docs.push(newDoc);
-                saveDocuments(docs);
-                renderSavedDocuments();
-            };
+            const html = marked.parse(markdown);
+            const fontSize = document.getElementById('fontSize').value;
+            const margin = document.getElementById('marginSize').value;
             
-            const handleSavedListClick = (e) => {
-                const item = e.target.closest('.saved-item');
-                if (!item) return;
-                const docId = item.dataset.id;
-                let docs = getSavedDocuments();
-                const docIndex = docs.findIndex(d => d.id === docId);
+            const pages = createPdfPages(html, fontSize, margin);
+            const previewBody = document.getElementById('pdfPreviewBody');
+            
+            previewBody.innerHTML = pages.map((pageContent, index) => `
+                <div class="pdf-page">
+                    <div class="pdf-page-header">Página ${index + 1}</div>
+                    <div class="pdf-page-content" style="font-size: ${fontSize}px; margin: ${margin}px;">
+                        ${pageContent}
+                    </div>
+                </div>
+            `).join('');
 
-                if (e.target.closest('.item-title')) {
-                    markdownInput.value = docs[docIndex].content;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else if (e.target.closest('.edit-btn')) {
-                    const newTitle = prompt('Novo nome:', docs[docIndex].title);
-                    if (newTitle && newTitle.trim() !== '') {
-                        docs[docIndex].title = newTitle.trim();
-                        saveDocuments(docs);
-                        renderSavedDocuments();
-                    }
-                } else if (e.target.closest('.delete-btn')) {
-                    if (confirm(`Excluir "${docs[docIndex].title}"?`)) {
-                        docs = docs.filter(d => d.id !== docId);
-                        saveDocuments(docs);
-                        renderSavedDocuments();
+            document.getElementById('pdfPreviewModal').classList.add('active');
+        }
+
+        function closePdfPreview() {
+            document.getElementById('pdfPreviewModal').classList.remove('active');
+        }
+
+        function downloadPdf() {
+            const markdown = document.getElementById('markdownInput').value;
+            if (!markdown.trim()) {
+                alert('Digite algum conteúdo antes de baixar o PDF.');
+                return;
+            }
+
+            const html = marked.parse(markdown);
+            const fontSize = parseInt(document.getElementById('fontSize').value);
+            const margin = parseInt(document.getElementById('marginSize').value);
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Create temporary element for text measurement
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.visibility = 'hidden';
+            tempDiv.style.fontSize = fontSize + 'px';
+            tempDiv.style.lineHeight = '1.8';
+            tempDiv.style.fontFamily = 'Arial, sans-serif';
+            document.body.appendChild(tempDiv);
+
+            // Convert HTML to plain text with basic formatting
+            const textContent = html
+                .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n\n$1\n' + '='.repeat(50) + '\n')
+                .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n\n$1\n' + '-'.repeat(30) + '\n')
+                .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n\n$1\n')
+                .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '$1')
+                .replace(/<em[^>]*>(.*?)<\/em>/gi, '$1')
+                .replace(/<p[^>]*>(.*?)<\/p>/gi, '\n$1\n')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<li[^>]*>(.*?)<\/li>/gi, '• $1\n')
+                .replace(/<[^>]*>/g, '')
+                .replace(/\n{3,}/g, '\n\n');
+
+            pdf.setFontSize(fontSize);
+            
+            const pageWidth = 210 - (2 * margin); // A4 width minus margins
+            const pageHeight = 297 - (2 * margin); // A4 height minus margins
+            const lineHeight = fontSize * 1.8 / 3.527777778; // Convert px to mm
+            
+            const lines = pdf.splitTextToSize(textContent, pageWidth);
+            let yPosition = margin;
+            
+            for (let i = 0; i < lines.length; i++) {
+                if (yPosition + lineHeight > 297 - margin) {
+                    pdf.addPage();
+                    yPosition = margin;
+                }
+                pdf.text(lines[i], margin, yPosition);
+                yPosition += lineHeight;
+            }
+
+            document.body.removeChild(tempDiv);
+            
+            const filename = currentDocId && documents[currentDocId] 
+                ? documents[currentDocId].name + '.pdf'
+                : 'documento.pdf';
+            
+            pdf.save(filename);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('pdfPreviewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePdfPreview();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 's') {
+                    e.preventDefault();
+                    if (document.getElementById('docName').value.trim()) {
+                        saveDocument();
                     }
                 }
-            };
-
-            saveBtn.addEventListener('click', saveCurrentDocument);
-            pdfBtn.addEventListener('click', downloadPDF);
-            savedList.addEventListener('click', handleSavedListClick);
-            saveConfigBtn.addEventListener('click', saveConfig);
-            previewRawBtn.addEventListener('click', showRawPreview);
-            previewPdfBtn.addEventListener('click', showPdfPreview);
-            closeModalBtn.addEventListener('click', closeModal);
-            fullscreenBtn.addEventListener('click', toggleFullscreen);
-            previewOverlay.addEventListener('click', closeModal);
-            
-            applySavedConfig();
-            renderSavedDocuments();
+            }
         });
     </script>
-
 </body>
 </html>

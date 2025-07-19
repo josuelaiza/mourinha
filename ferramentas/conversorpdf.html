@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>☆ Editor Markdown para PDF</title>
+    <title>Editor Markdown para PDF | Corrigido</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        /* --- Variáveis Globais e Reset --- */
         :root {
             --primary-color: #7c3aed;
             --secondary-color: #10b981;
@@ -24,7 +23,6 @@
             --border-color: #e2e8f0;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --border-radius: 0.75rem;
-            /* Configurações do PDF (serão atualizadas via JS) */
             --pdf-font-size: 16px;
             --pdf-margin: 20mm;
         }
@@ -38,7 +36,6 @@
             line-height: 1.6;
         }
 
-        /* --- Estrutura Principal --- */
         header {
             text-align: center;
             padding: 2rem 1rem;
@@ -51,7 +48,6 @@
         .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
         footer { text-align: center; padding: 2rem 1rem; margin-top: 2rem; color: var(--muted-text-color); font-size: 0.9rem; }
 
-        /* --- Painel de Edição e Controles --- */
         .main-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -97,13 +93,12 @@
         .config-item label { font-weight: 500; color: var(--muted-text-color); font-size: 0.9rem;}
         .config-item input { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.5rem;}
         
-        /* --- Botões --- */
         .btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
             padding: 0.75rem 1.5rem; border: none; border-radius: var(--border-radius);
             font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center;
-            position: relative; /* Garante que os botões sejam clicáveis */
-            z-index: 1; /* Evita sobreposição por outros elementos */
+            position: relative;
+            z-index: 1;
         }
         .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
         .btn svg { width: 18px; height: 18px; }
@@ -114,7 +109,6 @@
         .btn-tertiary { background-color: #334155; color: white; }
         .btn-tertiary:hover { background-color: #1e293b; }
 
-        /* --- MODAL DE PRÉ-VISUALIZAÇÃO --- */
         #preview-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
@@ -150,7 +144,6 @@
 
         .modal-body { flex-grow: 1; overflow: auto; padding: 1.5rem; }
 
-        /* --- Estilos para o conteúdo PAGINADO --- */
         #pdf-preview-content-wrapper {
             display: flex; justify-content: center;
         }
@@ -165,15 +158,16 @@
         .page-preview {
             background-color: white;
             width: 21cm;
-            height: 29.7cm; /* A4-like height */
+            height: 29.7cm;
             box-shadow: 0 0 10px rgba(0,0,0,0.15);
-            padding: var(--pdf-margin); /* Margem dinâmica */
-            overflow: hidden; /* Garante que o conteúdo não vaze */
-            font-size: var(--pdf-font-size); 
+            padding: var(--pdf-margin);
+            overflow: hidden;
+            font-size: var(--pdf-font-size);
+            position: relative;
+            page-break-after: always;
         }
 
-        /* --- Estilo do Conteúdo Gerado (PROSE) --- */
-        .prose { color: var(--text-color); line-height: 1.6; }
+        .prose { color: var(--text-color); line-height: 1.6; word-wrap: break-word; }
         .prose > :first-child { margin-top: 0 !important; }
         .prose h1, .prose h2, .prose h3 { margin-top: 1.5em; margin-bottom: 1em; font-weight: 700; page-break-after: avoid;}
         .prose h1 { font-size: 2em; } .prose h2 { font-size: 1.5em; } .prose h3 { font-size: 1.25em; }
@@ -189,7 +183,6 @@
         .prose th, .prose td { border: 1px solid var(--border-color); padding: 0.5em 1em; text-align: left; }
         .prose th { background-color: #f1f5f9; font-weight: 600; }
 
-        /* --- Documentos Salvos --- */
         .saved-documents-panel { margin-top: 3rem; padding: 1.5rem; background-color: var(--surface-color); border-radius: var(--border-radius); box-shadow: var(--shadow); }
         .saved-documents-panel h2 { font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; }
         #saved-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
@@ -198,7 +191,6 @@
         .item-actions button { background: none; border: none; cursor: pointer; padding: 0.5rem; color: var(--muted-text-color); }
         .item-actions button:hover { background-color: #e2e8f0; color: var(--text-color); border-radius: 50%;}
 
-        /* --- Responsividade --- */
         @media (max-width: 1024px) {
             .main-grid { grid-template-columns: 1fr; }
             .controls-panel { position: static; }
@@ -287,7 +279,6 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Seleção de Elementos ---
             const markdownInput = document.getElementById('markdown-input');
             const saveBtn = document.getElementById('save-btn');
             const pdfBtn = document.getElementById('pdf-btn');
@@ -298,7 +289,6 @@
             const fontSizeInput = document.getElementById('font-size-input');
             const marginInput = document.getElementById('margin-input');
 
-            // --- Elementos do Modal ---
             const previewOverlay = document.getElementById('preview-overlay');
             const previewModal = document.getElementById('preview-modal');
             const modalTitle = document.getElementById('modal-title');
@@ -306,14 +296,12 @@
             const closeModalBtn = document.getElementById('close-modal-btn');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
 
-            // --- Variável de estado para o listener de resize ---
             let isPaginatedPreviewOpen = false;
             
-            // --- Funções do Modal ---
             const openModal = () => {
                 previewOverlay.style.display = 'block';
                 previewModal.style.display = 'flex';
-                document.body.style.overflow = 'hidden'; // Impede rolagem do fundo
+                document.body.style.overflow = 'hidden';
             };
             const closeModal = () => {
                 previewOverlay.style.display = 'none';
@@ -321,7 +309,7 @@
                 document.body.style.overflow = 'auto';
                 previewModal.classList.remove('fullscreen');
                 isPaginatedPreviewOpen = false;
-                window.removeEventListener('resize', scalePreviewToFit); // Remove o listener
+                window.removeEventListener('resize', scalePreviewToFit);
                 if (document.fullscreenElement) {
                     document.exitFullscreen();
                 }
@@ -342,10 +330,9 @@
                 if (!document.fullscreenElement) {
                     previewModal.classList.remove('fullscreen');
                 }
-                scalePreviewToFit(); // Re-escala ao sair/entrar em tela cheia
+                scalePreviewToFit();
             });
 
-            // --- Funções de Configuração ---
             const applySavedConfig = () => {
                 const config = JSON.parse(localStorage.getItem('pdf_config')) || { fontSize: 16, margin: 20 };
                 fontSizeInput.value = config.fontSize;
@@ -361,7 +348,6 @@
                 alert('Configurações salvas!');
             };
 
-            // --- Funções de Pré-Visualização ---
             const showRawPreview = () => {
                 isPaginatedPreviewOpen = false;
                 modalTitle.textContent = 'Pré-visualização Simples';
@@ -381,7 +367,7 @@
                 const contentWidth = content.offsetWidth;
                 
                 if (contentWidth > wrapperWidth) {
-                    const scale = (wrapperWidth / contentWidth) * 0.98; // 98% para dar uma margem
+                    const scale = (wrapperWidth / contentWidth) * 0.98;
                     content.style.transform = `scale(${scale})`;
                 } else {
                     content.style.transform = 'scale(1)';
@@ -397,50 +383,84 @@
                     return;
                 }
 
-                // Prepara a estrutura do corpo do modal
                 modalBody.innerHTML = `<div id="pdf-preview-content-wrapper"><div id="pdf-preview-content"></div></div>`;
                 const previewContent = document.getElementById('pdf-preview-content');
-                
-                // Área de teste invisível
+
                 const stagingArea = document.createElement('div');
                 stagingArea.className = 'prose';
                 stagingArea.style.opacity = '0';
                 stagingArea.style.position = 'absolute';
-                stagingArea.style.width = `calc(21cm - 2 * ${marginInput.value}mm)`; // Largura do conteúdo
+                stagingArea.style.width = `calc(21cm - 2 * ${marginInput.value}mm)`;
                 stagingArea.style.fontSize = `${fontSizeInput.value}px`;
-                stagingArea.style.pointerEvents = 'none';
+                stagingArea.style.lineHeight = '1.6';
                 stagingArea.innerHTML = marked.parse(markdownText);
                 document.body.appendChild(stagingArea);
 
-                const pageHeightPx = (29.7 * 37.795) - (2 * marginInput.value * 3.7795); // Altura útil da página em pixels
-
+                const pageHeightPx = (29.7 * 37.795) - (2 * marginInput.value * 3.7795); // A4 height in pixels minus margins
                 let pageCounter = 1;
                 let currentPage = createNewPage(pageCounter);
                 previewContent.appendChild(currentPage.container);
-
-                const elements = Array.from(stagingArea.children);
                 let currentHeight = 0;
 
-                elements.forEach(el => {
-                    const clone = el.cloneNode(true);
-                    const elHeight = getElementHeight(clone);
+                const splitContentIntoPages = (node, pageDiv) => {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const words = node.textContent.split(' ');
+                        let tempText = '';
+                        for (const word of words) {
+                            const testText = tempText + (tempText ? ' ' : '') + word;
+                            const testSpan = document.createElement('span');
+                            testSpan.style.visibility = 'hidden';
+                            testSpan.textContent = testText;
+                            document.body.appendChild(testSpan);
+                            const height = testSpan.offsetHeight;
+                            document.body.removeChild(testSpan);
 
-                    if (currentHeight + elHeight > pageHeightPx) {
-                        pageCounter++;
-                        currentPage = createNewPage(pageCounter);
-                        previewContent.appendChild(currentPage.container);
-                        currentHeight = 0;
+                            if (currentHeight + height > pageHeightPx) {
+                                const span = document.createElement('span');
+                                span.textContent = tempText;
+                                pageDiv.appendChild(span);
+                                pageCounter++;
+                                currentPage = createNewPage(pageCounter);
+                                previewContent.appendChild(currentPage.container);
+                                pageDiv = currentPage.proseDiv;
+                                currentHeight = 0;
+                                tempText = word;
+                            } else {
+                                tempText = testText;
+                            }
+                        }
+                        if (tempText) {
+                            const span = document.createElement('span');
+                            span.textContent = tempText;
+                            pageDiv.appendChild(span);
+                            currentHeight += getElementHeight(span);
+                        }
+                    } else if (node.nodeType === Node.ELEMENT_NODE) {
+                        const clone = node.cloneNode(false);
+                        pageDiv.appendChild(clone);
+                        const height = getElementHeight(clone);
+                        if (currentHeight + height > pageHeightPx && height < pageHeightPx) {
+                            pageDiv.removeChild(clone);
+                            pageCounter++;
+                            currentPage = createNewPage(pageCounter);
+                            previewContent.appendChild(currentPage.container);
+                            pageDiv = currentPage.proseDiv;
+                            currentHeight = 0;
+                            pageDiv.appendChild(clone);
+                            currentHeight = height;
+                        } else {
+                            currentHeight += height;
+                        }
+                        node.childNodes.forEach(child => splitContentIntoPages(child, clone));
                     }
+                };
 
-                    currentPage.proseDiv.appendChild(clone);
-                    currentHeight += elHeight;
-                });
-
+                Array.from(stagingArea.childNodes).forEach(node => splitContentIntoPages(node, currentPage.proseDiv));
                 document.body.removeChild(stagingArea);
-                openModal();
 
+                openModal();
                 isPaginatedPreviewOpen = true;
-                setTimeout(scalePreviewToFit, 100); // Atraso para garantir renderização
+                setTimeout(scalePreviewToFit, 100);
                 window.addEventListener('resize', scalePreviewToFit);
             };
 
@@ -475,7 +495,6 @@
                 return height;
             }
 
-            // --- Download como PDF ---
             const downloadPDF = () => {
                 const markdownText = markdownInput.value;
                 if (markdownText.trim() === '') {
@@ -484,31 +503,32 @@
                 }
                 
                 const element = document.createElement('div');
+                element.style.width = '21cm';
+                element.style.padding = `${marginInput.value}mm`;
+                element.style.fontSize = `${fontSizeInput.value}px`;
+                element.style.lineHeight = '1.6';
+                element.style.backgroundColor = 'white';
+
                 const proseEl = document.createElement('div');
                 proseEl.className = 'prose';
                 proseEl.innerHTML = marked.parse(markdownText);
                 element.appendChild(proseEl);
 
-                // Aplica estilos para o html2pdf capturar corretamente
-                const fontSize = getComputedStyle(document.documentElement).getPropertyValue('--pdf-font-size');
-                proseEl.style.fontSize = fontSize;
-                
                 const now = new Date();
                 const filename = `documento-${now.toISOString().slice(0,10)}.pdf`;
-                const marginInches = (parseFloat(marginInput.value) || 20) / 25.4;
+                const marginMm = parseFloat(marginInput.value) || 20;
 
                 const opt = {
-                    margin: marginInches,
+                    margin: marginMm / 25.4, // Convert mm to inches
                     filename: filename,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true, letterRendering: true },
                     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                    pagebreak: { mode: ['css', 'legacy'] }
+                    pagebreak: { mode: ['avoid-all', 'css'], avoid: ['h1', 'h2', 'h3', 'p', 'li'] }
                 };
                 html2pdf().set(opt).from(element).save();
             };
 
-            // --- Armazenamento Local (Documentos) ---
             const getSavedDocuments = () => JSON.parse(localStorage.getItem('markdown_docs')) || [];
             const saveDocuments = (docs) => localStorage.setItem('markdown_docs', JSON.stringify(docs));
 
@@ -543,17 +563,17 @@
                 let docs = getSavedDocuments();
                 const docIndex = docs.findIndex(d => d.id === docId);
 
-                if (e.target.closest('.item-title')) { // Carregar
+                if (e.target.closest('.item-title')) {
                     markdownInput.value = docs[docIndex].content;
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else if (e.target.closest('.edit-btn')) { // Editar
+                } else if (e.target.closest('.edit-btn')) {
                     const newTitle = prompt('Novo nome:', docs[docIndex].title);
                     if (newTitle && newTitle.trim() !== '') {
                         docs[docIndex].title = newTitle.trim();
                         saveDocuments(docs);
                         renderSavedDocuments();
                     }
-                } else if (e.target.closest('.delete-btn')) { // Excluir
+                } else if (e.target.closest('.delete-btn')) {
                     if (confirm(`Excluir "${docs[docIndex].title}"?`)) {
                         docs = docs.filter(d => d.id !== docId);
                         saveDocuments(docs);
@@ -562,7 +582,6 @@
                 }
             };
 
-            // --- Event Listeners ---
             saveBtn.addEventListener('click', saveCurrentDocument);
             pdfBtn.addEventListener('click', downloadPDF);
             savedList.addEventListener('click', handleSavedListClick);
@@ -573,7 +592,6 @@
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             previewOverlay.addEventListener('click', closeModal);
             
-            // --- Inicialização ---
             applySavedConfig();
             renderSavedDocuments();
         });

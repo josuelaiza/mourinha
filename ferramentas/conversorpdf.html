@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conversor Markdown para PDF</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -384,8 +383,8 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>📝 Conversor Markdown → PDF</h1>
-            <p>Transforme seu Markdown em PDF com visualização profissional</p>
+            <h1>📝 Conversor Markdown → Texto Formatado</h1>
+            <p>Transforme seu Markdown em texto formatado para copiar e colar</p>
         </header>
 
         <div class="main-content">
@@ -421,7 +420,7 @@ Visite [OpenAI](https://openai.com) para mais informações."></textarea>
         </div>
 
         <div class="button-group">
-            <button class="btn-success" onclick="downloadPDF()">⬇️ Baixar PDF</button>
+            <button class="btn-success" onclick="copyFormattedText()">📋 Copiar Texto Formatado</button>
             <button class="btn-secondary" onclick="saveDocument()">💾 Salvar Documento</button>
         </div>
 
@@ -621,8 +620,7 @@ Visite [OpenAI](https://openai.com) para mais informações."></textarea>
             document.body.style.overflow = 'auto';
         }
 
-        function downloadPDF() {
-            const { jsPDF } = window.jspdf;
+        function copyFormattedText() {
             const markdownText = markdownInput.value;
             
             if (!markdownText.trim()) {
@@ -630,180 +628,192 @@ Visite [OpenAI](https://openai.com) para mais informações."></textarea>
                 return;
             }
 
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4',
-                putOnlyUsedFonts: true,
-                floatPrecision: 16
-            });
+            // Converter markdown para HTML formatado
+            const htmlContent = marked.parse(markdownText);
+            
+            // Criar um elemento temporário para processar o HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            
+            // Aplicar estilos inline para manter formatação ao colar
+            const styledHTML = processHTMLForCopy(tempDiv);
+            
+            // Criar versão em texto plano também (fallback)
+            const plainText = tempDiv.textContent || tempDiv.innerText || '';
 
-            // Configurações de página e layout
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const margin = 25;
-            const maxWidth = pageWidth - 2 * margin;
-            let currentY = margin;
-            let pageNumber = 1;
+            // Usar a Clipboard API moderna
+            if (navigator.clipboard && navigator.clipboard.write) {
+                // Criar dados de clipboard com HTML formatado
+                const clipboardItem = new ClipboardItem({
+                    'text/html': new Blob([styledHTML], { type: 'text/html' }),
+                    'text/plain': new Blob([plainText], { type: 'text/plain' })
+                });
 
-            // Configurações de fonte padrão
-            const defaultFont = 'helvetica';
-            const defaultFontSize = 12;
-            const lineHeight = 6;
-
-            // Função para adicionar número da página
-            function addPageNumber() {
-                doc.setFontSize(10);
-                doc.setFont(defaultFont, 'normal');
-                doc.setTextColor(100);
-                doc.text(`Página ${pageNumber}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-                pageNumber++;
+                navigator.clipboard.write([clipboardItem]).then(() => {
+                    showCopySuccess();
+                }).catch(err => {
+                    console.error('Erro ao copiar:', err);
+                    fallbackCopyMethod(styledHTML);
+                });
+            } else {
+                // Fallback para navegadores mais antigos
+                fallbackCopyMethod(styledHTML);
             }
+        }
 
-            // Função para verificar se precisa de nova página
-            function checkNewPage(additionalHeight = 15) {
-                if (currentY + additionalHeight > pageHeight - 30) {
-                    addPageNumber();
-                    doc.addPage();
-                    currentY = margin;
-                    return true;
-                }
-                return false;
-            }
+        function processHTMLForCopy(element) {
+            // Aplicar estilos inline para garantir que a formatação seja mantida
+            const styledHTML = `
+                <div style="font-family: Georgia, 'Times New Roman', serif; line-height: 1.6; color: #2d3748; max-width: 800px;">
+                    ${processElements(element)}
+                </div>
+            `;
+            return styledHTML;
+        }
 
-            // Função para processar texto markdown em elementos
-            function processMarkdownText(text) {
-                // Dividir o texto em linhas
-                const lines = text.split('\n');
+        function processElements(element) {
+            let result = '';
+            const children = Array.from(element.children);
+            
+            for (const child of children) {
+                const tagName = child.tagName.toLowerCase();
+                const textContent = child.innerHTML;
                 
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    
-                    if (!line && i < lines.length - 1) {
-                        // Linha vazia - adicionar espaço
-                        currentY += lineHeight;
-                        continue;
-                    }
-
-                    if (!line) continue;
-
-                    checkNewPage();
-
-                    // Reset para configurações padrão
-                    doc.setFont(defaultFont, 'normal');
-                    doc.setFontSize(defaultFontSize);
-                    doc.setTextColor(0);
-                    
-                    let fontSize = defaultFontSize;
-                    let fontWeight = 'normal';
-                    let textColor = 0;
-                    let extraSpacing = 0;
-                    let processedText = line;
-
-                    // Detectar e processar diferentes tipos de markdown
-                    if (line.startsWith('# ')) {
-                        // H1
-                        processedText = line.substring(2);
-                        fontSize = 18;
-                        fontWeight = 'bold';
-                        extraSpacing = 8;
-                    } else if (line.startsWith('## ')) {
-                        // H2
-                        processedText = line.substring(3);
-                        fontSize = 16;
-                        fontWeight = 'bold';
-                        extraSpacing = 6;
-                    } else if (line.startsWith('### ')) {
-                        // H3
-                        processedText = line.substring(4);
-                        fontSize = 14;
-                        fontWeight = 'bold';
-                        extraSpacing = 4;
-                    } else if (line.startsWith('#### ')) {
-                        // H4
-                        processedText = line.substring(5);
-                        fontSize = 13;
-                        fontWeight = 'bold';
-                        extraSpacing = 3;
-                    } else if (line.startsWith('##### ') || line.startsWith('###### ')) {
-                        // H5/H6
-                        processedText = line.replace(/^#+\s/, '');
-                        fontSize = 12;
-                        fontWeight = 'bold';
-                        extraSpacing = 2;
-                    } else if (line.startsWith('> ')) {
-                        // Blockquote
-                        processedText = line.substring(2);
-                        fontSize = 11;
-                        fontWeight = 'italic';
-                        textColor = 80;
-                    } else if (line.startsWith('- ') || line.startsWith('* ') || line.match(/^\d+\.\s/)) {
-                        // Lista
-                        if (line.startsWith('- ') || line.startsWith('* ')) {
-                            processedText = '• ' + line.substring(2);
-                        } else {
-                            processedText = line; // Manter numeração original
+                switch (tagName) {
+                    case 'h1':
+                        result += `<h1 style="font-size: 28px; font-weight: bold; margin: 24px 0 16px 0; color: #1a202c; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">${child.textContent}</h1>`;
+                        break;
+                    case 'h2':
+                        result += `<h2 style="font-size: 24px; font-weight: bold; margin: 20px 0 12px 0; color: #2d3748;">${child.textContent}</h2>`;
+                        break;
+                    case 'h3':
+                        result += `<h3 style="font-size: 20px; font-weight: bold; margin: 16px 0 10px 0; color: #2d3748;">${child.textContent}</h3>`;
+                        break;
+                    case 'h4':
+                        result += `<h4 style="font-size: 18px; font-weight: bold; margin: 14px 0 8px 0; color: #2d3748;">${child.textContent}</h4>`;
+                        break;
+                    case 'h5':
+                        result += `<h5 style="font-size: 16px; font-weight: bold; margin: 12px 0 6px 0; color: #2d3748;">${child.textContent}</h5>`;
+                        break;
+                    case 'h6':
+                        result += `<h6 style="font-size: 14px; font-weight: bold; margin: 10px 0 6px 0; color: #2d3748;">${child.textContent}</h6>`;
+                        break;
+                    case 'p':
+                        result += `<p style="margin: 0 0 16px 0; text-align: justify;">${textContent}</p>`;
+                        break;
+                    case 'ul':
+                        result += `<ul style="margin: 16px 0; padding-left: 20px;">${textContent}</ul>`;
+                        break;
+                    case 'ol':
+                        result += `<ol style="margin: 16px 0; padding-left: 20px;">${textContent}</ol>`;
+                        break;
+                    case 'li':
+                        result += `<li style="margin: 4px 0;">${textContent}</li>`;
+                        break;
+                    case 'blockquote':
+                        result += `<blockquote style="border-left: 4px solid #667eea; padding: 12px 16px; margin: 16px 0; background-color: #f7fafc; font-style: italic; color: #4a5568;">${textContent}</blockquote>`;
+                        break;
+                    case 'pre':
+                        result += `<pre style="background-color: #2d3748; color: #e2e8f0; padding: 16px; border-radius: 8px; margin: 16px 0; overflow-x: auto; font-family: 'Courier New', Consolas, monospace; font-size: 14px;">${child.textContent}</pre>`;
+                        break;
+                    case 'code':
+                        if (child.parentElement.tagName.toLowerCase() !== 'pre') {
+                            result += `<code style="background-color: #e2e8f0; color: #2d3748; padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', Consolas, monospace; font-size: 14px;">${child.textContent}</code>`;
                         }
-                        fontSize = defaultFontSize;
-                    } else if (line.startsWith('```') || line.startsWith('`')) {
-                        // Código - pular as linhas de código por enquanto para simplificar
-                        continue;
-                    }
-
-                    // Aplicar configurações de fonte
-                    doc.setFontSize(fontSize);
-                    doc.setFont(defaultFont, fontWeight);
-                    doc.setTextColor(textColor);
-
-                    // Processar texto inline (negrito, itálico)
-                    processedText = processedText
-                        .replace(/\*\*(.*?)\*\*/g, '$1') // Remover markdown de negrito
-                        .replace(/\*(.*?)\*/g, '$1')     // Remover markdown de itálico
-                        .replace(/`(.*?)`/g, '$1')       // Remover markdown de código inline
-                        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Remover links, manter texto
-
-                    // Quebrar texto em múltiplas linhas se necessário
-                    const splitText = doc.splitTextToSize(processedText, maxWidth);
-                    
-                    // Verificar se todas as linhas cabem na página atual
-                    const totalHeight = splitText.length * lineHeight + extraSpacing;
-                    if (checkNewPage(totalHeight)) {
-                        // Reconfigurar fonte após mudança de página
-                        doc.setFontSize(fontSize);
-                        doc.setFont(defaultFont, fontWeight);
-                        doc.setTextColor(textColor);
-                    }
-
-                    // Adicionar espaçamento extra antes de títulos
-                    if (extraSpacing > 0) {
-                        currentY += extraSpacing;
-                    }
-
-                    // Adicionar o texto
-                    for (let j = 0; j < splitText.length; j++) {
-                        checkNewPage();
-                        doc.text(splitText[j], margin, currentY);
-                        currentY += lineHeight;
-                    }
-
-                    // Espaçamento após títulos
-                    if (extraSpacing > 0) {
-                        currentY += extraSpacing / 2;
-                    } else {
-                        currentY += 2; // Espaçamento mínimo entre linhas
-                    }
+                        break;
+                    case 'table':
+                        result += `<table style="border-collapse: collapse; width: 100%; margin: 16px 0; border: 1px solid #e2e8f0;">${textContent}</table>`;
+                        break;
+                    case 'thead':
+                        result += `<thead style="background-color: #f7fafc;">${textContent}</thead>`;
+                        break;
+                    case 'tbody':
+                        result += `<tbody>${textContent}</tbody>`;
+                        break;
+                    case 'tr':
+                        result += `<tr style="border-bottom: 1px solid #e2e8f0;">${textContent}</tr>`;
+                        break;
+                    case 'th':
+                        result += `<th style="padding: 12px; text-align: left; font-weight: bold; border: 1px solid #e2e8f0; background-color: #f7fafc;">${child.textContent}</th>`;
+                        break;
+                    case 'td':
+                        result += `<td style="padding: 12px; border: 1px solid #e2e8f0;">${textContent}</td>`;
+                        break;
+                    case 'hr':
+                        result += `<hr style="border: none; border-top: 2px solid #e2e8f0; margin: 24px 0;">`;
+                        break;
+                    case 'a':
+                        result += `<a href="${child.href || '#'}" style="color: #667eea; text-decoration: underline;">${child.textContent}</a>`;
+                        break;
+                    case 'strong':
+                    case 'b':
+                        result += `<strong style="font-weight: bold;">${child.textContent}</strong>`;
+                        break;
+                    case 'em':
+                    case 'i':
+                        result += `<em style="font-style: italic;">${child.textContent}</em>`;
+                        break;
+                    default:
+                        result += textContent;
                 }
             }
+            
+            return result;
+        }
 
-            // Processar todo o texto markdown
-            processMarkdownText(markdownText);
+        function fallbackCopyMethod(htmlContent) {
+            // Método alternativo usando execCommand (para compatibilidade)
+            const textArea = document.createElement('textarea');
+            textArea.style.position = 'fixed';
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.width = '2em';
+            textArea.style.height = '2em';
+            textArea.style.padding = '0';
+            textArea.style.border = 'none';
+            textArea.style.outline = 'none';
+            textArea.style.boxShadow = 'none';
+            textArea.style.background = 'transparent';
+            
+            // Para copiar HTML, vamos usar um div contenteditable
+            const div = document.createElement('div');
+            div.contentEditable = true;
+            div.innerHTML = htmlContent;
+            div.style.position = 'fixed';
+            div.style.top = '-9999px';
+            div.style.left = '-9999px';
+            
+            document.body.appendChild(div);
+            
+            // Selecionar todo o conteúdo
+            const range = document.createRange();
+            range.selectNodeContents(div);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            try {
+                document.execCommand('copy');
+                showCopySuccess();
+            } catch (err) {
+                console.error('Erro ao copiar:', err);
+                alert('Erro ao copiar o texto. Tente selecionar e copiar manualmente da pré-visualização.');
+            } finally {
+                document.body.removeChild(div);
+                selection.removeAllRanges();
+            }
+        }
 
-            // Adicionar número na última página
-            addPageNumber();
-
-            // Fazer o download
-            const fileName = document.getElementById('docName').value.trim() || 'documento';
-            doc.save(`${fileName}.pdf`);
+        function showCopySuccess() {
+            // Mostrar feedback visual de sucesso
+            const originalButtonText = event.target.innerHTML;
+            event.target.innerHTML = '✅ Copiado!';
+            event.target.style.backgroundColor = '#48bb78';
+            
+            setTimeout(() => {
+                event.target.innerHTML = originalButtonText;
+                event.target.style.backgroundColor = '';
+            }, 2000);
         }
 
         // Inicialização

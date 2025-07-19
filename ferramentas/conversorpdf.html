@@ -380,7 +380,6 @@
                         docs[docIndex].title = newTitle.trim();
                         localStorage.setItem('markdownDocs', JSON.stringify(docs));
                         renderSavedDocs();
-                        // Se o documento editado for o atual, atualiza o campo de título
                         if (currentEditingId === id) {
                             docTitleInput.value = newTitle.trim();
                         }
@@ -395,7 +394,6 @@
                     docs = docs.filter(doc => doc.id !== id);
                     localStorage.setItem('markdownDocs', JSON.stringify(docs));
                     
-                    // Se o documento excluído era o que estava sendo editado, limpa o editor
                     if (currentEditingId === id) {
                         clearEditor();
                     }
@@ -403,19 +401,41 @@
                 }
             };
 
-            // Função para copiar o HTML formatado
-            const copyFormattedText = async () => {
-                try {
+            // --- FUNÇÃO DE COPIAR ATUALIZADA ---
+            const copyFormattedText = () => {
+                const content = preview;
+
+                // Fallback para navegadores mobile e mais antigos
+                const fallbackCopy = () => {
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(content);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    try {
+                        document.execCommand('copy');
+                        alert('Texto formatado copiado para a área de transferência!');
+                    } catch (err) {
+                        alert('Não foi possível copiar o texto. Seu navegador pode não suportar esta ação.');
+                        console.error('Fallback copy failed', err);
+                    }
+                    selection.removeAllRanges();
+                };
+
+                // Tenta o método moderno primeiro
+                if (navigator.clipboard && navigator.clipboard.write) {
                     const htmlContent = preview.innerHTML;
-                    // Usando a API Clipboard para copiar HTML.
-                    // Isso preserva a formatação ao colar em apps como Google Docs.
                     const blob = new Blob([htmlContent], { type: 'text/html' });
                     const clipboardItem = new ClipboardItem({ 'text/html': blob });
-                    await navigator.clipboard.write([clipboardItem]);
-                    alert('Texto formatado copiado para a área de transferência!');
-                } catch (err) {
-                    console.error('Falha ao copiar texto: ', err);
-                    alert('Erro ao copiar. Seu navegador pode não suportar esta funcionalidade.');
+
+                    navigator.clipboard.write([clipboardItem]).then(() => {
+                        alert('Texto formatado copiado para a área de transferência!');
+                    }).catch(err => {
+                        console.warn('navigator.clipboard.write failed, trying fallback.', err);
+                        fallbackCopy(); // Se o método moderno falhar, usa o fallback
+                    });
+                } else {
+                    fallbackCopy(); // Se a API moderna não existir, vai direto para o fallback
                 }
             };
 

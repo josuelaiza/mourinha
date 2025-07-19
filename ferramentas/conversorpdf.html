@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor Markdown para PDF | Corrigido</title>
+    <title>Editor Markdown para PDF ☆</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        /* --- Variáveis Globais e Reset --- */
         :root {
             --primary-color: #7c3aed;
             --secondary-color: #10b981;
@@ -24,85 +23,29 @@
             --border-color: #e2e8f0;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --border-radius: 0.75rem;
-            /* Configurações do PDF (serão atualizadas via JS) */
             --pdf-font-size: 16px;
             --pdf-margin: 20mm;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-
-        /* --- Estrutura Principal --- */
-        header {
-            text-align: center;
-            padding: 2rem 1rem;
-            background-color: var(--surface-color);
-            border-bottom: 1px solid var(--border-color);
-        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color); line-height: 1.6; }
+        header { text-align: center; padding: 2rem 1rem; background-color: var(--surface-color); border-bottom: 1px solid var(--border-color); }
         header h1 { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); }
         header p { max-width: 600px; margin: 0.5rem auto 0; color: var(--muted-text-color); }
-
         .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
         footer { text-align: center; padding: 2rem 1rem; margin-top: 2rem; color: var(--muted-text-color); font-size: 0.9rem; }
-
-        /* --- Painel de Edição e Controles --- */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            align-items: flex-start;
-        }
-
+        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: flex-start; }
         .editor-section { display: flex; flex-direction: column; min-height: 65vh; }
-        
-        #markdown-input {
-            flex-grow: 1;
-            width: 100%;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-family: monospace;
-            font-size: 1rem;
-            background-color: var(--surface-color);
-            resize: vertical;
-            box-shadow: var(--shadow);
-        }
-        #markdown-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
-        }
-
-        .controls-panel {
-            background-color: var(--surface-color);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 2rem;
-        }
-
+        #markdown-input { flex-grow: 1; width: 100%; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-family: monospace; font-size: 1rem; background-color: var(--surface-color); resize: vertical; box-shadow: var(--shadow); }
+        #markdown-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2); }
+        .controls-panel { background-color: var(--surface-color); border-radius: var(--border-radius); padding: 1.5rem; box-shadow: var(--shadow); position: sticky; top: 2rem; }
         .control-group { margin-bottom: 2rem; }
         .control-group:last-child { margin-bottom: 0; }
         .control-group h3 { font-size: 1.1rem; margin-bottom: 1rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; }
         .control-group .btn-group { display: flex; flex-direction: column; gap: 0.75rem; }
-        
         .config-item { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
         .config-item label { font-weight: 500; color: var(--muted-text-color); font-size: 0.9rem;}
         .config-item input { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.5rem;}
-        
-        /* --- Botões --- */
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-            padding: 0.75rem 1.5rem; border: none; border-radius: var(--border-radius);
-            font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center;
-        }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: var(--border-radius); font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center; }
         .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
         .btn svg { width: 18px; height: 18px; }
         .btn-primary { background-color: var(--primary-color); color: white; }
@@ -111,67 +54,22 @@
         .btn-secondary:hover { background-color: #059669; }
         .btn-tertiary { background-color: #334155; color: white; }
         .btn-tertiary:hover { background-color: #1e293b; }
-
-        /* --- MODAL DE PRÉ-VISUALIZAÇÃO --- */
-        #preview-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000; display: none;
-        }
-
-        #preview-modal {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 95%; max-width: 1200px;
-            height: 90vh;
-            background-color: var(--background-color);
-            border-radius: var(--border-radius);
-            z-index: 1001;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            display: none; flex-direction: column;
-        }
-        #preview-modal.fullscreen {
-            width: 100%; height: 100%; top: 0; left: 0; border-radius: 0; transform: none; max-width: 100%;
-        }
-
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border-color);
-            background-color: var(--surface-color); flex-shrink: 0;
-            border-radius: var(--border-radius) var(--border-radius) 0 0;
-        }
+        #preview-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 1000; display: none; }
+        #preview-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95%; max-width: 1200px; height: 90vh; background-color: var(--background-color); border-radius: var(--border-radius); z-index: 1001; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; flex-direction: column; }
+        #preview-modal.fullscreen { width: 100%; height: 100%; top: 0; left: 0; border-radius: 0; transform: none; max-width: 100%; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border-color); background-color: var(--surface-color); flex-shrink: 0; border-radius: var(--border-radius) var(--border-radius) 0 0; }
         .modal-header h4 { font-size: 1.2rem; color: var(--primary-color); margin-right: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
         .modal-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
         .modal-actions button { background: none; border: none; cursor: pointer; padding: 0.5rem; line-height: 0; }
         .modal-actions button svg { width: 22px; height: 22px; color: var(--muted-text-color); }
         .modal-actions button:hover svg { color: var(--text-color); }
-
         .modal-body { flex-grow: 1; overflow: auto; padding: 1.5rem; }
-
-        /* --- Estilos para o conteúdo PAGINADO --- */
-        #pdf-preview-content-wrapper {
-            display: flex; justify-content: center;
-        }
-        #pdf-preview-content {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 1.5rem; transform-origin: top center; transition: transform 0.2s;
-        }
-
+        #pdf-preview-content-wrapper { display: flex; justify-content: center; }
+        #pdf-preview-content { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; transform-origin: top center; transition: transform 0.2s; }
         .page-container { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
         .page-number-indicator { font-size: 0.8rem; color: var(--muted-text-color); font-weight: 500; }
-
-        .page-preview {
-            background-color: white;
-            width: 21cm;
-            height: 29.7cm;
-            box-shadow: 0 0 10px rgba(0,0,0,0.15);
-            padding: var(--pdf-margin);
-            overflow: hidden;
-            font-size: var(--pdf-font-size); 
-        }
-
-        /* --- Estilo do Conteúdo Gerado (PROSE) --- */
-        .prose { color: var(--text-color); line-height: 1.6; height: 100%; }
+        .page-preview { background-color: white; width: 21cm; height: 29.7cm; box-shadow: 0 0 10px rgba(0,0,0,0.15); padding: var(--pdf-margin); overflow: hidden; font-size: var(--pdf-font-size); }
+        .prose { color: var(--text-color); line-height: 1.6; height: 100%; overflow: hidden; }
         .prose > :first-child { margin-top: 0 !important; }
         .prose h1, .prose h2, .prose h3 { margin-top: 1.5em; margin-bottom: 1em; font-weight: 700; page-break-after: avoid;}
         .prose h1 { font-size: 2em; } .prose h2 { font-size: 1.5em; } .prose h3 { font-size: 1.25em; }
@@ -186,8 +84,6 @@
         .prose table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
         .prose th, .prose td { border: 1px solid var(--border-color); padding: 0.5em 1em; text-align: left; }
         .prose th { background-color: #f1f5f9; font-weight: 600; }
-
-        /* --- Documentos Salvos --- */
         .saved-documents-panel { margin-top: 3rem; padding: 1.5rem; background-color: var(--surface-color); border-radius: var(--border-radius); box-shadow: var(--shadow); }
         .saved-documents-panel h2 { font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; }
         #saved-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
@@ -195,19 +91,8 @@
         .item-title { font-weight: 500; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 1rem; }
         .item-actions button { background: none; border: none; cursor: pointer; padding: 0.5rem; color: var(--muted-text-color); }
         .item-actions button:hover { background-color: #e2e8f0; color: var(--text-color); border-radius: 50%;}
-
-        /* --- Responsividade --- */
-        @media (max-width: 1024px) {
-            .main-grid { grid-template-columns: 1fr; }
-            .controls-panel { position: static; }
-        }
-        @media (max-width: 480px) {
-            header h1 { font-size: 2rem; }
-            .modal-header { padding: 0.5rem 1rem; }
-            .modal-header h4 { font-size: 1rem; }
-            .modal-actions button svg { width: 20px; height: 20px; }
-            .modal-body { padding: 1rem 0.5rem; }
-        }
+        @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } .controls-panel { position: static; } }
+        @media (max-width: 480px) { header h1 { font-size: 2rem; } .modal-header { padding: 0.5rem 1rem; } .modal-header h4 { font-size: 1rem; } .modal-actions button svg { width: 20px; height: 20px; } .modal-body { padding: 1rem 0.5rem; } }
     </style>
 </head>
 <body>
@@ -267,25 +152,17 @@
         <div class="modal-header">
             <h4 id="modal-title">Pré-visualização</h4>
             <div class="modal-actions">
-                <button id="fullscreen-btn" title="Tela Cheia">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/></svg>
-                </button>
-                <button id="close-modal-btn" title="Fechar">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
-                </button>
+                <button id="fullscreen-btn" title="Tela Cheia"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/></svg></button>
+                <button id="close-modal-btn" title="Fechar"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg></button>
             </div>
         </div>
-        <div class="modal-body" id="modal-body-content">
-            </div>
+        <div class="modal-body" id="modal-body-content"></div>
     </div>
     
-    <footer>
-        <p>&copy; 2025 - Criado com ❤️ para facilitar sua vida.</p>
-    </footer>
+    <footer><p>&copy; 2025 - Criado com ❤️ para facilitar sua vida.</p></footer>
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Seleção de Elementos ---
             const markdownInput = document.getElementById('markdown-input');
             const saveBtn = document.getElementById('save-btn');
             const pdfBtn = document.getElementById('pdf-btn');
@@ -295,8 +172,6 @@
             const saveConfigBtn = document.getElementById('save-config-btn');
             const fontSizeInput = document.getElementById('font-size-input');
             const marginInput = document.getElementById('margin-input');
-
-            // --- Elementos do Modal ---
             const previewOverlay = document.getElementById('preview-overlay');
             const previewModal = document.getElementById('preview-modal');
             const modalTitle = document.getElementById('modal-title');
@@ -304,7 +179,6 @@
             const closeModalBtn = document.getElementById('close-modal-btn');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             
-            // --- Funções do Modal ---
             const openModal = () => {
                 previewOverlay.style.display = 'block';
                 previewModal.style.display = 'flex';
@@ -320,23 +194,18 @@
                     document.exitFullscreen();
                 }
             };
-            
             const toggleFullscreen = () => {
                 if (!document.fullscreenElement) {
                     previewModal.requestFullscreen().catch(err => alert(`Erro: ${err.message}`));
-                    previewModal.classList.add('fullscreen');
                 } else {
                     document.exitFullscreen();
                 }
             };
             document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement) {
-                    previewModal.classList.remove('fullscreen');
-                }
+                previewModal.classList.toggle('fullscreen', !!document.fullscreenElement);
                 scalePreviewToFit();
             });
 
-            // --- Funções de Configuração ---
             const applySavedConfig = () => {
                 const config = JSON.parse(localStorage.getItem('pdf_config')) || { fontSize: 16, margin: 20 };
                 fontSizeInput.value = config.fontSize;
@@ -352,7 +221,6 @@
                 alert('Configurações salvas!');
             };
 
-            // --- Funções de Pré-Visualização ---
             const showRawPreview = () => {
                 modalTitle.textContent = 'Pré-visualização Simples';
                 const rawHtml = marked.parse(markdownInput.value || '### Nenhum conteúdo para visualizar.');
@@ -373,7 +241,7 @@
                     content.style.transform = 'scale(1)';
                 }
             };
-
+            
             const showPdfPreview = () => {
                 modalTitle.textContent = 'Pré-visualização Paginada';
                 if (markdownInput.value.trim() === '') {
@@ -381,20 +249,32 @@
                     openModal();
                     return;
                 }
+
+                // --- INÍCIO DA LÓGICA DE PAGINAÇÃO CORRIGIDA ---
+
+                // 1. Medir a altura real de uma página em pixels.
+                modalBody.innerHTML = ''; // Limpa para a medição.
+                const tempPageForMeasuring = document.createElement('div');
+                tempPageForMeasuring.className = 'page-preview';
+                modalBody.appendChild(tempPageForMeasuring);
+                const pageHeightPx = tempPageForMeasuring.clientHeight; // Medida real!
+                modalBody.innerHTML = ''; // Limpa de novo para o conteúdo final.
+                
+                if (pageHeightPx === 0) {
+                    alert("Erro: Não foi possível determinar a altura da página. Tente novamente.");
+                    return;
+                }
+
+                // 2. Preparar a área de conteúdo e a área de teste.
                 modalBody.innerHTML = `<div id="pdf-preview-content-wrapper"><div id="pdf-preview-content"></div></div>`;
                 const previewContent = document.getElementById('pdf-preview-content');
                 
                 const stagingArea = document.createElement('div');
-                stagingArea.className = 'prose';
-                stagingArea.style.cssText = 'opacity: 0; position: absolute; pointer-events: none;';
-                stagingArea.style.width = `calc(21cm - (${(marginInput.value || 20) * 2}mm))`;
-                stagingArea.style.fontSize = `${fontSizeInput.value || 16}px`;
+                stagingArea.style.cssText = 'position: absolute; visibility: hidden; left: -9999px;'; // Mais robusto
                 stagingArea.innerHTML = marked.parse(markdownInput.value);
                 document.body.appendChild(stagingArea);
 
-                // Altura útil da página em pixels (A4 height - margens)
-                const pageHeightPx = (29.7 * 37.795) - ((marginInput.value || 20) * 2 * 3.7795);
-
+                // 3. Loop de distribuição de elementos.
                 let pageCounter = 1;
                 let currentPage = createNewPage(pageCounter);
                 previewContent.appendChild(currentPage.container);
@@ -402,29 +282,25 @@
                 
                 for (const el of allElements) {
                     const proseDiv = currentPage.proseDiv;
-                    
-                    if (proseDiv.children.length === 0) {
-                        // Se a página está vazia, o elemento DEVE ser adicionado, mesmo se for grande demais.
-                        proseDiv.appendChild(el);
-                    } else {
-                        // Tenta adicionar o elemento para ver se cabe
-                        proseDiv.appendChild(el);
+                    proseDiv.appendChild(el);
+
+                    // Verifica o overflow APENAS se a página já tem outros elementos.
+                    // Isso força elementos muito grandes a ficarem em sua própria página.
+                    if (proseDiv.scrollHeight > pageHeightPx && proseDiv.children.length > 1) {
+                        proseDiv.removeChild(el); // Remove o elemento que causou o overflow.
                         
-                        // Se transbordar, desfaz e cria uma nova página
-                        if (proseDiv.scrollHeight > pageHeightPx) {
-                            proseDiv.removeChild(el); // Remove o elemento que não coube
-                            
-                            pageCounter++;
-                            currentPage = createNewPage(pageCounter);
-                            previewContent.appendChild(currentPage.container);
-                            currentPage.proseDiv.appendChild(el); // Adiciona na nova página
-                        }
+                        pageCounter++;
+                        currentPage = createNewPage(pageCounter);
+                        previewContent.appendChild(currentPage.container);
+                        currentPage.proseDiv.appendChild(el); // Adiciona na nova página.
                     }
                 }
                 
-                document.body.removeChild(stagingArea);
-                openModal();
+                document.body.removeChild(stagingArea); // Limpa a área de teste.
 
+                // --- FIM DA LÓGICA DE PAGINAÇÃO ---
+
+                openModal();
                 setTimeout(() => {
                     scalePreviewToFit();
                     window.addEventListener('resize', scalePreviewToFit);
@@ -434,25 +310,15 @@
             function createNewPage(pageNumber) {
                 const container = document.createElement('div');
                 container.className = 'page-container';
-                
-                const numberIndicator = document.createElement('h3');
-                numberIndicator.className = 'page-number-indicator';
-                numberIndicator.textContent = `Página ${pageNumber}`;
-                
-                const page = document.createElement('div');
-                page.className = 'page-preview';
-                
-                const proseDiv = document.createElement('div');
-                proseDiv.className = 'prose';
-                page.appendChild(proseDiv);
-
-                container.appendChild(numberIndicator);
-                container.appendChild(page);
-
-                return { container, proseDiv };
+                container.innerHTML = `
+                    <h3 class="page-number-indicator">Página ${pageNumber}</h3>
+                    <div class="page-preview">
+                        <div class="prose"></div>
+                    </div>
+                `;
+                return { container, proseDiv: container.querySelector('.prose') };
             }
 
-            // --- Download como PDF ---
             const downloadPDF = () => {
                 const markdownText = markdownInput.value;
                 if (markdownText.trim() === '') {
@@ -478,7 +344,6 @@
                 html2pdf().set(opt).from(element).save();
             };
 
-            // --- Armazenamento Local (Documentos) ---
             const getSavedDocuments = () => JSON.parse(localStorage.getItem('markdown_docs')) || [];
             const saveDocuments = (docs) => localStorage.setItem('markdown_docs', JSON.stringify(docs));
 
@@ -513,7 +378,6 @@
                 let docs = getSavedDocuments();
                 const docIndex = docs.findIndex(d => d.id === docId);
                 if (docIndex === -1) return;
-
                 if (e.target.closest('.item-title')) {
                     markdownInput.value = docs[docIndex].content;
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -533,7 +397,6 @@
                 }
             };
 
-            // --- Event Listeners ---
             saveBtn.addEventListener('click', saveCurrentDocument);
             pdfBtn.addEventListener('click', downloadPDF);
             savedList.addEventListener('click', handleSavedListClick);
@@ -544,7 +407,6 @@
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             previewOverlay.addEventListener('click', closeModal);
             
-            // --- Inicialização ---
             applySavedConfig();
             renderSavedDocuments();
         });

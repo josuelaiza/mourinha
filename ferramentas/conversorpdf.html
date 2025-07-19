@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor Markdown para PDF</title>
+    <title>Editor Markdown para PDF | Corrigido</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -163,15 +163,15 @@
         .page-preview {
             background-color: white;
             width: 21cm;
-            height: 29.7cm; /* A4-like height */
+            height: 29.7cm;
             box-shadow: 0 0 10px rgba(0,0,0,0.15);
-            padding: var(--pdf-margin); /* Margem dinâmica */
-            overflow: hidden; /* Garante que o conteúdo não vaze */
+            padding: var(--pdf-margin);
+            overflow: hidden;
             font-size: var(--pdf-font-size); 
         }
 
         /* --- Estilo do Conteúdo Gerado (PROSE) --- */
-        .prose { color: var(--text-color); line-height: 1.6; }
+        .prose { color: var(--text-color); line-height: 1.6; height: 100%; }
         .prose > :first-child { margin-top: 0 !important; }
         .prose h1, .prose h2, .prose h3 { margin-top: 1.5em; margin-bottom: 1em; font-weight: 700; page-break-after: avoid;}
         .prose h1 { font-size: 2em; } .prose h2 { font-size: 1.5em; } .prose h3 { font-size: 1.25em; }
@@ -303,23 +303,19 @@
             const modalBody = document.getElementById('modal-body-content');
             const closeModalBtn = document.getElementById('close-modal-btn');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
-
-            // --- Variável de estado para o listener de resize ---
-            let isPaginatedPreviewOpen = false;
             
             // --- Funções do Modal ---
             const openModal = () => {
                 previewOverlay.style.display = 'block';
                 previewModal.style.display = 'flex';
-                document.body.style.overflow = 'hidden'; // Impede rolagem do fundo
+                document.body.style.overflow = 'hidden';
             };
             const closeModal = () => {
                 previewOverlay.style.display = 'none';
                 previewModal.style.display = 'none';
                 document.body.style.overflow = 'auto';
                 previewModal.classList.remove('fullscreen');
-                isPaginatedPreviewOpen = false;
-                window.removeEventListener('resize', scalePreviewToFit); // Remove o listener
+                window.removeEventListener('resize', scalePreviewToFit);
                 if (document.fullscreenElement) {
                     document.exitFullscreen();
                 }
@@ -327,20 +323,17 @@
             
             const toggleFullscreen = () => {
                 if (!document.fullscreenElement) {
-                    previewModal.requestFullscreen().catch(err => {
-                        alert(`Erro ao entrar em tela cheia: ${err.message}`);
-                    });
+                    previewModal.requestFullscreen().catch(err => alert(`Erro: ${err.message}`));
                     previewModal.classList.add('fullscreen');
                 } else {
                     document.exitFullscreen();
-                    previewModal.classList.remove('fullscreen');
                 }
             };
             document.addEventListener('fullscreenchange', () => {
                 if (!document.fullscreenElement) {
                     previewModal.classList.remove('fullscreen');
                 }
-                scalePreviewToFit(); // Re-escala ao sair/entrar em tela cheia
+                scalePreviewToFit();
             });
 
             // --- Funções de Configuração ---
@@ -361,11 +354,9 @@
 
             // --- Funções de Pré-Visualização ---
             const showRawPreview = () => {
-                isPaginatedPreviewOpen = false;
                 modalTitle.textContent = 'Pré-visualização Simples';
-                const markdownText = markdownInput.value;
-                const rawHtml = marked.parse(markdownText || '### Nenhum conteúdo para visualizar.');
-                modalBody.innerHTML = `<div class="prose" style="font-size: var(--pdf-font-size); max-width: 800px; margin: auto;">${rawHtml}</div>`;
+                const rawHtml = marked.parse(markdownInput.value || '### Nenhum conteúdo para visualizar.');
+                modalBody.innerHTML = `<div class="prose" style="font-size: var(--pdf-font-size); max-width: 800px; margin: auto; height: auto;">${rawHtml}</div>`;
                 openModal();
             };
             
@@ -373,12 +364,10 @@
                 const content = document.getElementById('pdf-preview-content');
                 const wrapper = document.getElementById('pdf-preview-content-wrapper');
                 if (!content || !wrapper) return;
-
                 const wrapperWidth = wrapper.clientWidth;
                 const contentWidth = content.offsetWidth;
-                
                 if (contentWidth > wrapperWidth) {
-                    const scale = (wrapperWidth / contentWidth) * 0.98; // 98% para dar uma margem
+                    const scale = (wrapperWidth / contentWidth) * 0.98;
                     content.style.transform = `scale(${scale})`;
                 } else {
                     content.style.transform = 'scale(1)';
@@ -387,54 +376,56 @@
 
             const showPdfPreview = () => {
                 modalTitle.textContent = 'Pré-visualização Paginada';
-                const markdownText = markdownInput.value;
-                if (markdownText.trim() === '') {
+                if (markdownInput.value.trim() === '') {
                     modalBody.innerHTML = '<p>Nenhum conteúdo para visualizar.</p>';
                     openModal();
                     return;
                 }
-
-                // Prepara a estrutura do corpo do modal
                 modalBody.innerHTML = `<div id="pdf-preview-content-wrapper"><div id="pdf-preview-content"></div></div>`;
                 const previewContent = document.getElementById('pdf-preview-content');
                 
-                // Área de teste invisível
                 const stagingArea = document.createElement('div');
                 stagingArea.className = 'prose';
-                stagingArea.style.opacity = '0';
-                stagingArea.style.position = 'absolute';
-                stagingArea.style.width = `calc(21cm - (${(marginInput.value || 20) * 2}mm))`; // Largura do conteúdo
+                stagingArea.style.cssText = 'opacity: 0; position: absolute; pointer-events: none;';
+                stagingArea.style.width = `calc(21cm - (${(marginInput.value || 20) * 2}mm))`;
                 stagingArea.style.fontSize = `${fontSizeInput.value || 16}px`;
-                stagingArea.style.pointerEvents = 'none';
-                stagingArea.innerHTML = marked.parse(markdownText);
+                stagingArea.innerHTML = marked.parse(markdownInput.value);
                 document.body.appendChild(stagingArea);
 
-                const pageHeightPx = (29.7 * 37.795) - ((marginInput.value || 20) * 2 * 3.7795); // Altura útil da página em pixels
+                // Altura útil da página em pixels (A4 height - margens)
+                const pageHeightPx = (29.7 * 37.795) - ((marginInput.value || 20) * 2 * 3.7795);
 
                 let pageCounter = 1;
                 let currentPage = createNewPage(pageCounter);
                 previewContent.appendChild(currentPage.container);
-
-                const elements = Array.from(stagingArea.children);
-                for (const el of elements) {
+                const allElements = Array.from(stagingArea.children);
+                
+                for (const el of allElements) {
                     const proseDiv = currentPage.proseDiv;
-                    proseDiv.appendChild(el);
-
-                    // Verifica overflow, mas previne loops infinitos com elementos muito grandes
-                    if (proseDiv.scrollHeight > pageHeightPx && proseDiv.children.length > 1) {
-                        proseDiv.removeChild(el); // Devolve o elemento que causou o estouro
-                        pageCounter++;
-                        currentPage = createNewPage(pageCounter);
-                        previewContent.appendChild(currentPage.container);
-                        currentPage.proseDiv.appendChild(el); // Adiciona na nova página
+                    
+                    if (proseDiv.children.length === 0) {
+                        // Se a página está vazia, o elemento DEVE ser adicionado, mesmo se for grande demais.
+                        proseDiv.appendChild(el);
+                    } else {
+                        // Tenta adicionar o elemento para ver se cabe
+                        proseDiv.appendChild(el);
+                        
+                        // Se transbordar, desfaz e cria uma nova página
+                        if (proseDiv.scrollHeight > pageHeightPx) {
+                            proseDiv.removeChild(el); // Remove o elemento que não coube
+                            
+                            pageCounter++;
+                            currentPage = createNewPage(pageCounter);
+                            previewContent.appendChild(currentPage.container);
+                            currentPage.proseDiv.appendChild(el); // Adiciona na nova página
+                        }
                     }
                 }
                 
                 document.body.removeChild(stagingArea);
                 openModal();
 
-                isPaginatedPreviewOpen = true;
-                setTimeout(() => { // Garante que o DOM foi renderizado antes de escalar
+                setTimeout(() => {
                     scalePreviewToFit();
                     window.addEventListener('resize', scalePreviewToFit);
                 }, 100);
@@ -468,25 +459,18 @@
                     alert('Não há conteúdo para converter para PDF.');
                     return;
                 }
-                
                 const element = document.createElement('div');
                 const proseEl = document.createElement('div');
                 proseEl.className = 'prose';
                 proseEl.innerHTML = marked.parse(markdownText);
                 element.appendChild(proseEl);
-
-                // Aplica estilos para o html2pdf capturar corretamente
-                const fontSize = getComputedStyle(document.documentElement).getPropertyValue('--pdf-font-size');
-                proseEl.style.fontSize = fontSize;
+                proseEl.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--pdf-font-size');
                 
-                const now = new Date();
-                const filename = `documento-${now.toISOString().slice(0,10)}.pdf`;
+                const filename = `documento-${new Date().toISOString().slice(0,10)}.pdf`;
                 const marginInches = (parseFloat(marginInput.value) || 20) / 25.4;
 
                 const opt = {
-                    margin: marginInches,
-                    filename: filename,
-                    image: { type: 'jpeg', quality: 0.98 },
+                    margin: marginInches, filename: filename, image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true, letterRendering: true },
                     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
                     pagebreak: { mode: ['css', 'legacy'] }
@@ -528,18 +512,19 @@
                 const docId = item.dataset.id;
                 let docs = getSavedDocuments();
                 const docIndex = docs.findIndex(d => d.id === docId);
+                if (docIndex === -1) return;
 
-                if (e.target.closest('.item-title')) { // Carregar
+                if (e.target.closest('.item-title')) {
                     markdownInput.value = docs[docIndex].content;
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else if (e.target.closest('.edit-btn')) { // Editar
+                } else if (e.target.closest('.edit-btn')) {
                     const newTitle = prompt('Novo nome:', docs[docIndex].title);
                     if (newTitle && newTitle.trim() !== '') {
                         docs[docIndex].title = newTitle.trim();
                         saveDocuments(docs);
                         renderSavedDocuments();
                     }
-                } else if (e.target.closest('.delete-btn')) { // Excluir
+                } else if (e.target.closest('.delete-btn')) {
                     if (confirm(`Excluir "${docs[docIndex].title}"?`)) {
                         docs = docs.filter(d => d.id !== docId);
                         saveDocuments(docs);

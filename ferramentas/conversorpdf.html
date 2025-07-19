@@ -333,6 +333,10 @@
             margin-bottom: 20px;
             position: relative;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 210mm;
+            min-height: 297mm;
+            max-width: 100%;
+            transform-origin: top left;
         }
 
         .pdf-page-header {
@@ -342,11 +346,18 @@
             font-weight: 500;
             color: #6b7280;
             border-bottom: 1px solid #e5e7eb;
+            height: 30px;
+            box-sizing: border-box;
         }
 
         .pdf-page-content {
-            padding: 20px;
-            min-height: 600px;
+            padding: 20mm;
+            height: calc(297mm - 30px);
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            overflow: hidden;
         }
 
         .close-btn {
@@ -453,16 +464,6 @@ console.log('Código de exemplo');
             </div>
             
             <div class="preview-controls">
-                <div class="control-group">
-                    <label for="fontSize">Tamanho da Fonte:</label>
-                    <input type="number" id="fontSize" class="control-input" value="14" min="8" max="24">
-                </div>
-                
-                <div class="control-group">
-                    <label for="marginSize">Margem (mm):</label>
-                    <input type="number" id="marginSize" class="control-input" value="20" min="5" max="50">
-                </div>
-                
                 <button class="btn btn-primary" onclick="showPdfPreview()">📄 Visualizar PDF</button>
                 <button class="btn btn-success" onclick="downloadPdf()">⬇️ Baixar PDF</button>
             </div>
@@ -495,8 +496,6 @@ console.log('Código de exemplo');
 
         // Initialize
         document.getElementById('markdownInput').addEventListener('input', updatePreview);
-        document.getElementById('fontSize').addEventListener('change', updatePreview);
-        document.getElementById('marginSize').addEventListener('change', updatePreview);
         
         updatePreview();
         updateDocumentsList();
@@ -504,13 +503,9 @@ console.log('Código de exemplo');
         function updatePreview() {
             const markdown = document.getElementById('markdownInput').value;
             const html = marked.parse(markdown);
-            const fontSize = document.getElementById('fontSize').value;
-            const margin = document.getElementById('marginSize').value;
             
             const output = document.getElementById('markdownOutput');
             output.innerHTML = html;
-            output.style.fontSize = fontSize + 'px';
-            output.style.margin = margin + 'px';
         }
 
         function saveDocument() {
@@ -527,8 +522,6 @@ console.log('Código de exemplo');
                 id: docId,
                 name: name,
                 content: content,
-                fontSize: document.getElementById('fontSize').value,
-                margin: document.getElementById('marginSize').value,
                 createdAt: new Date()
             };
 
@@ -543,8 +536,6 @@ console.log('Código de exemplo');
             
             const doc = documents[docId];
             document.getElementById('markdownInput').value = doc.content;
-            document.getElementById('fontSize').value = doc.fontSize;
-            document.getElementById('marginSize').value = doc.margin;
             currentDocId = docId;
             
             updatePreview();
@@ -582,42 +573,45 @@ console.log('Código de exemplo');
             `).join('');
         }
 
-        function createPdfPages(html, fontSize, margin) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            tempDiv.style.fontSize = fontSize + 'px';
-            tempDiv.style.lineHeight = '1.8';
-            tempDiv.style.visibility = 'hidden';
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.width = '520px'; // A4 width minus margins
-            document.body.appendChild(tempDiv);
+        function createPdfPages(content) {
+            // Create a temporary container with exact PDF dimensions
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.width = '170mm'; // A4 width - margins (210mm - 40mm)
+            container.style.fontFamily = 'Arial, sans-serif';
+            container.style.fontSize = '12pt';
+            container.style.lineHeight = '1.6';
+            container.innerHTML = content;
+            document.body.appendChild(container);
 
             const pages = [];
-            const pageHeight = 700; // Approximate A4 height minus margins
-            let currentPage = '';
+            const maxHeight = 250; // Approximate height in mm for content area
+            let currentPageContent = '';
             let currentHeight = 0;
 
-            const elements = tempDiv.children;
-            for (let i = 0; i < elements.length; i++) {
-                const element = elements[i];
-                const elementHeight = element.offsetHeight;
+            // Split content into pages based on height
+            const elements = Array.from(container.children);
+            
+            for (const element of elements) {
+                const elementHeight = element.offsetHeight * 0.264583; // Convert px to mm
                 
-                if (currentHeight + elementHeight > pageHeight && currentPage) {
-                    pages.push(currentPage);
-                    currentPage = element.outerHTML;
+                if (currentHeight + elementHeight > maxHeight && currentPageContent) {
+                    pages.push(currentPageContent);
+                    currentPageContent = element.outerHTML;
                     currentHeight = elementHeight;
                 } else {
-                    currentPage += element.outerHTML;
+                    currentPageContent += element.outerHTML;
                     currentHeight += elementHeight;
                 }
             }
-
-            if (currentPage) {
-                pages.push(currentPage);
+            
+            if (currentPageContent) {
+                pages.push(currentPageContent);
             }
 
-            document.body.removeChild(tempDiv);
-            return pages.length > 0 ? pages : [html];
+            document.body.removeChild(container);
+            return pages.length > 0 ? pages : [content];
         }
 
         function showPdfPreview() {
@@ -628,16 +622,17 @@ console.log('Código de exemplo');
             }
 
             const html = marked.parse(markdown);
-            const fontSize = document.getElementById('fontSize').value;
-            const margin = document.getElementById('marginSize').value;
-            
-            const pages = createPdfPages(html, fontSize, margin);
+            const pages = createPdfPages(html);
             const previewBody = document.getElementById('pdfPreviewBody');
             
+            // Calculate scale for mobile
+            const isMobile = window.innerWidth <= 768;
+            const scale = isMobile ? 0.4 : 0.6;
+            
             previewBody.innerHTML = pages.map((pageContent, index) => `
-                <div class="pdf-page">
+                <div class="pdf-page" style="transform: scale(${scale});">
                     <div class="pdf-page-header">Página ${index + 1}</div>
-                    <div class="pdf-page-content" style="font-size: ${fontSize}px; margin: ${margin}px;">
+                    <div class="pdf-page-content">
                         ${pageContent}
                     </div>
                 </div>
@@ -658,53 +653,113 @@ console.log('Código de exemplo');
             }
 
             const html = marked.parse(markdown);
-            const fontSize = parseInt(document.getElementById('fontSize').value);
-            const margin = parseInt(document.getElementById('marginSize').value);
-            
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             
-            // Create temporary element for text measurement
+            // Set font and margins to match preview
+            pdf.setFont('helvetica');
+            pdf.setFontSize(12);
+            const margin = 20;
+            const pageWidth = 210 - (2 * margin);
+            const lineHeight = 6;
+            
+            // Convert HTML to text while preserving some formatting
             const tempDiv = document.createElement('div');
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.visibility = 'hidden';
-            tempDiv.style.fontSize = fontSize + 'px';
-            tempDiv.style.lineHeight = '1.8';
-            tempDiv.style.fontFamily = 'Arial, sans-serif';
-            document.body.appendChild(tempDiv);
-
-            // Convert HTML to plain text with basic formatting
-            const textContent = html
-                .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n\n$1\n' + '='.repeat(50) + '\n')
-                .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n\n$1\n' + '-'.repeat(30) + '\n')
-                .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n\n$1\n')
-                .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '$1')
-                .replace(/<em[^>]*>(.*?)<\/em>/gi, '$1')
-                .replace(/<p[^>]*>(.*?)<\/p>/gi, '\n$1\n')
-                .replace(/<br\s*\/?>/gi, '\n')
-                .replace(/<li[^>]*>(.*?)<\/li>/gi, '• $1\n')
-                .replace(/<[^>]*>/g, '')
-                .replace(/\n{3,}/g, '\n\n');
-
-            pdf.setFontSize(fontSize);
+            tempDiv.innerHTML = html;
             
-            const pageWidth = 210 - (2 * margin); // A4 width minus margins
-            const pageHeight = 297 - (2 * margin); // A4 height minus margins
-            const lineHeight = fontSize * 1.8 / 3.527777778; // Convert px to mm
+            let yPos = margin;
+            let pageNum = 1;
             
-            const lines = pdf.splitTextToSize(textContent, pageWidth);
-            let yPosition = margin;
-            
-            for (let i = 0; i < lines.length; i++) {
-                if (yPosition + lineHeight > 297 - margin) {
+            function addNewPageIfNeeded(requiredHeight) {
+                if (yPos + requiredHeight > 277) { // 297 - 20 margin
                     pdf.addPage();
-                    yPosition = margin;
+                    yPos = margin;
+                    pageNum++;
                 }
-                pdf.text(lines[i], margin, yPosition);
-                yPosition += lineHeight;
             }
-
-            document.body.removeChild(tempDiv);
+            
+            function processElement(element) {
+                const tagName = element.tagName?.toLowerCase();
+                const text = element.textContent || '';
+                
+                if (!text.trim()) return;
+                
+                switch(tagName) {
+                    case 'h1':
+                        addNewPageIfNeeded(lineHeight * 2);
+                        pdf.setFontSize(18);
+                        pdf.setFont('helvetica', 'bold');
+                        yPos += lineHeight;
+                        const h1Lines = pdf.splitTextToSize(text, pageWidth);
+                        h1Lines.forEach(line => {
+                            pdf.text(line, margin, yPos);
+                            yPos += lineHeight;
+                        });
+                        yPos += lineHeight;
+                        pdf.setFontSize(12);
+                        pdf.setFont('helvetica', 'normal');
+                        break;
+                        
+                    case 'h2':
+                        addNewPageIfNeeded(lineHeight * 1.5);
+                        pdf.setFontSize(14);
+                        pdf.setFont('helvetica', 'bold');
+                        yPos += lineHeight * 0.5;
+                        const h2Lines = pdf.splitTextToSize(text, pageWidth);
+                        h2Lines.forEach(line => {
+                            pdf.text(line, margin, yPos);
+                            yPos += lineHeight;
+                        });
+                        yPos += lineHeight * 0.5;
+                        pdf.setFontSize(12);
+                        pdf.setFont('helvetica', 'normal');
+                        break;
+                        
+                    case 'h3':
+                        addNewPageIfNeeded(lineHeight);
+                        pdf.setFontSize(12);
+                        pdf.setFont('helvetica', 'bold');
+                        const h3Lines = pdf.splitTextToSize(text, pageWidth);
+                        h3Lines.forEach(line => {
+                            pdf.text(line, margin, yPos);
+                            yPos += lineHeight;
+                        });
+                        pdf.setFont('helvetica', 'normal');
+                        break;
+                        
+                    case 'p':
+                        const pLines = pdf.splitTextToSize(text, pageWidth);
+                        pLines.forEach(line => {
+                            addNewPageIfNeeded(lineHeight);
+                            pdf.text(line, margin, yPos);
+                            yPos += lineHeight;
+                        });
+                        yPos += lineHeight * 0.3;
+                        break;
+                        
+                    case 'li':
+                        addNewPageIfNeeded(lineHeight);
+                        const liLines = pdf.splitTextToSize('• ' + text, pageWidth - 5);
+                        liLines.forEach(line => {
+                            pdf.text(line, margin + 5, yPos);
+                            yPos += lineHeight;
+                        });
+                        break;
+                        
+                    default:
+                        if (text.trim()) {
+                            const defaultLines = pdf.splitTextToSize(text, pageWidth);
+                            defaultLines.forEach(line => {
+                                addNewPageIfNeeded(lineHeight);
+                                pdf.text(line, margin, yPos);
+                                yPos += lineHeight;
+                            });
+                        }
+                }
+            }
+            
+            // Process all elements
+            Array.from(tempDiv.children).forEach(processElement);
             
             const filename = currentDocId && documents[currentDocId] 
                 ? documents[currentDocId].name + '.pdf'

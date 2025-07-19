@@ -1,241 +1,806 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Markdown → PDF</title>
-  <style>
-    /* Reset básico */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { display: flex; height: 100vh; font-family: sans-serif; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor Markdown para PDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    /* Sidebar */
-    #sidebar {
-      width: 250px; background: #2c3e50; color: white;
-      display: flex; flex-direction: column;
-    }
-    #sidebar h2 { padding: 1rem; }
-    #doc-list { flex: 1; overflow-y: auto; }
-    .doc-item {
-      padding: .5rem 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-    }
-    .doc-item:hover, .doc-item.active { background: #34495e; }
-    .doc-item button { background: none; border: none; color: #e74c3c; cursor: pointer; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
 
-    #new-doc-btn { margin: 1rem; padding: .5rem; background: #27ae60; border: none; color: white; cursor: pointer; border-radius: 4px; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-    /* Main */
-    #main {
-      flex: 1; display: flex; flex-direction: column; padding: 1rem;
-    }
-    #doc-name { font-size: 1.2rem; padding: .5rem; margin-bottom: .5rem; }
-    #markdown-input { flex: 1; width: 100%; padding: .5rem; font-family: monospace; resize: none; }
-    #controls { margin-top: .5rem; display: flex; gap: .5rem; flex-wrap: wrap; }
-    #controls button {
-      flex: 1; padding: .7rem; border: none; border-radius: 4px;
-      cursor: pointer; font-weight: bold;
-    }
-    #save-btn { background: #2980b9; color: white; }
-    #preview-btn { background: #f39c12; color: white; }
-    #download-btn { background: #16a085; color: white; }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
 
-    /* Modal Preview */
-    #preview-modal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center;
-      overflow: auto; padding: 2rem;
-    }
-    #preview-content {
-      background: white; padding: 1rem; border-radius: 8px;
-      max-width: 95%; max-height: 95%; overflow: auto;
-    }
-    .pdf-page {
-      width: 794px; height: 1123px; /* A4 @96dpi */
-      margin: 1rem auto; padding: 40px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3); position: relative;
-      background: white;
-      page-break-after: always;
-    }
-    .page-label {
-      position: absolute; top: 10px; right: 20px; font-size: .9rem; color: #555;
-    }
-    /* adapta para mobile: escala para caber */
-    @media (max-width: 850px) {
-      .pdf-page { transform: scale(0.6); transform-origin: top center; }
-    }
-    @media (max-width: 550px) {
-      .pdf-page { transform: scale(0.45); }
-    }
-  </style>
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel h2 {
+            margin-bottom: 15px;
+            color: #4a5568;
+            font-size: 1.3rem;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .preview {
+            height: 400px;
+            overflow-y: auto;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f7fafc;
+            font-family: Georgia, serif;
+            line-height: 1.6;
+        }
+
+        .preview h1, .preview h2, .preview h3, .preview h4, .preview h5, .preview h6 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .preview p {
+            margin-bottom: 15px;
+        }
+
+        .preview ul, .preview ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .preview blockquote {
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+            margin: 15px 0;
+            font-style: italic;
+            background: #f1f5f9;
+            padding: 10px 15px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .preview code {
+            background: #e2e8f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .preview pre {
+            background: #2d3748;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #4a5568;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #2d3748;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+
+        .documents-panel {
+            grid-column: 1 / -1;
+        }
+
+        .document-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .document-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .document-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .document-card h3 {
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .document-actions button {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+
+        .pdf-preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .pdf-preview-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 900px;
+            max-height: 90vh;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pdf-preview-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pdf-preview-body {
+            height: calc(90vh - 100px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .pdf-page {
+            background: white;
+            margin: 0 auto 30px;
+            padding: 60px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+            width: 210mm;
+            min-height: 297mm;
+            font-family: Georgia, serif;
+            line-height: 1.6;
+            font-size: 12pt;
+            page-break-after: always;
+        }
+
+        .page-number {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background: #f56565;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .panel {
+                padding: 15px;
+            }
+
+            textarea, .preview {
+                height: 300px;
+            }
+
+            .button-group {
+                justify-content: center;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 10px 15px;
+            }
+
+            .pdf-page {
+                width: 100%;
+                padding: 40px 20px;
+            }
+
+            .pdf-preview-body {
+                padding: 10px;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #718096;
+            padding: 40px;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
-  <div id="sidebar">
-    <h2>Meus Docs</h2>
-    <div id="doc-list"></div>
-    <button id="new-doc-btn">+ Novo Documento</button>
-  </div>
-  <div id="main">
-    <input id="doc-name" placeholder="Nome do documento">
-    <textarea id="markdown-input" placeholder="Cole seu Markdown aqui..."></textarea>
-    <div id="controls">
-      <button id="save-btn">Salvar</button>
-      <button id="preview-btn">Visualizar PDF</button>
-      <button id="download-btn">Baixar PDF</button>
+    <div class="container">
+        <header class="header">
+            <h1>📝 Conversor Markdown → PDF</h1>
+            <p>Transforme seu Markdown em PDF com visualização profissional</p>
+        </header>
+
+        <div class="main-content">
+            <div class="panel">
+                <h2>✏️ Editor Markdown</h2>
+                <div class="input-group">
+                    <label for="docName">Nome do Documento:</label>
+                    <input type="text" id="docName" placeholder="Meu Documento" value="Novo Documento">
+                </div>
+                <textarea id="markdownInput" placeholder="# Digite seu Markdown aqui...
+
+## Exemplo de Título
+
+Este é um **texto em negrito** e este é *itálico*.
+
+- Item de lista 1
+- Item de lista 2
+- Item de lista 3
+
+> Esta é uma citação de exemplo.
+
+```javascript
+console.log('Hello World!');
+```
+
+Visite [OpenAI](https://openai.com) para mais informações."></textarea>
+            </div>
+
+            <div class="panel">
+                <h2>👁️ Pré-visualização</h2>
+                <div id="preview" class="preview"></div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="previewPDF()">📄 Visualizar PDF</button>
+            <button class="btn-success" onclick="downloadPDF()">⬇️ Baixar PDF</button>
+            <button class="btn-secondary" onclick="saveDocument()">💾 Salvar Documento</button>
+        </div>
+
+        <div class="panel documents-panel">
+            <h2>📚 Documentos Salvos</h2>
+            <div id="documentList" class="document-list"></div>
+        </div>
     </div>
-  </div>
 
-  <!-- Modal de preview -->
-  <div id="preview-modal">
-    <div id="preview-content"></div>
-  </div>
+    <!-- Modal de Pré-visualização PDF -->
+    <div id="pdfPreviewModal" class="pdf-preview-modal">
+        <div class="pdf-preview-content">
+            <div class="pdf-preview-header">
+                <h3>📖 Pré-visualização do PDF</h3>
+                <button class="close-modal" onclick="closePDFPreview()">✖️ Fechar</button>
+            </div>
+            <div class="pdf-preview-body" id="pdfPreviewBody">
+                <!-- Páginas do PDF serão inseridas aqui -->
+            </div>
+        </div>
+    </div>
 
-  <!-- Dependências -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
-  <script>
-    // ===== Gestão de storage =====
-    const STORAGE_KEY = 'markdownDocs';
-    let docs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    let currentId = null;
+    <script>
+        // Simulação do localStorage (use localStorage real em ambiente de produção)
+        const storage = {};
+        const mockLocalStorage = {
+            setItem: (key, value) => storage[key] = value,
+            getItem: (key) => storage[key] || null,
+            removeItem: (key) => delete storage[key],
+            clear: () => Object.keys(storage).forEach(key => delete storage[key])
+        };
 
-    const docListEl = document.getElementById('doc-list');
-    const nameInput = document.getElementById('doc-name');
-    const mdInput = document.getElementById('markdown-input');
-    const saveBtn = document.getElementById('save-btn');
-    const previewBtn = document.getElementById('preview-btn');
-    const downloadBtn = document.getElementById('download-btn');
-    const newDocBtn = document.getElementById('new-doc-btn');
-    const previewModal = document.getElementById('preview-modal');
-    const previewContent = document.getElementById('preview-content');
+        // Configuração do marked para melhor renderização
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: true,
+            mangle: false
+        });
 
-    function renderDocList() {
-      docListEl.innerHTML = '';
-      docs.forEach(doc => {
-        const div = document.createElement('div');
-        div.className = 'doc-item' + (doc.id === currentId ? ' active' : '');
-        div.innerHTML = `<span>${doc.name}</span>
-          <button title="Excluir" onclick="deleteDoc('${doc.id}')">✕</button>`;
-        div.onclick = () => selectDoc(doc.id);
-        docListEl.appendChild(div);
-      });
-    }
+        let documents = JSON.parse(mockLocalStorage.getItem('markdownDocuments') || '[]');
 
-    function selectDoc(id) {
-      currentId = id;
-      const doc = docs.find(d=> d.id===id);
-      nameInput.value = doc.name;
-      mdInput.value = doc.markdown;
-      renderDocList();
-    }
+        // Atualização em tempo real da pré-visualização
+        const markdownInput = document.getElementById('markdownInput');
+        const preview = document.getElementById('preview');
 
-    function saveCurrent() {
-      const name = nameInput.value.trim() || 'Sem título';
-      const markdown = mdInput.value;
-      if (!currentId) {
-        currentId = Date.now().toString();
-        docs.push({ id: currentId, name, markdown });
-      } else {
-        const doc = docs.find(d=> d.id===currentId);
-        doc.name = name; doc.markdown = markdown;
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
-      renderDocList();
-      alert('Documento salvo!');
-    }
+        markdownInput.addEventListener('input', updatePreview);
 
-    function newDoc() {
-      currentId = null;
-      nameInput.value = '';
-      mdInput.value = '';
-      renderDocList();
-    }
-
-    function deleteDoc(id) {
-      if (!confirm('Confirma exclusão?')) return;
-      docs = docs.filter(d=> d.id!==id);
-      if (id === currentId) newDoc();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
-      renderDocList();
-    }
-
-    // ===== Preview & Download =====
-    function generatePagesContainer() {
-      // container temporário
-      const container = document.createElement('div');
-      container.style.background = '#eee'; // diferente do white
-      // converter markdown em HTML
-      const html = marked.parse(mdInput.value);
-      // fragmentar em páginas
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = html;
-      // criar páginas ao encher altura
-      const pageHeight = 1123 - 80; // altura interna
-      let page = createPage();
-      container.appendChild(page);
-      let cursor = 0;
-
-      Array.from(wrapper.childNodes).forEach(node => {
-        page.content.appendChild(node.cloneNode(true));
-        // se ultrapassar:
-        if (page.content.scrollHeight > pageHeight) {
-          // remove último
-          page.content.removeChild(page.content.lastChild);
-          // nova página
-          page = createPage();
-          container.appendChild(page);
-          page.content.appendChild(node.cloneNode(true));
+        function updatePreview() {
+            const markdownText = markdownInput.value;
+            const htmlContent = marked.parse(markdownText);
+            preview.innerHTML = htmlContent;
         }
-      });
-      return container;
-    }
 
-    function createPage() {
-      const page = document.createElement('div');
-      page.className = 'pdf-page';
-      const label = document.createElement('div');
-      label.className = 'page-label';
-      const idx = document.querySelectorAll('.pdf-page').length + 1;
-      label.textContent = `Página ${idx}`;
-      page.appendChild(label);
-      const content = document.createElement('div');
-      content.style.marginTop = '30px';
-      page.content = content;
-      page.appendChild(content);
-      return page;
-    }
+        function saveDocument() {
+            const name = document.getElementById('docName').value.trim();
+            const content = markdownInput.value;
 
-    function showPreview() {
-      previewContent.innerHTML = '';
-      const pages = generatePagesContainer();
-      previewContent.appendChild(pages);
-      previewModal.style.display = 'flex';
-    }
+            if (!name) {
+                alert('Por favor, digite um nome para o documento.');
+                return;
+            }
 
-    function closePreview() {
-      previewModal.style.display = 'none';
-      previewContent.innerHTML = '';
-    }
+            const existingIndex = documents.findIndex(doc => doc.name === name);
+            
+            if (existingIndex >= 0) {
+                documents[existingIndex] = { name, content, lastModified: new Date().toISOString() };
+            } else {
+                documents.push({ name, content, lastModified: new Date().toISOString() });
+            }
 
-    function downloadPDF() {
-      const pagesContainer = generatePagesContainer();
-      // usar html2pdf: mesmas dimensões
-      html2pdf().set({
-        margin:       10,
-        filename:     (nameInput.value.trim() || 'documento') + '.pdf',
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'pt', format: [794, 1123], orientation: 'portrait' }
-      }).from(pagesContainer).save();
-    }
+            mockLocalStorage.setItem('markdownDocuments', JSON.stringify(documents));
+            renderDocuments();
+            alert('Documento salvo com sucesso!');
+        }
 
-    // ===== Eventos =====
-    saveBtn.onclick = saveCurrent;
-    newDocBtn.onclick = newDoc;
-    previewBtn.onclick = showPreview;
-    downloadBtn.onclick = downloadPDF;
-    previewModal.onclick = e => { if(e.target===previewModal) closePreview(); };
+        function loadDocument(name) {
+            const doc = documents.find(d => d.name === name);
+            if (doc) {
+                document.getElementById('docName').value = doc.name;
+                markdownInput.value = doc.content;
+                updatePreview();
+            }
+        }
 
-    // inicialização
-    renderDocList();
-  </script>
+        function deleteDocument(name) {
+            if (confirm(`Tem certeza que deseja excluir "${name}"?`)) {
+                documents = documents.filter(doc => doc.name !== name);
+                mockLocalStorage.setItem('markdownDocuments', JSON.stringify(documents));
+                renderDocuments();
+            }
+        }
+
+        function renderDocuments() {
+            const container = document.getElementById('documentList');
+            
+            if (documents.length === 0) {
+                container.innerHTML = '<div class="empty-state">Nenhum documento salvo ainda</div>';
+                return;
+            }
+
+            container.innerHTML = documents.map(doc => `
+                <div class="document-card">
+                    <h3>${doc.name}</h3>
+                    <p style="font-size: 12px; color: #718096; margin-bottom: 10px;">
+                        Modificado: ${new Date(doc.lastModified).toLocaleDateString('pt-BR')}
+                    </p>
+                    <div class="document-actions">
+                        <button class="btn-primary" onclick="loadDocument('${doc.name}')">📂 Abrir</button>
+                        <button class="btn-danger" onclick="deleteDocument('${doc.name}')">🗑️ Excluir</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function splitContentIntoPages(htmlContent) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            
+            const pages = [];
+            let currentPage = '';
+            let currentHeight = 0;
+            const maxHeight = 800; // Altura aproximada da página em pixels
+            
+            const elements = Array.from(tempDiv.children);
+            
+            for (const element of elements) {
+                const elementHTML = element.outerHTML;
+                const estimatedHeight = getElementHeight(element);
+                
+                if (currentHeight + estimatedHeight > maxHeight && currentPage !== '') {
+                    pages.push(currentPage);
+                    currentPage = elementHTML;
+                    currentHeight = estimatedHeight;
+                } else {
+                    currentPage += elementHTML;
+                    currentHeight += estimatedHeight;
+                }
+            }
+            
+            if (currentPage) {
+                pages.push(currentPage);
+            }
+            
+            return pages.length > 0 ? pages : [htmlContent];
+        }
+
+        function getElementHeight(element) {
+            const tagName = element.tagName.toLowerCase();
+            const textLength = element.textContent.length;
+            
+            // Estimativas aproximadas de altura baseadas no tipo de elemento
+            const heights = {
+                'h1': 60,
+                'h2': 50,
+                'h3': 40,
+                'h4': 35,
+                'h5': 30,
+                'h6': 25,
+                'p': Math.max(25, textLength / 80 * 20),
+                'ul': element.children.length * 25 + 10,
+                'ol': element.children.length * 25 + 10,
+                'blockquote': Math.max(40, textLength / 60 * 20),
+                'pre': Math.max(60, textLength / 50 * 15),
+                'hr': 20
+            };
+            
+            return heights[tagName] || 25;
+        }
+
+        function previewPDF() {
+            const markdownText = markdownInput.value;
+            if (!markdownText.trim()) {
+                alert('Por favor, digite algum conteúdo Markdown.');
+                return;
+            }
+
+            const htmlContent = marked.parse(markdownText);
+            const pages = splitContentIntoPages(htmlContent);
+            
+            const modal = document.getElementById('pdfPreviewModal');
+            const body = document.getElementById('pdfPreviewBody');
+            
+            body.innerHTML = pages.map((pageContent, index) => `
+                <div class="pdf-page">
+                    <div class="page-number">Página ${index + 1}</div>
+                    ${pageContent}
+                </div>
+            `).join('');
+            
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePDFPreview() {
+            document.getElementById('pdfPreviewModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const markdownText = markdownInput.value;
+            
+            if (!markdownText.trim()) {
+                alert('Por favor, digite algum conteúdo Markdown.');
+                return;
+            }
+
+            const htmlContent = marked.parse(markdownText);
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+                putOnlyUsedFonts: true,
+                floatPrecision: 16
+            });
+
+            // Configurações de margem e layout
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 20;
+            const maxWidth = pageWidth - 2 * margin;
+            let currentY = margin;
+
+            // Parse do HTML para texto simples e aplicação de estilos
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            
+            const elements = Array.from(tempDiv.children);
+            let pageNumber = 1;
+
+            // Adicionar número da página
+            function addPageNumber() {
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Página ${pageNumber}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+                pageNumber++;
+            }
+
+            // Função para quebrar linha se necessário
+            function checkNewPage(additionalHeight = 20) {
+                if (currentY + additionalHeight > pageHeight - margin) {
+                    addPageNumber();
+                    doc.addPage();
+                    currentY = margin;
+                    return true;
+                }
+                return false;
+            }
+
+            for (const element of elements) {
+                const tagName = element.tagName.toLowerCase();
+                const text = element.textContent.trim();
+
+                if (!text) continue;
+
+                checkNewPage();
+
+                // Configurar fonte e tamanho baseado no elemento
+                doc.setTextColor(0);
+                
+                switch (tagName) {
+                    case 'h1':
+                        doc.setFontSize(20);
+                        doc.setFont('helvetica', 'bold');
+                        currentY += 10;
+                        break;
+                    case 'h2':
+                        doc.setFontSize(16);
+                        doc.setFont('helvetica', 'bold');
+                        currentY += 8;
+                        break;
+                    case 'h3':
+                        doc.setFontSize(14);
+                        doc.setFont('helvetica', 'bold');
+                        currentY += 6;
+                        break;
+                    case 'h4':
+                    case 'h5':
+                    case 'h6':
+                        doc.setFontSize(12);
+                        doc.setFont('helvetica', 'bold');
+                        currentY += 5;
+                        break;
+                    case 'blockquote':
+                        doc.setFontSize(11);
+                        doc.setFont('helvetica', 'italic');
+                        doc.setTextColor(100);
+                        break;
+                    case 'pre':
+                    case 'code':
+                        doc.setFontSize(10);
+                        doc.setFont('courier', 'normal');
+                        break;
+                    default:
+                        doc.setFontSize(11);
+                        doc.setFont('helvetica', 'normal');
+                }
+
+                // Quebrar texto em múltiplas linhas se necessário
+                const lines = doc.splitTextToSize(text, maxWidth);
+                
+                // Verificar se todas as linhas cabem na página
+                const totalHeight = lines.length * (doc.getLineHeight() / doc.internal.scaleFactor);
+                checkNewPage(totalHeight);
+
+                // Adicionar texto
+                for (let i = 0; i < lines.length; i++) {
+                    if (checkNewPage()) {
+                        // Se mudou de página, reconfigurar o estilo
+                        switch (tagName) {
+                            case 'h1':
+                                doc.setFontSize(20);
+                                doc.setFont('helvetica', 'bold');
+                                break;
+                            case 'h2':
+                                doc.setFontSize(16);
+                                doc.setFont('helvetica', 'bold');
+                                break;
+                            case 'h3':
+                                doc.setFontSize(14);
+                                doc.setFont('helvetica', 'bold');
+                                break;
+                            case 'h4':
+                            case 'h5':
+                            case 'h6':
+                                doc.setFontSize(12);
+                                doc.setFont('helvetica', 'bold');
+                                break;
+                            case 'blockquote':
+                                doc.setFontSize(11);
+                                doc.setFont('helvetica', 'italic');
+                                doc.setTextColor(100);
+                                break;
+                            case 'pre':
+                            case 'code':
+                                doc.setFontSize(10);
+                                doc.setFont('courier', 'normal');
+                                break;
+                            default:
+                                doc.setFontSize(11);
+                                doc.setFont('helvetica', 'normal');
+                        }
+                    }
+                    
+                    doc.text(lines[i], margin, currentY);
+                    currentY += doc.getLineHeight() / doc.internal.scaleFactor;
+                }
+
+                // Espaçamento após o elemento
+                currentY += tagName.startsWith('h') ? 8 : 5;
+            }
+
+            // Adicionar número na última página
+            addPageNumber();
+
+            // Download do PDF
+            const fileName = document.getElementById('docName').value.trim() || 'documento';
+            doc.save(`${fileName}.pdf`);
+        }
+
+        // Inicialização
+        updatePreview();
+        renderDocuments();
+
+        // Fechar modal ao clicar fora
+        document.getElementById('pdfPreviewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePDFPreview();
+            }
+        });
+
+        // Tecla ESC para fechar modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePDFPreview();
+            }
+        });
+    </script>
 </body>
 </html>

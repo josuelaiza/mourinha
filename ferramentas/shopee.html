@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Otimizador de Rotas de Entrega</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 15px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        h1, h2 {
+            color: #1a1a1a;
+            text-align: center;
+            border-bottom: 2px solid #ff6600;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8em;
+        }
+
+        h2 {
+            font-size: 1.4em;
+            margin-top: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-group input {
+            width: calc(100% - 24px);
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #ff6600;
+            box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.2);
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            background: linear-gradient(90deg, #ff6600, #ff8533);
+            color: white;
+            font-size: 1.1em;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 102, 0, 0.4);
+        }
+
+        #optimize-btn {
+            background: linear-gradient(90deg, #007bff, #0096ff);
+        }
+
+        #optimize-btn:hover {
+            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        #route-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 25px;
+        }
+
+        .route-item {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-left: 6px solid #ff6600;
+            padding: 18px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            transition: box-shadow 0.3s;
+        }
+
+        .route-item:hover {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .route-item h3 {
+            margin: 0 0 12px 0;
+            color: #ff6600;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+        }
+
+        .route-item h3 span {
+            background-color: #ff6600;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 0.9em;
+        }
+
+        .route-item p {
+            margin: 6px 0;
+            font-size: 0.95em;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .route-item .distances {
+            margin-top: 15px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+
+        .distances p {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .distances p span {
+            font-weight: 400;
+            color: #007bff;
+            background-color: rgba(0, 123, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 5px solid #ff6600;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+
+        #location-status {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status-ok {
+            background-color: #e6ffed;
+            color: #2f855a;
+        }
+
+        .status-error {
+            background-color: #fff5f5;
+            color: #c53030;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Otimizador de Rotas</h1>
+        <p id="location-status"></p>
+
+        <div class="input-group">
+            <label for="home-address">Seu Endereço de Partida (Casa/Depósito):</label>
+            <input type="text" id="home-address" placeholder="Ex: Av. Torquato Tapajós, 1000, Manaus, AM">
+        </div>
+
+        <hr>
+
+        <h2>Adicionar Entrega</h2>
+        <div id="delivery-form">
+            <div class="input-group">
+                <label for="recipient-name">Nome do Destinatário:</label>
+                <input type="text" id="recipient-name" placeholder="Ex: Maria Souza">
+            </div>
+            <div class="input-group">
+                <label for="delivery-address">Endereço de Entrega:</label>
+                <input type="text" id="delivery-address" placeholder="Ex: Rua das Pedras, 123, Cidade Nova, Manaus, AM">
+            </div>
+            <div class="input-group">
+                <label for="neighborhood">Bairro:</label>
+                <input type="text" id="neighborhood" placeholder="Ex: Cidade Nova">
+            </div>
+            <button onclick="addAddress()">Adicionar Endereço</button>
+        </div>
+
+        <hr>
+
+        <h2>Lista de Entregas</h2>
+        <button id="optimize-btn" onclick="optimizeRoute()">Otimizar Rota</button>
+        <div id="loader" class="loader">
+            <div class="spinner"></div>
+            <p>Calculando a melhor rota...</p>
+        </div>
+        <ul id="route-list"></ul>
+    </div>
+
+    <script>
+        let addresses = [];
+        let currentLocation = null;
+        let homeLocation = null;
+        // IMPORTANTE: Substitua "SUA_CHAVE_API_AQUI" pela sua chave de API do Google Maps.
+        const apiKey = "SUA_CHAVE_API_AQUI";
+        const locationStatusEl = document.getElementById('location-status');
+
+        function loadGoogleMapsAPI() {
+            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry&callback=initApp`;
+                script.defer = true;
+                script.async = true;
+                document.head.appendChild(script);
+            } else {
+                initApp();
+            }
+        }
+
+        function initApp() {
+            console.log("API do Google Maps carregada.");
+            startGeolocation();
+        }
+
+        function startGeolocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(updatePosition, handleLocationError, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                setLocationStatus("Geolocalização não é suportada por este navegador.", true);
+            }
+        }
+
+        function updatePosition(position) {
+            currentLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            setLocationStatus(`Localização atualizada com sucesso! (Precisão: ${position.coords.accuracy.toFixed(0)}m)`, false);
+            updateDistancesFromCurrentLocation();
+        }
+
+        function handleLocationError(error) {
+            let message = "Ocorreu um erro ao obter sua localização.";
+            if (error.code === error.PERMISSION_DENIED) {
+                message = "Você negou o acesso à localização. Funcionalidades limitadas.";
+            }
+            setLocationStatus(message, true);
+        }
+
+        function setLocationStatus(message, isError) {
+            locationStatusEl.textContent = message;
+            locationStatusEl.className = isError ? 'status-error' : 'status-ok';
+        }
+
+        async function geocodeAddress(address) {
+            const geocoder = new google.maps.Geocoder();
+            return new Promise((resolve, reject) => {
+                geocoder.geocode({ 'address': address }, (results, status) => {
+                    if (status === 'OK') {
+                        resolve(results[0].geometry.location);
+                    } else {
+                        reject(new Error(`Geocodificação falhou para o endereço "${address}": ${status}`));
+                    }
+                });
+            });
+        }
+
+        async function addAddress() {
+            const recipientName = document.getElementById('recipient-name').value;
+            const deliveryAddress = document.getElementById('delivery-address').value;
+            const neighborhood = document.getElementById('neighborhood').value;
+
+            if (!recipientName || !deliveryAddress || !neighborhood) {
+                alert("Por favor, preencha todos os campos da entrega.");
+                return;
+            }
+
+            try {
+                const location = await geocodeAddress(deliveryAddress);
+                addresses.push({
+                    name: recipientName,
+                    address: deliveryAddress,
+                    neighborhood: neighborhood,
+                    location: { lat: location.lat(), lng: location.lng() }
+                });
+                renderAddressList(addresses);
+                document.getElementById('recipient-name').value = '';
+                document.getElementById('delivery-address').value = '';
+                document.getElementById('neighborhood').value = '';
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function renderAddressList(listToRender) {
+            const listEl = document.getElementById('route-list');
+            listEl.innerHTML = '';
+            listToRender.forEach((addr, index) => {
+                const item = document.createElement('li');
+                item.className = 'route-item';
+                item.innerHTML = `<h3><span>${index + 1}</span>${addr.name}</h3>
+                                <p><strong>Endereço:</strong> ${addr.address}</p>
+                                <p><strong>Bairro:</strong> ${addr.neighborhood}</p>`;
+                listEl.appendChild(item);
+            });
+        }
+        
+        async function optimizeRoute() {
+            if (addresses.length < 2) {
+                alert("Adicione pelo menos dois endereços de entrega para otimizar a rota.");
+                return;
+            }
+
+            const homeAddressStr = document.getElementById('home-address').value;
+            if (!homeAddressStr) {
+                alert("Por favor, insira o seu endereço de partida.");
+                return;
+            }
+
+            if (!currentLocation) {
+                alert("Aguardando sua localização. Por favor, certifique-se de que o acesso à localização está permitido e tente novamente.");
+                return;
+            }
+
+            document.getElementById('loader').style.display = 'block';
+
+            try {
+                homeLocation = await geocodeAddress(homeAddressStr);
+                homeLocation = { lat: homeLocation.lat(), lng: homeLocation.lng() };
+
+                let remainingAddresses = [...addresses];
+                let optimizedRoute = [];
+                let currentPoint = currentLocation;
+
+                while (remainingAddresses.length > 0) {
+                    let nearestIndex = -1;
+                    let shortestDistance = Infinity;
+
+                    for (let i = 0; i < remainingAddresses.length; i++) {
+                        const distance = google.maps.geometry.spherical.computeDistanceBetween(
+                            new google.maps.LatLng(currentPoint),
+                            new google.maps.LatLng(remainingAddresses[i].location)
+                        );
+
+                        if (distance < shortestDistance) {
+                            shortestDistance = distance;
+                            nearestIndex = i;
+                        }
+                    }
+
+                    const nearestAddress = remainingAddresses.splice(nearestIndex, 1)[0];
+                    optimizedRoute.push(nearestAddress);
+                    currentPoint = nearestAddress.location;
+                }
+
+                addresses = optimizedRoute;
+                renderOptimizedRoute();
+
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        }
+
+        function renderOptimizedRoute() {
+            const listEl = document.getElementById('route-list');
+            listEl.innerHTML = '';
+            let lastPoint = currentLocation;
+
+            addresses.forEach((addr, index) => {
+                const item = document.createElement('li');
+                item.className = 'route-item';
+                item.setAttribute('data-lat', addr.location.lat);
+                item.setAttribute('data-lng', addr.location.lng);
+
+                const distanceFromCurrent = google.maps.geometry.spherical.computeDistanceBetween(
+                    new google.maps.LatLng(currentLocation),
+                    new google.maps.LatLng(addr.location)
+                );
+                
+                const distanceFromLastStop = google.maps.geometry.spherical.computeDistanceBetween(
+                    new google.maps.LatLng(lastPoint),
+                    new google.maps.LatLng(addr.location)
+                );
+
+                const distanceFromHome = google.maps.geometry.spherical.computeDistanceBetween(
+                    new google.maps.LatLng(homeLocation),
+                    new google.maps.LatLng(addr.location)
+                );
+                
+                let distanceToNextStr = 'Última entrega';
+                if (index < addresses.length - 1) {
+                    const nextAddr = addresses[index + 1];
+                    const distance = google.maps.geometry.spherical.computeDistanceBetween(
+                        new google.maps.LatLng(addr.location),
+                        new google.maps.LatLng(nextAddr.location)
+                    );
+                    distanceToNextStr = `<span>${(distance / 1000).toFixed(2)} km</span>`;
+                }
+
+                item.innerHTML = `
+                    <h3><span>${index + 1}</span>${addr.name}</h3>
+                    <p><strong>Endereço:</strong> ${addr.address}</p>
+                    <p><strong>Bairro:</strong> ${addr.neighborhood}</p>
+                    <div class="distances">
+                        <p>Dist. de onde estou: <span class="dist-current">${(distanceFromCurrent / 1000).toFixed(2)} km</span></p>
+                        <p>Dist. do ponto anterior: <span>${(distanceFromLastStop / 1000).toFixed(2)} km</span></p>
+                        <p>Dist. para a próxima: ${distanceToNextStr}</p>
+                        <p>Dist. da sua casa/partida: <span>${(distanceFromHome / 1000).toFixed(2)} km</span></p>
+                    </div>
+                `;
+                listEl.appendChild(item);
+                lastPoint = addr.location;
+            });
+        }
+
+        function updateDistancesFromCurrentLocation() {
+            if (!currentLocation) return;
+
+            const items = document.querySelectorAll('.route-item[data-lat]');
+            items.forEach(item => {
+                const lat = parseFloat(item.getAttribute('data-lat'));
+                const lng = parseFloat(item.getAttribute('data-lng'));
+
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const distance = google.maps.geometry.spherical.computeDistanceBetween(
+                        new google.maps.LatLng(currentLocation),
+                        new google.maps.LatLng({ lat, lng })
+                    );
+                    const distSpan = item.querySelector('.dist-current');
+                    if (distSpan) {
+                        distSpan.textContent = `${(distance / 1000).toFixed(2)} km`;
+                    }
+                }
+            });
+        }
+
+        window.onload = loadGoogleMapsAPI;
+    </script>
+</body>
+</html>

@@ -71,6 +71,9 @@
             margin-bottom: 8px;
             font-weight: 500;
             color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .input-group {
@@ -93,16 +96,11 @@
             font-size: 1rem;
             transition: border-color 0.2s;
         }
-
-        .input-group .form-control {
-            border-radius: 0 4px 4px 0;
-        }
         
-        .input-group .form-select {
-             border-left: none;
-             border-radius: 0 4px 4px 0;
-             background-color: #f8f9fa;
-        }
+        .input-group .form-control { border-radius: 0; }
+        .input-group .form-control:first-child { border-radius: 4px 0 0 4px; }
+        .input-group span:last-child { border-radius: 0 4px 4px 0; border-right: 1px solid var(--border-color); border-left: none; }
+        .input-group .form-select { border-left: none; border-radius: 0 4px 4px 0; background-color: #f8f9fa; }
 
         .form-control:focus, .form-select:focus {
             outline: none;
@@ -127,137 +125,95 @@
             transition: background-color 0.2s, transform 0.1s;
         }
         
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-light {
-            background-color: #f0f0f0;
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-        }
-        
-        .btn-light:hover {
-            background-color: #e0e0e0;
-        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #2980b9; }
+        .btn-light { background-color: #f0f0f0; color: var(--text-color); border: 1px solid var(--border-color); }
+        .btn-light:hover { background-color: #e0e0e0; }
 
         .results-section, .table-section {
             margin-top: 30px;
             border-top: 1px solid var(--border-color);
             padding-top: 25px;
         }
+        
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .section-title { font-size: 1.1rem; font-weight: 500; color: var(--secondary-color); border-left: 4px solid var(--primary-color); padding-left: 10px; margin: 0; }
+        
+        .view-toggle button { padding: 6px 12px; border: 1px solid var(--border-color); background-color: #f0f0f0; cursor: pointer; font-size: 0.85rem; color: var(--secondary-color); }
+        .view-toggle button:first-child { border-radius: 4px 0 0 4px; border-right: none; }
+        .view-toggle button:last-child { border-radius: 0 4px 4px 0; }
+        .view-toggle button.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .view-toggle button:disabled { background-color: #e9ecef; cursor: not-allowed; color: #adb5bd; }
 
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 20px;
-            color: var(--secondary-color);
-            border-left: 4px solid var(--primary-color);
-            padding-left: 10px;
-        }
-
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-        }
-
-        .result-card {
-            background-color: #f8f9fa;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            padding: 15px;
+        .help-tooltip {
+            position: relative;
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            font-weight: bold;
             text-align: center;
+            cursor: help;
+            line-height: 18px;
         }
-        
-        .result-card.net-value {
-            background-color: #eafaf1;
-            border-color: var(--success-color);
-        }
-
-        .result-card h3 {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--light-text-color);
-            margin-bottom: 8px;
-        }
-
-        .result-card p {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--secondary-color);
-        }
-        
-        .result-card.net-value p {
-            color: var(--success-color);
-        }
-        
-        .calculation-summary {
-            font-size: 0.85rem;
-            color: var(--light-text-color);
-            margin-top: 25px;
-            padding: 12px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            text-align: center;
-            border: 1px solid var(--border-color);
-            word-wrap: break-word;
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            padding: 12px 15px;
+        .help-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 240px;
+            background-color: #555;
+            color: #fff;
             text-align: left;
-            border-bottom: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -120px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .help-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #555 transparent transparent transparent;
+        }
+        .help-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
         }
 
-        thead {
-            background-color: #f8f9fa;
-        }
-
-        th {
-            font-weight: 500;
-            color: var(--secondary-color);
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+        .result-card { background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: 5px; padding: 15px; text-align: center; }
+        .result-card.net-value { background-color: #eafaf1; border-color: var(--success-color); }
+        .result-card h3 { font-size: 0.9rem; font-weight: 500; color: var(--light-text-color); margin-bottom: 8px; }
+        .result-card p { font-size: 1.5rem; font-weight: 700; color: var(--secondary-color); }
+        .result-card.net-value p { color: var(--success-color); }
         
-        tbody tr:hover {
-            background-color: #f1f8ff;
-        }
-        
-        .hidden {
-            display: none;
-        }
+        .calculation-summary { font-size: 0.85rem; color: var(--light-text-color); margin-top: 25px; padding: 12px; background-color: #f8f9fa; border-radius: 4px; text-align: center; border: 1px solid var(--border-color); word-wrap: break-word; }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 0; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        thead { background-color: #f8f9fa; }
+        th { font-weight: 500; color: var(--secondary-color); }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background-color: #f1f8ff; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <div class="header">
-            SIMULADOR DE JUROS COMPOSTOS
-        </div>
+        <div class="header">SIMULADOR DE JUROS COMPOSTOS</div>
         <div class="simulator-body">
             <form id="calculatorForm">
                 <div class="form-grid">
@@ -265,14 +221,14 @@
                         <label for="initialValue">Valor Inicial</label>
                         <div class="input-group">
                             <span>R$</span>
-                            <input type="text" id="initialValue" class="form-control" value="1.000,00">
+                            <input type="text" id="initialValue" class="form-control" value="1.000,00" style="border-radius: 0 4px 4px 0;">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="interestRate">Taxa de Juros</label>
                         <div class="input-group">
-                            <span>%</span>
                             <input type="text" id="interestRate" class="form-control" value="14,90">
+                            <span>%</span>
                             <select id="rateType" class="form-select">
                                 <option value="annual" selected>Anual</option>
                                 <option value="monthly">Mensal</option>
@@ -284,8 +240,9 @@
                         <div class="input-group">
                             <input type="number" id="period" class="form-control" value="30" style="border-radius: 4px 0 0 4px;">
                             <select id="periodType" class="form-select">
-                                <option value="years" selected>Anos</option>
+                                <option value="days" selected>Dias</option>
                                 <option value="months">Meses</option>
+                                <option value="years">Anos</option>
                             </select>
                         </div>
                     </div>
@@ -293,17 +250,26 @@
                         <label for="monthlyInvestment">Investimento Mensal</label>
                         <div class="input-group">
                             <span>R$</span>
-                            <input type="text" id="monthlyInvestment" class="form-control" value="300,00">
+                            <input type="text" id="monthlyInvestment" class="form-control" value="0,00" style="border-radius: 0 4px 4px 0;">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="incomeTax">Imposto de Renda (sobre o lucro)</label>
-                        <select id="incomeTax" class="form-select" style="width:100%; border-radius: 4px;">
-                            <option value="0.150" data-days="721">15% (acima de 720 dias)</option>
-                            <option value="0.175" data-days="361">17,5% (361 a 720 dias)</option>
-                            <option value="0.200" data-days="181">20% (181 a 360 dias)</option>
-                            <option value="0.225" data-days="0">22,5% (até 180 dias)</option>
-                        </select>
+                         <label for="incomeTax">
+                            Imposto de Renda (sobre o lucro)
+                            <span class="help-tooltip">?
+                                <span class="tooltip-text">
+                                    <strong>Tabela Regressiva IR:</strong><br>
+                                    - 22,5% (até 180 dias)<br>
+                                    - 20,0% (de 181 a 360 dias)<br>
+                                    - 17,5% (de 361 a 720 dias)<br>
+                                    - 15,0% (acima de 720 dias)
+                                </span>
+                            </span>
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="incomeTax" class="form-control" value="22,50">
+                            <span style="border-radius: 0 4px 4px 0;">%</span>
+                        </div>
                     </div>
                 </div>
                 <div class="actions">
@@ -337,7 +303,13 @@
                 </div>
 
                 <div class="table-section">
-                    <h2 class="section-title">TABELA DE EVOLUÇÃO</h2>
+                    <div class="table-header">
+                        <h2 class="section-title">TABELA DE EVOLUÇÃO</h2>
+                        <div class="view-toggle">
+                            <button id="viewByPeriodBtn" class="active">Ver por Mês/Ano</button>
+                            <button id="viewByDayBtn">Ver por Dia</button>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table id="evolutionTable">
                             <thead>
@@ -349,8 +321,7 @@
                                     <th>Total Líquido</th>
                                 </tr>
                             </thead>
-                            <tbody id="evolutionTableBody">
-                            </tbody>
+                            <tbody id="evolutionTableBody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -363,6 +334,9 @@
             const form = document.getElementById('calculatorForm');
             const clearBtn = document.getElementById('clearBtn');
             const resultsDiv = document.getElementById('results');
+            const viewByPeriodBtn = document.getElementById('viewByPeriodBtn');
+            const viewByDayBtn = document.getElementById('viewByDayBtn');
+            let currentTableView = 'period';
 
             const parseCurrency = (value) => {
                 if(typeof value !== 'string') value = String(value);
@@ -372,97 +346,136 @@
                 return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
             };
 
-            const getTaxRate = (days) => {
-                if (days > 720) return 0.15;
-                if (days > 360) return 0.175;
-                if (days > 180) return 0.20;
-                return 0.225;
-            };
-
-            const calculate = () => {
-                // --- 1. COLETA E PREPARAÇÃO DOS DADOS ---
+            const generateTable = (finalValues) => {
                 const initialValue = parseCurrency(document.getElementById('initialValue').value);
                 const monthlyInvestment = parseCurrency(document.getElementById('monthlyInvestment').value);
                 let interestRate = parseCurrency(document.getElementById('interestRate').value) / 100;
                 let period = parseInt(document.getElementById('period').value) || 0;
-
                 const rateType = document.getElementById('rateType').value;
                 const periodType = document.getElementById('periodType').value;
+                const incomeTaxRate = parseCurrency(document.getElementById('incomeTax').value) / 100;
+
+                const annualRate = rateType === 'annual' ? interestRate : Math.pow(1 + interestRate, 12) - 1;
                 
-                // Converte a taxa para MENSAL, que é a base do nosso cálculo
-                const monthlyRate = rateType === 'annual' ? Math.pow(1 + interestRate, 1/12) - 1 : interestRate;
-                
-                // Converte o período para MESES
-                const totalMonths = periodType === 'years' ? period * 12 : period;
-                const displayInYears = periodType === 'years';
+                let totalMonths;
+                if (periodType === 'years') totalMonths = period * 12;
+                else if (periodType === 'months') totalMonths = period;
+                else totalMonths = period / 30.417; // Conversão aproximada de dias para meses
+
+                const displayInYears = periodType === 'years' && totalMonths >= 12;
 
                 const tableBody = document.getElementById('evolutionTableBody');
+                const periodHeader = document.getElementById('periodHeader');
                 tableBody.innerHTML = '';
-                document.getElementById('periodHeader').textContent = displayInYears ? 'Ano' : 'Mês';
-                
-                // --- 2. CÁLCULO ITERATIVO MÊS A MÊS ---
-                
-                // Variáveis que vamos atualizar a cada mês no loop
-                let currentBalance = initialValue;
-                let totalInvestedForLoop = initialValue;
-                let totalInterestForLoop = 0;
-                
-                for (let i = 1; i <= totalMonths; i++) {
-                    // 1. Calcula os juros do mês sobre o saldo atual
-                    const monthlyInterest = currentBalance * monthlyRate;
-                    
-                    // 2. Adiciona os juros ao saldo total e ao contador de juros
-                    currentBalance += monthlyInterest;
-                    totalInterestForLoop += monthlyInterest;
-                    
-                    // 3. Adiciona o aporte mensal (se houver)
-                    currentBalance += monthlyInvestment;
-                    totalInvestedForLoop += monthlyInvestment;
-                    
-                    // Lógica para adicionar uma linha na tabela a cada ano (ou mês)
-                    if ((displayInYears && i % 12 === 0) || !displayInYears) {
-                        const periodLabel = displayInYears ? i / 12 : i;
-                        
-                        // O lucro é o saldo bruto menos o que foi investido
-                        const profit = currentBalance - totalInvestedForLoop;
-                        
-                        // Calcula o imposto para o período atual
-                        const daysElapsed = periodLabel * (displayInYears ? 365 : 30.4);
-                        const taxRateForPeriod = getTaxRate(daysElapsed);
-                        const taxAmount = profit > 0 ? profit * taxRateForPeriod : 0;
-                        const netValue = currentBalance - taxAmount;
 
+                if (currentTableView === 'period') {
+                    periodHeader.textContent = displayInYears ? 'Ano' : 'Mês';
+                    const monthlyRate = Math.pow(1 + annualRate, 1/12) - 1;
+
+                    let currentBalance = initialValue;
+                    let totalInvested = initialValue;
+                    
+                    for (let i = 1; i <= Math.ceil(totalMonths); i++) {
+                        let isLastPeriod = (i === Math.ceil(totalMonths));
+
+                        currentBalance += currentBalance * monthlyRate;
+                        currentBalance += monthlyInvestment;
+                        totalInvested += monthlyInvestment;
+                        
+                        if ((displayInYears && i % 12 === 0) || !displayInYears || isLastPeriod) {
+                            const periodLabel = displayInYears ? i / 12 : i;
+                            const profit = isLastPeriod ? finalValues.profit : currentBalance - totalInvested;
+                            const accumulated = isLastPeriod ? finalValues.accumulated : currentBalance;
+                            const taxAmount = profit > 0 ? profit * incomeTaxRate : 0;
+                            const netValue = accumulated - taxAmount;
+
+                            tableBody.innerHTML += `
+                                <tr>
+                                    <td>${periodLabel}</td>
+                                    <td>${formatCurrency(isLastPeriod ? finalValues.invested : totalInvested)}</td>
+                                    <td>${formatCurrency(profit)}</td>
+                                    <td>${formatCurrency(accumulated)}</td>
+                                    <td>${formatCurrency(netValue)}</td>
+                                </tr>`;
+                        }
+                    }
+                } else {
+                    periodHeader.textContent = 'Dia';
+                    const dailyRate = Math.pow(1 + annualRate, 1 / 365) - 1;
+                    
+                    let totalDays;
+                    if (periodType === 'years') totalDays = period * 365;
+                    else if (periodType === 'months') totalDays = Math.round(period * 30.417);
+                    else totalDays = period;
+
+                    let currentBalance = initialValue;
+                    let totalInvested = initialValue;
+                    
+                    for (let d = 1; d <= totalDays; d++) {
+                        let isLastDay = (d === totalDays);
+
+                        currentBalance += currentBalance * dailyRate;
+
+                        if (d % 30 === 0 && d < totalDays && monthlyInvestment > 0) {
+                            currentBalance += monthlyInvestment;
+                            totalInvested += monthlyInvestment;
+                        }
+                        
+                        const profit = isLastDay ? finalValues.profit : currentBalance - totalInvested;
+                        const accumulated = isLastDay ? finalValues.accumulated : currentBalance;
+                        const taxAmount = profit > 0 ? profit * incomeTaxRate : 0;
+                        const netValue = accumulated - taxAmount;
+                        
                         tableBody.innerHTML += `
                             <tr>
-                                <td>${periodLabel}</td>
-                                <td>${formatCurrency(totalInvestedForLoop)}</td>
+                                <td>${d}</td>
+                                <td>${formatCurrency(isLastDay ? finalValues.invested : totalInvested)}</td>
                                 <td>${formatCurrency(profit)}</td>
-                                <td>${formatCurrency(currentBalance)}</td>
+                                <td>${formatCurrency(accumulated)}</td>
                                 <td>${formatCurrency(netValue)}</td>
-                            </tr>
-                        `;
+                            </tr>`;
                     }
                 }
+            };
+
+            const calculate = () => {
+                const initialValue = parseCurrency(document.getElementById('initialValue').value);
+                const monthlyInvestment = parseCurrency(document.getElementById('monthlyInvestment').value);
+                let interestRate = parseCurrency(document.getElementById('interestRate').value) / 100;
+                let period = parseInt(document.getElementById('period').value) || 0;
+                const rateType = document.getElementById('rateType').value;
+                const periodType = document.getElementById('periodType').value;
+                const incomeTaxRate = parseCurrency(document.getElementById('incomeTax').value) / 100;
                 
-                // --- 3. ATUALIZAÇÃO DOS CARDS DE RESULTADO FINAL ---
-                // As variáveis do final do loop contêm os valores finais
-                const finalAccumulatedValue = currentBalance;
-                const finalTotalInvested = totalInvestedForLoop;
-                const finalProfit = totalInterestForLoop;
+                const annualRate = rateType === 'annual' ? interestRate : Math.pow(1 + interestRate, 12) - 1;
                 
-                const totalDays = totalMonths * 30.4;
-                const selectedTaxRate = getTaxRate(totalDays);
-                const finalTaxAmount = finalProfit > 0 ? finalProfit * selectedTaxRate : 0;
+                let totalMonths;
+                if (periodType === 'years') totalMonths = period * 12;
+                else if (periodType === 'months') totalMonths = period;
+                else totalMonths = period / 30.417; // Período em meses para o cálculo final
+
+                if (totalMonths > 60) {
+                    viewByDayBtn.disabled = true;
+                    if(currentTableView === 'day') {
+                        currentTableView = 'period';
+                        viewByPeriodBtn.classList.add('active');
+                        viewByDayBtn.classList.remove('active');
+                    }
+                } else {
+                    viewByDayBtn.disabled = false;
+                }
+                
+                const monthlyRate = Math.pow(1 + annualRate, 1/12) - 1;
+                let finalAccumulatedValue;
+                const fvInitial = initialValue * Math.pow(1 + monthlyRate, totalMonths);
+                const fvMonthly = monthlyInvestment > 0 ? monthlyInvestment * ( (Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate ) : 0;
+                finalAccumulatedValue = fvInitial + fvMonthly;
+                
+                const finalTotalInvested = initialValue + (monthlyInvestment * Math.ceil(totalMonths));
+                const finalProfit = finalAccumulatedValue - finalTotalInvested;
+                
+                const finalTaxAmount = finalProfit > 0 ? finalProfit * incomeTaxRate : 0;
                 const finalNetValue = finalAccumulatedValue - finalTaxAmount;
-                
-                // Sincroniza o seletor de IR com a alíquota calculada
-                const taxOptions = document.getElementById('incomeTax').options;
-                for(let opt of taxOptions) {
-                    if(parseFloat(opt.value) === selectedTaxRate) {
-                        opt.selected = true;
-                        break;
-                    }
-                }
 
                 document.getElementById('totalInterestResult').textContent = formatCurrency(finalProfit);
                 document.getElementById('totalInvestedResult').textContent = formatCurrency(finalTotalInvested);
@@ -475,50 +488,64 @@
                     Valor Inicial: ${formatCurrency(initialValue)} | 
                     Invest. Mensal: ${formatCurrency(monthlyInvestment)} | 
                     Taxa: ${(interestRate * 100).toFixed(2).replace('.',',')}% (${rateType === 'annual' ? 'Anual' : 'Mensal'}) | 
-                    Período: ${period} ${periodType === 'years' ? 'Anos' : 'Meses'}
+                    Período: ${period} ${periodType === 'years' ? 'Anos' : (periodType === 'months' ? 'Meses' : 'Dias')}
                 `;
                 
                 resultsDiv.classList.remove('hidden');
+                generateTable({
+                    accumulated: finalAccumulatedValue,
+                    invested: finalTotalInvested,
+                    profit: finalProfit
+                });
             };
-
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
+            
+            form.addEventListener('submit', (e) => { e.preventDefault(); calculate(); });
+            clearBtn.addEventListener('click', () => { form.reset(); resultsDiv.classList.add('hidden'); });
+            
+            viewByPeriodBtn.addEventListener('click', () => {
+                currentTableView = 'period';
+                viewByPeriodBtn.classList.add('active');
+                viewByDayBtn.classList.remove('active');
                 calculate();
             });
 
-            clearBtn.addEventListener('click', function() {
-                form.reset();
-                resultsDiv.classList.add('hidden');
-                document.getElementById('evolutionTableBody').innerHTML = '';
-                document.getElementById('calcSummary').innerHTML = '';
+            viewByDayBtn.addEventListener('click', () => {
+                currentTableView = 'day';
+                viewByDayBtn.classList.add('active');
+                viewByPeriodBtn.classList.remove('active');
+                calculate();
             });
             
-            // Adiciona máscara de formatação aos campos de moeda
-            const currencyInputs = ['initialValue', 'monthlyInvestment'];
-            currencyInputs.forEach(id => {
-                const input = document.getElementById(id);
-                input.addEventListener('input', (e) => {
-                    let value = e.target.value.replace(/\D/g, '');
-                    value = (parseInt(value) / 100).toFixed(2).toString();
-                    value = value.replace('.', ',');
-                    value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-                    e.target.value = value;
-                });
-            });
-            
-            // Adiciona máscara ao campo de taxa
-            const rateInput = document.getElementById('interestRate');
-            rateInput.addEventListener('input', (e) => {
-                 let value = e.target.value.replace(/\D/g, '');
-                 if(value.length > 2){
-                    value = value.slice(0, value.length - 2) + ',' + value.slice(value.length - 2);
-                 } else if (value.length > 0) {
-                     value = '0,' + ('00' + value).slice(-2);
-                 }
-                 e.target.value = value;
+            // CORRIGIDO: Nova função de máscara para porcentagens
+            const applyPercentageMask = (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value === '') {
+                    e.target.value = '0,00';
+                    return;
+                }
+                value = parseInt(value, 10).toString(); // Remove zeros à esquerda
+                
+                if (value.length < 3) {
+                    value = value.padStart(3, '0');
+                }
+                
+                value = value.slice(0, value.length - 2) + ',' + value.slice(value.length - 2);
+                e.target.value = value;
+            };
+
+            const applyCurrencyMask = (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value === '') value = '0';
+                const numberValue = parseInt(value, 10) / 100;
+                e.target.value = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numberValue);
+            };
+
+            document.getElementById('interestRate').addEventListener('input', applyPercentageMask);
+            document.getElementById('incomeTax').addEventListener('input', applyPercentageMask);
+            document.querySelectorAll('#initialValue, #monthlyInvestment').forEach(input => {
+                input.addEventListener('input', applyCurrencyMask);
             });
 
-            // Roda o cálculo inicial com os valores padrão
             calculate();
         });
     </script>

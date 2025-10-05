@@ -36,9 +36,10 @@
 
         .form-group, .paste-group { margin-bottom: 15px; }
         .form-group label, .paste-group label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary-color); }
-        .form-group input, .paste-group textarea { width: 100%; padding: 12px; border: 1px solid var(--light-gray-color); border-radius: 5px; font-size: 1em; font-family: var(--font-family); }
-        .form-group input:focus, .paste-group textarea:focus { outline: none; border-color: var(--primary-color); }
+        .form-group input, .paste-group textarea, #bulk-paste-area { width: 100%; padding: 12px; border: 1px solid var(--light-gray-color); border-radius: 5px; font-size: 1em; font-family: var(--font-family); }
+        .form-group input:focus, .paste-group textarea:focus, #bulk-paste-area:focus { outline: none; border-color: var(--primary-color); }
         .paste-group textarea { resize: vertical; min-height: 60px; }
+        #bulk-paste-area { min-height: 200px; resize: vertical; }
 
         .btn { display: inline-block; padding: 12px 20px; font-size: 1em; font-weight: bold; text-align: center; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s, transform 0.2s; text-decoration: none; color: var(--white-color); }
         .btn:hover:not(:disabled) { transform: translateY(-2px); }
@@ -65,7 +66,7 @@
         .delete-btn svg { fill: var(--danger-color); }
         
         .modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; }
-        .modal-content { background-color: var(--white-color); padding: 25px; border-radius: 10px; text-align: center; max-width: 90%; width: 450px; animation: fadeIn 0.3s; }
+        .modal-content { background-color: var(--white-color); padding: 25px; border-radius: 10px; text-align: center; max-width: 90%; width: 500px; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .modal h2 { margin-bottom: 15px; color: var(--primary-color); }
         #lucky-number-display, #winner-name { font-size: 2.5em; font-weight: bold; color: var(--primary-color); margin: 15px 0; }
@@ -97,8 +98,8 @@
 
         <main>
             <div class="paste-group">
-                <label for="paste-area">Preenchimento Rápido</label>
-                <textarea id="paste-area" placeholder="Cole o nome e o CPF aqui..."></textarea>
+                <label for="paste-area">Preenchimento Rápido (Individual)</label>
+                <textarea id="paste-area" placeholder="Cole o nome e o CPF de uma pessoa aqui..."></textarea>
                 <button id="parse-btn" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Analisar e Preencher</button>
             </div>
             
@@ -119,6 +120,7 @@
             <div class="main-actions">
                 <button id="draw-btn" class="btn btn-success">Realizar Sorteio</button>
                 <button id="toggle-list-btn" class="btn btn-secondary">Visualizar Lista</button>
+                <button id="bulk-add-btn" class="btn btn-secondary">Cadastro em Lote</button>
             </div>
             
             <section id="participant-list">
@@ -137,14 +139,13 @@
     <div id="winner-modal" class="modal"><div class="modal-content"><h2>🎉 Parabéns ao Vencedor! 🎉</h2><div id="winner-name"></div><div id="winner-details"></div><button class="btn btn-primary close-modal-btn">Fechar</button></div></div>
     <div id="edit-modal" class="modal"><div class="modal-content"><h2>Editar Participante</h2><form id="edit-form"><input type="hidden" id="edit-index"><div class="form-group" style="text-align: left;"><label for="edit-fullName">Nome Completo</label><input type="text" id="edit-fullName" required></div><div class="form-group" style="text-align: left;"><label for="edit-cpf">CPF</label><input type="tel" id="edit-cpf" required pattern="\d{11}"></div><button type="submit" class="btn btn-primary">Salvar</button><button type="button" class="btn btn-secondary close-modal-btn" style="margin-top: 10px;">Cancelar</button></form></div></div>
     <div id="winners-list-modal" class="modal"><div class="modal-content"><h2>🏆 Lista de Sorteados 🏆</h2><div id="winners-list-container"></div><button class="btn btn-primary close-modal-btn" style="margin-top: 20px;">Fechar</button></div></div>
+    <div id="bulk-add-modal" class="modal"><div class="modal-content"><h2>Cadastro de Múltiplos Participantes</h2><p style="margin-bottom:15px; text-align:left;">Cole a lista abaixo (um participante por linha). O sistema identificará o nome e CPF em cada linha.</p><textarea id="bulk-paste-area"></textarea><div style="display:flex; gap:10px; margin-top:15px;"><button id="process-bulk-list-btn" class="btn btn-success" style="flex-grow:1;">Processar Lista</button><button type="button" class="btn btn-secondary close-modal-btn" style="flex-grow:1;">Cancelar</button></div></div></div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Armazenamento
         let participants = JSON.parse(localStorage.getItem('participants')) || [];
         let winners = JSON.parse(localStorage.getItem('winners')) || [];
 
-        // Elementos DOM
         const form = document.getElementById('participant-form');
         const fullNameInput = document.getElementById('fullName');
         const cpfInput = document.getElementById('cpf');
@@ -152,6 +153,7 @@
         const parseBtn = document.getElementById('parse-btn');
         const drawBtn = document.getElementById('draw-btn');
         const toggleListBtn = document.getElementById('toggle-list-btn');
+        const bulkAddBtn = document.getElementById('bulk-add-btn');
         const participantListSection = document.getElementById('participant-list');
         const listContainer = document.getElementById('list-container');
         const searchBox = document.getElementById('search-box');
@@ -166,7 +168,10 @@
         const winnerModal = document.getElementById('winner-modal');
         const editModal = document.getElementById('edit-modal');
         const winnersListModal = document.getElementById('winners-list-modal');
-        
+        const bulkAddModal = document.getElementById('bulk-add-modal');
+        const bulkPasteArea = document.getElementById('bulk-paste-area');
+        const processBulkListBtn = document.getElementById('process-bulk-list-btn');
+
         const saveParticipants = () => { localStorage.setItem('participants', JSON.stringify(participants)); updateButtonStates(); };
         const saveWinners = () => localStorage.setItem('winners', JSON.stringify(winners));
         const updateButtonStates = () => drawBtn.disabled = participants.length === 0;
@@ -204,15 +209,8 @@
             document.querySelectorAll('.edit-btn').forEach(b => b.onclick = e => openEditModal(e.currentTarget.getAttribute('data-index')));
         };
         
-        // NOVA FUNÇÃO: Análise Inteligente de Texto
-        parseBtn.addEventListener('click', () => {
-            const text = pasteArea.value.trim();
-            if (!text) return;
-
-            let extractedName = '';
-            let extractedCpf = '';
-
-            // 1. Tenta encontrar um CPF (com ou sem formatação)
+        const parseTextToNameAndCpf = (text) => {
+            let extractedName = '', extractedCpf = '';
             const cpfRegex = /\b(\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\d{11})\b/;
             const cpfMatch = text.match(cpfRegex);
             let restOfString = text;
@@ -221,23 +219,25 @@
                 const potentialCpf = cpfMatch[0].replace(/\D/g, '');
                 if (potentialCpf.length === 11) {
                     extractedCpf = potentialCpf;
-                    restOfString = text.replace(cpfMatch[0], ''); // Remove o CPF do texto original
+                    restOfString = text.replace(cpfMatch[0], '');
                 }
             }
-
-            // 2. O que sobrar é o nome. Limpa o texto restante.
             if (restOfString) {
-                // Remove as palavras "nome", "cpf", dois pontos e excesso de espaços
                 extractedName = restOfString.replace(/nome|cpf|:/ig, '').replace(/\s+/g, ' ').trim();
             }
-            
-            // 3. Valida e preenche os campos
-            if (extractedName && extractedCpf) {
-                fullNameInput.value = extractedName;
-                cpfInput.value = extractedCpf;
-                pasteArea.value = ''; // Limpa a área após o sucesso
+            return { name: extractedName, cpf: extractedCpf };
+        };
+
+        parseBtn.addEventListener('click', () => {
+            const text = pasteArea.value.trim();
+            if (!text) return;
+            const { name, cpf } = parseTextToNameAndCpf(text);
+            if (name && cpf) {
+                fullNameInput.value = name;
+                cpfInput.value = cpf;
+                pasteArea.value = '';
             } else {
-                alert('Não foi possível identificar um nome e um CPF válidos no texto. Por favor, verifique e tente novamente.');
+                alert('Não foi possível identificar um nome e um CPF válidos no texto.');
             }
         });
 
@@ -249,21 +249,61 @@
             if (participants.some(p => p.cpf === cpf)) return alert('CPF já cadastrado.');
             const newParticipant = { luckyNumber: (participants.length > 0 ? Math.max(...participants.map(p => p.luckyNumber)) : 0) + 1, name, cpf };
             participants.push(newParticipant);
-            saveParticipants();
-            renderList();
+            saveParticipants(); renderList();
             document.getElementById('lucky-number-display').textContent = newParticipant.luckyNumber;
             luckyNumberModal.style.display = 'flex';
-            form.reset();
-            fullNameInput.focus();
+            form.reset(); fullNameInput.focus();
+        });
+        
+        const closeModal = () => modals.forEach(m => m.style.display = 'none');
+        document.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
+
+        bulkAddBtn.addEventListener('click', () => bulkAddModal.style.display = 'flex');
+
+        processBulkListBtn.addEventListener('click', () => {
+            const text = bulkPasteArea.value.trim();
+            if (!text) return;
+
+            const lines = text.split('\n');
+            let newParticipants = [];
+            let errorLines = [];
+            const existingCpfs = new Set(participants.map(p => p.cpf));
+            
+            lines.forEach((line, index) => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return;
+                
+                const { name, cpf } = parseTextToNameAndCpf(trimmedLine);
+
+                if (name && cpf && !existingCpfs.has(cpf)) {
+                    newParticipants.push({ name, cpf });
+                    existingCpfs.add(cpf); // Evita duplicados na mesma lista
+                } else {
+                    errorLines.push(index + 1);
+                }
+            });
+
+            if (newParticipants.length > 0) {
+                let lastLuckyNumber = participants.length > 0 ? Math.max(...participants.map(p => p.luckyNumber)) : 0;
+                newParticipants.forEach(p => {
+                    lastLuckyNumber++;
+                    participants.push({ ...p, luckyNumber: lastLuckyNumber });
+                });
+                saveParticipants();
+                renderList();
+            }
+
+            let summaryMessage = `${newParticipants.length} participante(s) adicionado(s) com sucesso.\n`;
+            if (errorLines.length > 0) {
+                summaryMessage += `${errorLines.length} linha(s) não puderam ser processadas (dados inválidos ou CPF duplicado). Linhas: ${errorLines.join(', ')}.`;
+            }
+            alert(summaryMessage);
+            closeModal();
+            bulkPasteArea.value = '';
         });
 
         menuToggle.addEventListener('click', () => menuPanel.classList.toggle('open'));
-        document.addEventListener('click', e => {
-            if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) menuPanel.classList.remove('open');
-        });
-
-        const closeModal = () => modals.forEach(m => m.style.display = 'none');
-        document.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
+        document.addEventListener('click', e => { if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) menuPanel.classList.remove('open'); });
 
         const openEditModal = (index) => {
             const p = participants[index];
@@ -280,8 +320,7 @@
             const newCpf = document.getElementById('edit-cpf').value.replace(/\D/g, '');
             if (!newName || newCpf.length !== 11) return alert('Verifique os dados.');
             if (participants.some((p, i) => p.cpf === newCpf && i != index)) return alert('CPF já pertence a outro participante.');
-            participants[index].name = newName;
-            participants[index].cpf = newCpf;
+            participants[index].name = newName; participants[index].cpf = newCpf;
             saveParticipants(); renderList(); closeModal();
         });
 
@@ -295,25 +334,17 @@
         drawBtn.addEventListener('click', () => {
             const excludeWinners = confirm("Deseja excluir participantes já sorteados dos próximos sorteios?");
             const drawingPool = excludeWinners ? participants.filter(p => !winners.includes(p.luckyNumber)) : [...participants];
-
             if (drawingPool.length === 0) return alert(excludeWinners ? "Todos os participantes já foram sorteados!" : "Não há participantes para sortear.");
-            
             document.querySelectorAll('.winner-highlight').forEach(el => el.classList.remove('winner-highlight'));
             const winner = drawingPool[Math.floor(Math.random() * drawingPool.length)];
-            
             if (!winners.includes(winner.luckyNumber)) { winners.push(winner.luckyNumber); saveWinners(); }
-
             document.getElementById('winner-name').textContent = `#${winner.luckyNumber} - ${winner.name}`;
             document.getElementById('winner-details').textContent = `CPF: ${winner.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}`;
             winnerModal.style.display = 'flex';
-            
             if (participantListSection.style.display !== 'block') toggleListBtn.click();
             setTimeout(() => {
                 const winnerElement = document.getElementById(`participant-${winner.luckyNumber}`);
-                if (winnerElement) {
-                    winnerElement.classList.add('winner-highlight');
-                    winnerElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                if (winnerElement) { winnerElement.classList.add('winner-highlight'); winnerElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
             }, 100);
         });
 
@@ -333,19 +364,8 @@
             winnersListModal.style.display = 'flex';
         });
 
-        deleteAllBtn.addEventListener('click', () => {
-            if (confirm('APAGAR LISTA DE PARTICIPANTES?\n\nA lista de sorteados será mantida. Deseja continuar?')) {
-                participants = []; saveParticipants(); renderList(); menuPanel.classList.remove('open');
-            }
-        });
-        
-        resetAllBtn.addEventListener('click', () => {
-            if (confirm('RESETAR TUDO?\n\nIsso apagará a lista de participantes E a lista de sorteados. A ação não pode ser desfeita. Continuar?')) {
-                participants = []; winners = [];
-                localStorage.removeItem('participants'); localStorage.removeItem('winners');
-                renderList(); menuPanel.classList.remove('open');
-            }
-        });
+        deleteAllBtn.addEventListener('click', () => { if (confirm('APAGAR LISTA DE PARTICIPANTES?\n\nA lista de sorteados será mantida. Deseja continuar?')) { participants = []; saveParticipants(); renderList(); menuPanel.classList.remove('open'); } });
+        resetAllBtn.addEventListener('click', () => { if (confirm('RESETAR TUDO?\n\nIsso apagará a lista de participantes E a lista de sorteados. A ação não pode ser desfeita. Continuar?')) { participants = []; winners = []; localStorage.removeItem('participants'); localStorage.removeItem('winners'); renderList(); menuPanel.classList.remove('open'); } });
 
         importFileInput.addEventListener('change', (e) => {
             menuPanel.classList.remove('open'); const file = e.target.files[0]; if (!file) return;
@@ -362,17 +382,8 @@
         });
 
         const createDownloadLink = (data, type) => URL.createObjectURL(new Blob([data], { type }));
-        document.getElementById('download-json-btn').addEventListener('click', (e) => {
-            if(participants.length === 0) { e.preventDefault(); return alert("Lista vazia."); }
-            e.currentTarget.href = createDownloadLink(JSON.stringify(participants, null, 2), 'application/json');
-            e.currentTarget.download = `sorteio_${new Date().toISOString().slice(0,10)}.json`;
-        });
-        document.getElementById('download-csv-btn').addEventListener('click', (e) => {
-            if(participants.length === 0) { e.preventDefault(); return alert("Lista vazia."); }
-            let csv = "NumeroDaSorte;NomeCompleto;CPF\n" + participants.map(p => `${p.luckyNumber};"${p.name}";"${p.cpf}"`).join("\n");
-            e.currentTarget.href = createDownloadLink(csv, 'text/csv;charset=utf-8;');
-            e.currentTarget.download = `sorteio_${new Date().toISOString().slice(0,10)}.csv`;
-        });
+        document.getElementById('download-json-btn').addEventListener('click', (e) => { if(participants.length === 0) { e.preventDefault(); return alert("Lista vazia."); } e.currentTarget.href = createDownloadLink(JSON.stringify(participants, null, 2), 'application/json'); e.currentTarget.download = `sorteio_${new Date().toISOString().slice(0,10)}.json`; });
+        document.getElementById('download-csv-btn').addEventListener('click', (e) => { if(participants.length === 0) { e.preventDefault(); return alert("Lista vazia."); } let csv = "NumeroDaSorte;NomeCompleto;CPF\n" + participants.map(p => `${p.luckyNumber};"${p.name}";"${p.cpf}"`).join("\n"); e.currentTarget.href = createDownloadLink(csv, 'text/csv;charset=utf-8;'); e.currentTarget.download = `sorteio_${new Date().toISOString().slice(0,10)}.csv`; });
         
         searchBox.addEventListener('input', renderList);
         updateButtonStates();

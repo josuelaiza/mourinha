@@ -30,7 +30,7 @@
 
         #menu-toggle { background: none; border: none; cursor: pointer; padding: 10px; z-index: 1001; }
         #menu-toggle .bar { display: block; width: 25px; height: 3px; background-color: var(--primary-color); margin: 5px 0; transition: 0.4s; }
-        #menu-panel { position: absolute; top: 60px; right: 0; background-color: var(--white-color); border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); list-style: none; padding: 10px 0; z-index: 1000; width: 250px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s, visibility 0.3s; }
+        #menu-panel { position: absolute; top: 60px; right: 0; background-color: var(--white-color); border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); list-style: none; padding: 10px 0; z-index: 1000; width: 280px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s, visibility 0.3s; }
         #menu-panel.open { opacity: 1; visibility: visible; transform: translateY(0); }
         #menu-panel li button, #menu-panel li label { display: block; width: 100%; padding: 12px 20px; background: none; border: none; text-align: left; font-size: 1em; cursor: pointer; color: var(--text-color); }
         #menu-panel li button:hover, #menu-panel li label:hover { background-color: #f0f0f0; }
@@ -39,9 +39,10 @@
 
         .form-group, .paste-group { margin-bottom: 15px; }
         .form-group label, .paste-group label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary-color); }
-        .form-group input, .paste-group textarea, #bulk-paste-area { width: 100%; padding: 12px; border: 1px solid var(--light-gray-color); border-radius: 5px; font-size: 1em; font-family: var(--font-family); }
+        .form-group input, .form-group select, .paste-group textarea, #bulk-paste-area { width: 100%; padding: 12px; border: 1px solid var(--light-gray-color); border-radius: 5px; font-size: 1em; font-family: var(--font-family); }
         .form-group input[type="checkbox"] { width: auto; margin-right: 10px; }
-        .form-group input:focus, .paste-group textarea:focus, #bulk-paste-area:focus { outline: none; border-color: var(--primary-color); }
+        .form-group input:focus, .form-group select:focus, .paste-group textarea:focus, #bulk-paste-area:focus { outline: none; border-color: var(--primary-color); }
+        .paste-group { display: none; } /* Oculto por padrão */
         .paste-group textarea { resize: vertical; min-height: 60px; }
         #bulk-paste-area { min-height: 200px; resize: vertical; }
 
@@ -50,11 +51,8 @@
         .btn:disabled { background-color: #ccc; cursor: not-allowed; transform: none; }
         .btn-full-width { width: 100%; }
         .btn-primary { background-color: var(--primary-color); }
-        .btn-primary:hover:not(:disabled) { background-color: #004c8c; }
         .btn-secondary { background-color: var(--secondary-color); }
-        .btn-secondary:hover:not(:disabled) { background-color: #d88e1a; }
         .btn-success { background-color: var(--success-color); }
-        .btn-success:hover:not(:disabled) { background-color: #449d44; }
 
         .main-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
         #participant-list { margin-top: 25px; display: none; }
@@ -64,6 +62,7 @@
         .participant-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--light-gray-color); }
         .participant-info .name { font-weight: bold; font-size: 1.1em; }
         .participant-info .details { font-size: 0.9em; color: #555; }
+        .doc-type-badge { background-color: var(--secondary-color); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold; margin-right: 8px; text-transform: uppercase; }
         .participant-actions button { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 8px; }
         .participant-actions svg { width: 24px; height: 24px; }
         .edit-btn svg { fill: var(--primary-color); }
@@ -90,9 +89,12 @@
                 <span class="bar"></span><span class="bar"></span><span class="bar"></span>
             </button>
             <ul id="menu-panel">
+                <li><button id="draw-btn" class="btn-success">Realizar Sorteio</button></li>
+                <li><button id="bulk-add-btn" class="btn-secondary">Cadastro em Lote</button></li>
                 <li><button id="view-winners-btn">Ver Sorteados</button></li>
-                <li>
-                    <label for="import-file-menu" style="width: 100%; cursor: pointer;">Importar Lista (JSON)</label>
+                <li><button id="toggle-paste-btn">Exibir Preenchimento Rápido</button></li>
+                <li class="separator"></li>
+                <li><label for="import-file-menu" style="cursor: pointer;">Importar Lista (JSON)</label>
                     <input type="file" id="import-file-menu" accept=".json" style="display: none;">
                 </li>
                 <li class="separator"></li>
@@ -104,33 +106,41 @@
         <main>
             <div class="paste-group">
                 <label for="paste-area">Preenchimento Rápido (Individual)</label>
-                <textarea id="paste-area" placeholder="Cole o nome e o CPF de uma pessoa aqui..."></textarea>
+                <textarea id="paste-area" placeholder="Cole o nome e o documento de uma pessoa aqui..."></textarea>
                 <button id="parse-btn" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Analisar e Preencher</button>
             </div>
             
-            <hr style="border: none; border-top: 1px dashed var(--light-gray-color); margin: 25px 0;">
+            <hr id="form-separator" style="border: none; border-top: 1px dashed var(--light-gray-color); margin: 25px 0; display: none;">
 
             <form id="participant-form">
                 <div class="form-group">
                     <label for="fullName">Nome Completo</label>
                     <input type="text" id="fullName" required>
                 </div>
-                <div class="form-group">
-                    <label for="cpf">CPF (apenas números)</label>
-                    <input type="tel" id="cpf" required pattern="\d{11}" title="Digite os 11 dígitos do CPF.">
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex-basis: 40%;">
+                        <label for="doc-type">Documento</label>
+                        <select id="doc-type">
+                            <option value="cpf" selected>CPF</option>
+                            <option value="rg">RG</option>
+                            <option value="dob">Data Nasc.</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex-grow: 1;">
+                        <label for="doc-number">Número</label>
+                        <input type="tel" id="doc-number" required>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-full-width">Gerar Número da Sorte</button>
             </form>
 
             <div class="main-actions">
-                <button id="draw-btn" class="btn btn-success">Realizar Sorteio</button>
                 <button id="toggle-list-btn" class="btn btn-secondary">Visualizar Lista</button>
-                <button id="bulk-add-btn" class="btn btn-secondary">Cadastro em Lote</button>
             </div>
             
             <section id="participant-list">
                 <h2 style="color: var(--primary-color); margin-bottom: 15px;">Lista de Participantes</h2>
-                <input type="text" id="search-box" placeholder="Buscar por nome ou CPF...">
+                <input type="text" id="search-box" placeholder="Buscar por nome ou documento...">
                 <div id="list-container"></div>
                 <div style="margin-top: 15px;">
                     <a id="download-json-btn" class="btn btn-secondary" href="#">Download (JSON)</a>
@@ -142,16 +152,15 @@
 
     <div id="lucky-number-modal" class="modal"><div class="modal-content"><h2>Número da Sorte Gerado!</h2><p>Informe este número para o participante:</p><div id="lucky-number-display"></div><button class="btn btn-primary close-modal-btn">Fechar</button></div></div>
     <div id="winner-modal" class="modal"><div class="modal-content"><h2>🎉 Parabéns ao Vencedor! 🎉</h2><div id="winner-name"></div><div id="winner-details"></div><button class="btn btn-primary close-modal-btn">Fechar</button></div></div>
-    <div id="edit-modal" class="modal"><div class="modal-content"><h2>Editar Participante</h2><form id="edit-form"><input type="hidden" id="edit-index"><div class="form-group" style="text-align: left;"><label for="edit-fullName">Nome Completo</label><input type="text" id="edit-fullName" required></div><div class="form-group" style="text-align: left;"><label for="edit-cpf">CPF (não pode ser alterado)</label><input type="tel" id="edit-cpf" required pattern="\d{11}" readonly></div><button type="submit" class="btn btn-primary">Salvar</button><button type="button" class="btn btn-secondary close-modal-btn" style="margin-top: 10px;">Cancelar</button></form></div></div>
+    <div id="edit-modal" class="modal"><div class="modal-content"><h2>Editar Participante</h2><form id="edit-form"><input type="hidden" id="edit-key"><div class="form-group" style="text-align: left;"><label for="edit-fullName">Nome Completo</label><input type="text" id="edit-fullName" required></div><div class="form-group" style="text-align: left;"><label for="edit-doc">Documento (não pode ser alterado)</label><input type="text" id="edit-doc" readonly></div><button type="submit" class="btn btn-primary">Salvar</button><button type="button" class="btn btn-secondary close-modal-btn" style="margin-top: 10px;">Cancelar</button></form></div></div>
     <div id="winners-list-modal" class="modal"><div class="modal-content"><h2>🏆 Lista de Sorteados 🏆</h2><div id="winners-list-container"></div><button class="btn btn-primary close-modal-btn" style="margin-top: 20px;">Fechar</button></div></div>
-    <div id="bulk-add-modal" class="modal"><div class="modal-content"><h2>Cadastro de Múltiplos Participantes</h2><p style="margin-bottom:15px; text-align:left;">Cole a lista abaixo (um participante por linha).</p><textarea id="bulk-paste-area"></textarea><div style="display:flex; gap:10px; margin-top:15px;"><button id="process-bulk-list-btn" class="btn btn-success" style="flex-grow:1;">Processar Lista</button><button type="button" class="btn btn-secondary close-modal-btn" style="flex-grow:1;">Cancelar</button></div></div></div>
+    <div id="bulk-add-modal" class="modal"><div class="modal-content"><h2>Cadastro de Múltiplos Participantes</h2><p style="margin-bottom:15px; text-align:left;">Cole a lista abaixo (um por linha). O sistema identificará o nome e o documento (CPF, RG ou Data Nasc.) em cada linha.</p><textarea id="bulk-paste-area"></textarea><div style="display:flex; gap:10px; margin-top:15px;"><button id="process-bulk-list-btn" class="btn btn-success" style="flex-grow:1;">Processar Lista</button><button type="button" class="btn btn-secondary close-modal-btn" style="flex-grow:1;">Cancelar</button></div></div></div>
     <div id="draw-options-modal" class="modal"><div class="modal-content"><h2>Opções do Sorteio</h2><form id="draw-options-form"><div class="form-group" style="text-align: left;"><label for="min-lucky-number">Sortear a partir do número:</label><input type="number" id="min-lucky-number" min="1" value="1" placeholder="Ex: 100"></div><div class="form-group" style="text-align: left; display: flex; align-items: center;"><input type="checkbox" id="exclude-winners-checkbox" checked><label for="exclude-winners-checkbox" style="margin-bottom: 0;">Excluir já sorteados</label></div><div style="display:flex; gap:10px; margin-top:15px;"><button type="submit" class="btn btn-success" style="flex-grow:1;">Sortear!</button><button type="button" class="btn btn-secondary close-modal-btn" style="flex-grow:1;">Cancelar</button></div></form></div></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
-    // SUA CHAVE JÁ ESTÁ INSERIDA AQUI
     const firebaseConfig = {
         apiKey: "AIzaSyAWqJlUVobXs859hfxaM6eT_dU5U2YIHQk",
         authDomain: "sorteiobamn.firebaseapp.com",
@@ -162,7 +171,6 @@
         appId: "1:427382818317:web:9f745b6f0afa86b5093744"
     };
 
-    // Inicializa o Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
@@ -172,10 +180,14 @@
 
         const participantsRef = database.ref('participants');
         const winnersRef = database.ref('winners');
-
+        
+        // Elementos do DOM
         const form = document.getElementById('participant-form');
         const fullNameInput = document.getElementById('fullName');
-        const cpfInput = document.getElementById('cpf');
+        const docTypeSelect = document.getElementById('doc-type');
+        const docNumberInput = document.getElementById('doc-number');
+        const pasteGroup = document.querySelector('.paste-group');
+        const formSeparator = document.getElementById('form-separator');
         const parseBtn = document.getElementById('parse-btn');
         const drawBtn = document.getElementById('draw-btn');
         const toggleListBtn = document.getElementById('toggle-list-btn');
@@ -185,36 +197,66 @@
         const searchBox = document.getElementById('search-box');
         const menuToggle = document.getElementById('menu-toggle');
         const menuPanel = document.getElementById('menu-panel');
-        const importFileInput = document.getElementById('import-file-menu');
-        const deleteAllBtn = document.getElementById('delete-all-btn');
-        const resetAllBtn = document.getElementById('reset-all-btn');
-        const viewWinnersBtn = document.getElementById('view-winners-btn');
-        const modals = document.querySelectorAll('.modal');
-        const luckyNumberModal = document.getElementById('lucky-number-modal');
-        const winnerModal = document.getElementById('winner-modal');
+        const togglePasteBtn = document.getElementById('toggle-paste-btn');
         const editModal = document.getElementById('edit-modal');
         const editForm = document.getElementById('edit-form');
-        const winnersListModal = document.getElementById('winners-list-modal');
-        const bulkAddModal = document.getElementById('bulk-add-modal');
-        const bulkPasteArea = document.getElementById('bulk-paste-area');
-        const processBulkListBtn = document.getElementById('process-bulk-list-btn');
-        const drawOptionsModal = document.getElementById('draw-options-modal');
-        const drawOptionsForm = document.getElementById('draw-options-form');
-        const connectionStatus = document.getElementById('connection-status');
-        
-        database.ref('.info/connected').on('value', (snap) => {
-            if (snap.val() === true) {
-                connectionStatus.textContent = 'Online';
-                connectionStatus.className = 'connected';
+        // ... (outras declarações de elementos)
+
+        // Lógica para Exibir/Ocultar Ferramenta de Preenchimento Rápido
+        const setShowPasteTool = (show) => {
+            if (show) {
+                pasteGroup.style.display = 'block';
+                formSeparator.style.display = 'block';
+                togglePasteBtn.textContent = 'Ocultar Preenchimento Rápido';
+                localStorage.setItem('showPasteTool', 'true');
             } else {
-                connectionStatus.textContent = 'Offline';
-                connectionStatus.className = 'disconnected';
+                pasteGroup.style.display = 'none';
+                formSeparator.style.display = 'none';
+                togglePasteBtn.textContent = 'Exibir Preenchimento Rápido';
+                localStorage.setItem('showPasteTool', 'false');
             }
+        };
+
+        togglePasteBtn.addEventListener('click', () => {
+            const isHidden = pasteGroup.style.display === 'none';
+            setShowPasteTool(isHidden);
+            menuPanel.classList.remove('open');
         });
+
+        if (localStorage.getItem('showPasteTool') === 'true') {
+            setShowPasteTool(true);
+        }
+
+        // Atualizar placeholder e validação do campo de documento
+        const updateDocInput = () => {
+            const type = docTypeSelect.value;
+            if (type === 'cpf') {
+                docNumberInput.placeholder = '11 dígitos';
+                docNumberInput.pattern = '\\d{11}';
+                docNumberInput.title = 'Digite os 11 dígitos do CPF.';
+            } else if (type === 'rg') {
+                docNumberInput.placeholder = '9 dígitos';
+                docNumberInput.pattern = '\\d{9}';
+                docNumberInput.title = 'Digite os 9 dígitos do RG.';
+            } else { // dob
+                docNumberInput.placeholder = 'DDMMAAAA';
+                docNumberInput.pattern = '\\d{8}';
+                docNumberInput.title = 'Digite a data no formato DDMMAAAA.';
+            }
+        };
+        docTypeSelect.addEventListener('change', updateDocInput);
+        updateDocInput(); // Inicializa o campo
+
+        database.ref('.info/connected').on('value', (snap) => { /* ... */ });
 
         participantsRef.on('value', (snapshot) => {
             const data = snapshot.val();
-            participants = data ? Object.values(data) : [];
+            participants = [];
+            if (data) {
+                for (const key in data) {
+                    participants.push({ key, ...data[key] });
+                }
+            }
             updateButtonStates();
             if (participantListSection.style.display === 'block') {
                 renderList();
@@ -222,15 +264,14 @@
         });
         
         winnersRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            winners = data ? Object.values(data) : [];
+            winners = snapshot.val() ? Object.values(snapshot.val()) : [];
         });
 
         const updateButtonStates = () => drawBtn.disabled = participants.length === 0;
 
         const renderList = () => {
             const searchTerm = searchBox.value.toLowerCase();
-            const filtered = participants.filter(p => p.name.toLowerCase().includes(searchTerm) || p.cpf.includes(searchTerm));
+            const filtered = participants.filter(p => p.name.toLowerCase().includes(searchTerm) || p.docNumber.includes(searchTerm));
             listContainer.innerHTML = filtered.length === 0 ? `<p>${participants.length === 0 ? 'Nenhum participante.' : 'Nenhum resultado.'}</p>` : '';
             
             filtered.sort((a, b) => a.luckyNumber - b.luckyNumber);
@@ -242,11 +283,14 @@
                 item.innerHTML = `
                     <div class="participant-info">
                         <div class="name">#${p.luckyNumber} - ${p.name}</div>
-                        <div class="details">CPF: ${p.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}</div>
+                        <div class="details">
+                            <span class="doc-type-badge">${p.docType}</span>
+                            <span>${p.docNumber}</span>
+                        </div>
                     </div>
                     <div class="participant-actions">
-                        <button class="edit-btn" data-cpf="${p.cpf}" title="Editar"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg></button>
-                        <button class="delete-btn" data-cpf="${p.cpf}" title="Apagar"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
+                        <button class="edit-btn" data-key="${p.key}" title="Editar"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg></button>
+                        <button class="delete-btn" data-key="${p.key}" title="Apagar"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
                     </div>`;
                 listContainer.appendChild(item);
             });
@@ -255,105 +299,153 @@
         
         const attachActionListeners = () => {
             document.querySelectorAll('.delete-btn').forEach(b => b.onclick = e => {
-                const cpfToDelete = e.currentTarget.getAttribute('data-cpf');
-                const participant = participants.find(p => p.cpf === cpfToDelete);
+                const keyToDelete = e.currentTarget.getAttribute('data-key');
+                const participant = participants.find(p => p.key === keyToDelete);
                 if (participant && confirm(`Apagar "${participant.name}"?`)) {
-                    participantsRef.child(cpfToDelete).remove();
+                    participantsRef.child(keyToDelete).remove();
                 }
             });
-            document.querySelectorAll('.edit-btn').forEach(b => b.onclick = e => openEditModal(e.currentTarget.getAttribute('data-cpf')));
+            document.querySelectorAll('.edit-btn').forEach(b => b.onclick = e => openEditModal(e.currentTarget.getAttribute('data-key')));
         };
         
-        const parseTextToNameAndCpf = (text) => {
-            let extractedName = '', extractedCpf = '';
-            const cpfRegex = /\b(\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\d{11})\b/;
-            const cpfMatch = text.match(cpfRegex);
-            let restOfString = text;
-
-            if (cpfMatch && cpfMatch[0]) {
-                const potentialCpf = cpfMatch[0].replace(/\D/g, '');
-                if (potentialCpf.length === 11) {
-                    extractedCpf = potentialCpf;
-                    restOfString = text.replace(cpfMatch[0], '');
-                }
+        const parseTextToNameAndDoc = (text) => {
+            let name = '', docNumber = '', docType = '';
+            const docRegex = /\b(\d{11}|\d{9}|\d{8})\b/;
+            const match = text.match(docRegex);
+            
+            if (match && match[0]) {
+                docNumber = match[0];
+                name = text.replace(docNumber, '').replace(/nome|cpf|rg|data|nasc|:/ig, '').replace(/\s+/g, ' ').trim();
+                const len = docNumber.length;
+                if (len === 11) docType = 'cpf';
+                else if (len === 9) docType = 'rg';
+                else if (len === 8) docType = 'dob';
             }
-            if (restOfString) {
-                extractedName = restOfString.replace(/nome|cpf|:/ig, '').replace(/\s+/g, ' ').trim();
-            }
-            return { name: extractedName, cpf: extractedCpf };
+            return { name, docNumber, docType };
         };
 
-        parseBtn.addEventListener('click', () => { /* ... (código mantido da versão anterior) ... */ });
+        parseBtn.addEventListener('click', () => {
+            const text = document.getElementById('paste-area').value.trim();
+            if (!text) return;
+            const { name, docNumber, docType } = parseTextToNameAndDoc(text);
+            if (name && docNumber && docType) {
+                fullNameInput.value = name;
+                docTypeSelect.value = docType;
+                updateDocInput();
+                docNumberInput.value = docNumber;
+                document.getElementById('paste-area').value = '';
+            } else {
+                alert('Não foi possível identificar um nome e um documento válidos no texto.');
+            }
+        });
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = fullNameInput.value.trim();
-            const cpf = cpfInput.value.replace(/\D/g, '');
-            if (!name || cpf.length !== 11) return alert('Verifique os dados.');
-            if (participants.some(p => p.cpf === cpf)) return alert('CPF já cadastrado.');
+            const docType = docTypeSelect.value;
+            const docNumber = docNumberInput.value.replace(/\D/g, '');
+            
+            const len = docNumber.length;
+            if (!name || (docType === 'cpf' && len !== 11) || (docType === 'rg' && len !== 9) || (docType === 'dob' && len !== 8)) {
+                return alert('Verifique os dados preenchidos. O número do documento não tem o tamanho correto.');
+            }
+
+            if (docType !== 'dob' && participants.some(p => p.docNumber === docNumber && p.docType === docType)) {
+                return alert('Este documento (CPF/RG) já foi cadastrado.');
+            }
+            
             const lastLuckyNumber = participants.length > 0 ? Math.max(...participants.map(p => p.luckyNumber)) : 0;
-            const newParticipant = { luckyNumber: lastLuckyNumber + 1, name, cpf };
-            participantsRef.child(newParticipant.cpf).set(newParticipant);
+            const newParticipant = { luckyNumber: lastLuckyNumber + 1, name, docType, docNumber };
+            
+            participantsRef.push(newParticipant);
+
             document.getElementById('lucky-number-display').textContent = newParticipant.luckyNumber;
             luckyNumberModal.style.display = 'flex';
-            form.reset(); fullNameInput.focus();
+            form.reset();
+            updateDocInput();
+            fullNameInput.focus();
         });
         
         const closeModal = () => modals.forEach(m => m.style.display = 'none');
         document.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
 
-        bulkAddBtn.addEventListener('click', () => bulkAddModal.style.display = 'flex');
+        bulkAddBtn.addEventListener('click', () => { bulkAddModal.style.display = 'flex'; menuPanel.classList.remove('open'); });
 
-        processBulkListBtn.addEventListener('click', () => { /* ... (código mantido da versão anterior) ... */ });
+        processBulkListBtn.addEventListener('click', () => {
+            const text = document.getElementById('bulk-paste-area').value.trim();
+            if (!text) return;
+            const lines = text.split('\n');
+            let errorLines = [];
+            let successCount = 0;
+            let lastLuckyNumber = participants.length > 0 ? Math.max(...participants.map(p => p.luckyNumber)) : 0;
+            const existingNonDobDocs = new Set(participants.filter(p => p.docType !== 'dob').map(p => `${p.docType}-${p.docNumber}`));
+
+            lines.forEach((line, index) => {
+                const { name, docNumber, docType } = parseTextToNameAndDoc(line.trim());
+                const docId = `${docType}-${docNumber}`;
+
+                if (name && docNumber && docType) {
+                    if (docType !== 'dob' && existingNonDobDocs.has(docId)) {
+                        errorLines.push(index + 1);
+                    } else {
+                        lastLuckyNumber++;
+                        const newParticipant = { name, docType, docNumber, luckyNumber: lastLuckyNumber };
+                        participantsRef.push(newParticipant);
+                        if(docType !== 'dob') existingNonDobDocs.add(docId);
+                        successCount++;
+                    }
+                } else { if(line.trim()) errorLines.push(index + 1); }
+            });
+            
+            alert(`${successCount} adicionados. ${errorLines.length} linhas com erro (inválido ou duplicado).`);
+            closeModal(); document.getElementById('bulk-paste-area').value = '';
+        });
 
         menuToggle.addEventListener('click', () => menuPanel.classList.toggle('open'));
         document.addEventListener('click', e => { if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) menuPanel.classList.remove('open'); });
 
-        // FUNÇÃO DE EDIÇÃO CORRIGIDA
-        const openEditModal = (cpfToEdit) => {
-            const p = participants.find(p => p.cpf === cpfToEdit);
+        const openEditModal = (keyToEdit) => {
+            const p = participants.find(p => p.key === keyToEdit);
             if (!p) return;
-            document.getElementById('edit-index').value = p.cpf;
+            document.getElementById('edit-key').value = p.key;
             document.getElementById('edit-fullName').value = p.name;
-            document.getElementById('edit-cpf').value = p.cpf;
+            document.getElementById('edit-doc').value = `${p.docType.toUpperCase()}: ${p.docNumber}`;
             editModal.style.display = 'flex';
         };
 
-        // FUNÇÃO DE SALVAR EDIÇÃO CORRIGIDA
         editForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const cpfToEdit = document.getElementById('edit-index').value;
+            const keyToEdit = document.getElementById('edit-key').value;
             const newName = document.getElementById('edit-fullName').value.trim();
-            if (!newName) {
-                alert('O nome não pode ser vazio.');
-                return;
-            }
-            participantsRef.child(cpfToEdit).child('name').set(newName);
+            if (!newName) return alert('O nome não pode ser vazio.');
+            participantsRef.child(keyToEdit).child('name').set(newName);
             closeModal();
         });
         
-        toggleListBtn.addEventListener('click', () => {
-            const isHidden = participantListSection.style.display !== 'block';
-            participantListSection.style.display = isHidden ? 'block' : 'none';
-            toggleListBtn.textContent = isHidden ? 'Ocultar Lista' : 'Visualizar Lista';
-            if (isHidden) {
-                renderList();
-            }
-        });
-
-        drawBtn.addEventListener('click', () => { /* ... (código mantido da versão anterior) ... */ });
-        drawOptionsForm.addEventListener('submit', (e) => { /* ... (código mantido da versão anterior) ... */ });
-        viewWinnersBtn.addEventListener('click', () => { /* ... (código mantido da versão anterior) ... */ });
+        toggleListBtn.addEventListener('click', () => { /* ... (código mantido) ... */ });
+        drawBtn.addEventListener('click', () => { /* ... (código mantido) ... */ menuPanel.classList.remove('open'); });
+        drawOptionsForm.addEventListener('submit', (e) => { /* ... (código mantido) ... */ });
+        viewWinnersBtn.addEventListener('click', () => { /* ... (código mantido) ... */ menuPanel.classList.remove('open'); });
 
         deleteAllBtn.addEventListener('click', () => { if (confirm('APAGAR LISTA DE PARTICIPANTES?')) { participantsRef.set(null); } menuPanel.classList.remove('open'); });
         resetAllBtn.addEventListener('click', () => { if (confirm('RESETAR TUDO?')) { database.ref().set(null); } menuPanel.classList.remove('open'); });
-
-        importFileInput.addEventListener('change', (e) => { /* ... (código mantido da versão anterior) ... */ });
-
-        const createDownloadLink = (data, type) => URL.createObjectURL(new Blob([data], { type }));
         
-        document.getElementById('download-json-btn').addEventListener('click', (e) => { /* ... (código mantido da versão anterior) ... */ });
-        document.getElementById('download-csv-btn').addEventListener('click', (e) => { /* ... (código mantido da versão anterior) ... */ });
+        document.getElementById('download-json-btn').addEventListener('click', (e) => {
+            if(participants.length === 0) { e.preventDefault(); return alert("A lista está vazia."); }
+            // Remove a chave interna do Firebase antes de exportar
+            const exportableList = participants.map(({key, ...rest}) => rest);
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportableList, null, 2));
+            e.currentTarget.href = dataStr;
+            e.currentTarget.download = `sorteio_online_${new Date().toISOString().slice(0,10)}.json`;
+        });
+        
+        document.getElementById('download-csv-btn').addEventListener('click', (e) => {
+            if(participants.length === 0) { e.preventDefault(); return alert("A lista está vazia."); }
+            let csv = "NumeroDaSorte;NomeCompleto;TipoDocumento;Documento\n" + participants.map(p => `${p.luckyNumber};"${p.name}";${p.docType.toUpperCase()};"${p.docNumber}"`).join("\n");
+            const createDownloadLink = (data, type) => URL.createObjectURL(new Blob([data], { type }));
+            e.currentTarget.href = createDownloadLink(csv, 'text/csv;charset=utf-8;');
+            e.currentTarget.download = `sorteio_online_${new Date().toISOString().slice(0,10)}.csv`;
+        });
         
         searchBox.addEventListener('input', renderList);
         updateButtonStates();

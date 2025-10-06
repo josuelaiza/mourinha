@@ -61,7 +61,7 @@
         
         .participant-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--light-gray-color); }
         .participant-info .name { font-weight: bold; font-size: 1.1em; }
-        .participant-info .details { font-size: 0.9em; color: #555; }
+        .participant-info .details { font-size: 0.9em; color: #555; display: flex; align-items: center; }
         .doc-type-badge { background-color: var(--secondary-color); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold; margin-right: 8px; text-transform: uppercase; }
         .participant-actions button { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 8px; }
         .participant-actions svg { width: 24px; height: 24px; }
@@ -166,7 +166,7 @@
         authDomain: "sorteiobamn.firebaseapp.com",
         databaseURL: "https://sorteiobamn-default-rtdb.firebaseio.com",
         projectId: "sorteiobamn",
-        storageBucket: "sorteiobamn.firebasestorage.app", // CORRIGIDO
+        storageBucket: "sorteiobamn.firebasestorage.app",
         messagingSenderId: "427382818317",
         appId: "1:427382818317:web:9f745b6f0afa86b5093744"
     };
@@ -175,12 +175,15 @@
     const database = firebase.database();
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Variáveis globais
         let participants = [];
         let winners = [];
 
+        // Referências do Firebase
         const participantsRef = database.ref('participants');
         const winnersRef = database.ref('winners');
         
+        // Elementos do DOM
         const form = document.getElementById('participant-form');
         const fullNameInput = document.getElementById('fullName');
         const docTypeSelect = document.getElementById('doc-type');
@@ -209,6 +212,61 @@
         const drawOptionsForm = document.getElementById('draw-options-form');
         const connectionStatus = document.getElementById('connection-status');
         
+        // --- DECLARAÇÃO DE FUNÇÕES ---
+        // (Movidas para o topo para evitar erros de referência)
+
+        const closeModal = () => modals.forEach(m => m.style.display = 'none');
+
+        const updateButtonStates = () => drawBtn.disabled = participants.length === 0;
+
+        const attachActionListeners = () => {
+            document.querySelectorAll('.delete-btn').forEach(b => b.onclick = e => {
+                const keyToDelete = e.currentTarget.getAttribute('data-key');
+                const participant = participants.find(p => p.key === keyToDelete);
+                if (participant && confirm(`Apagar "${participant.name}"?`)) {
+                    participantsRef.child(keyToDelete).remove();
+                }
+            });
+            document.querySelectorAll('.edit-btn').forEach(b => b.onclick = e => openEditModal(e.currentTarget.getAttribute('data-key')));
+        };
+        
+        const renderList = () => {
+            const searchTerm = searchBox.value.toLowerCase();
+            const filtered = participants.filter(p => p.name.toLowerCase().includes(searchTerm) || p.docNumber.includes(searchTerm));
+            listContainer.innerHTML = filtered.length === 0 ? `<p>${participants.length === 0 ? 'Nenhum participante.' : 'Nenhum resultado.'}</p>` : '';
+            
+            filtered.sort((a, b) => a.luckyNumber - b.luckyNumber);
+
+            filtered.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'participant-item';
+                item.id = `participant-${p.luckyNumber}`;
+                item.innerHTML = `
+                    <div class="participant-info">
+                        <div class="name">#${p.luckyNumber} - ${p.name}</div>
+                        <div class="details">
+                            <span class="doc-type-badge">${p.docType}</span>
+                            <span>${p.docNumber}</span>
+                        </div>
+                    </div>
+                    <div class="participant-actions">
+                        <button class="edit-btn" data-key="${p.key}" title="Editar"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg></button>
+                        <button class="delete-btn" data-key="${p.key}" title="Apagar"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
+                    </div>`;
+                listContainer.appendChild(item);
+            });
+            attachActionListeners();
+        };
+
+        const openEditModal = (keyToEdit) => {
+            const p = participants.find(p => p.key === keyToEdit);
+            if (!p) return;
+            document.getElementById('edit-key').value = p.key;
+            document.getElementById('edit-fullName').value = p.name;
+            document.getElementById('edit-doc').value = `${p.docType.toUpperCase()}: ${p.docNumber}`;
+            editModal.style.display = 'flex';
+        };
+
         const setShowPasteTool = (show) => {
             if (show) {
                 pasteGroup.style.display = 'block';
@@ -222,16 +280,6 @@
                 localStorage.setItem('showPasteTool', 'false');
             }
         };
-
-        togglePasteBtn.addEventListener('click', () => {
-            const isHidden = pasteGroup.style.display === 'none';
-            setShowPasteTool(isHidden);
-            menuPanel.classList.remove('open');
-        });
-
-        if (localStorage.getItem('showPasteTool') === 'true') {
-            setShowPasteTool(true);
-        }
 
         const updateDocInput = () => {
             const type = docTypeSelect.value;
@@ -249,9 +297,26 @@
                 docNumberInput.title = 'Digite a data no formato DDMMAAAA.';
             }
         };
-        docTypeSelect.addEventListener('change', updateDocInput);
-        updateDocInput();
 
+        const parseTextToNameAndDoc = (text) => {
+            let name = '', docNumber = '', docType = '';
+            const docRegex = /\b(\d{11}|\d{9}|\d{8})\b/;
+            const match = text.match(docRegex);
+            
+            if (match && match[0]) {
+                docNumber = match[0];
+                name = text.replace(docNumber, '').replace(/nome|cpf|rg|data|nasc|:/ig, '').replace(/\s+/g, ' ').trim();
+                const len = docNumber.length;
+                if (len === 11) docType = 'cpf';
+                else if (len === 9) docType = 'rg';
+                else if (len === 8) docType = 'dob';
+            }
+            return { name, docNumber, docType };
+        };
+
+        // --- LISTENERS E LÓGICA DE EXECUÇÃO ---
+
+        // Firebase Listeners
         database.ref('.info/connected').on('value', (snap) => {
             if (snap.val() === true) {
                 connectionStatus.textContent = 'Online';
@@ -280,62 +345,14 @@
             winners = snapshot.val() ? Object.values(snapshot.val()) : [];
         });
 
-        const updateButtonStates = () => drawBtn.disabled = participants.length === 0;
+        // Event Listeners
+        togglePasteBtn.addEventListener('click', () => {
+            const isHidden = pasteGroup.style.display === 'none';
+            setShowPasteTool(isHidden);
+            menuPanel.classList.remove('open');
+        });
 
-        const renderList = () => {
-            const searchTerm = searchBox.value.toLowerCase();
-            const filtered = participants.filter(p => p.name.toLowerCase().includes(searchTerm) || p.docNumber.includes(searchTerm));
-            listContainer.innerHTML = filtered.length === 0 ? `<p>${participants.length === 0 ? 'Nenhum participante.' : 'Nenhum resultado.'}</p>` : '';
-            
-            filtered.sort((a, b) => a.luckyNumber - b.luckyNumber);
-
-            filtered.forEach(p => {
-                const item = document.createElement('div');
-                item.className = 'participant-item';
-                item.id = `participant-${p.luckyNumber}`;
-                item.innerHTML = `
-                    <div class="participant-info">
-                        <div class="name">#${p.luckyNumber} - ${p.name}</div>
-                        <div class="details">
-                            <span class="doc-type-badge">${p.docType}</span>
-                            <span>${p.docNumber}</span>
-                        </div>
-                    </div>
-                    <div class="participant-actions">
-                        <button class="edit-btn" data-key="${p.key}" title="Editar"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg></button>
-                        <button class="delete-btn" data-key="${p.key}" title="Apagar"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
-                    </div>`;
-                listContainer.appendChild(item);
-            });
-            attachActionListeners();
-        };
-        
-        const attachActionListeners = () => {
-            document.querySelectorAll('.delete-btn').forEach(b => b.onclick = e => {
-                const keyToDelete = e.currentTarget.getAttribute('data-key');
-                const participant = participants.find(p => p.key === keyToDelete);
-                if (participant && confirm(`Apagar "${participant.name}"?`)) {
-                    participantsRef.child(keyToDelete).remove();
-                }
-            });
-            document.querySelectorAll('.edit-btn').forEach(b => b.onclick = e => openEditModal(e.currentTarget.getAttribute('data-key')));
-        };
-        
-        const parseTextToNameAndDoc = (text) => {
-            let name = '', docNumber = '', docType = '';
-            const docRegex = /\b(\d{11}|\d{9}|\d{8})\b/;
-            const match = text.match(docRegex);
-            
-            if (match && match[0]) {
-                docNumber = match[0];
-                name = text.replace(docNumber, '').replace(/nome|cpf|rg|data|nasc|:/ig, '').replace(/\s+/g, ' ').trim();
-                const len = docNumber.length;
-                if (len === 11) docType = 'cpf';
-                else if (len === 9) docType = 'rg';
-                else if (len === 8) docType = 'dob';
-            }
-            return { name, docNumber, docType };
-        };
+        docTypeSelect.addEventListener('change', updateDocInput);
 
         parseBtn.addEventListener('click', () => {
             const text = document.getElementById('paste-area').value.trim();
@@ -379,7 +396,6 @@
             fullNameInput.focus();
         });
         
-        const closeModal = () => modals.forEach(m => m.style.display = 'none');
         document.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
 
         bulkAddBtn.addEventListener('click', () => { bulkAddModal.style.display = 'flex'; menuPanel.classList.remove('open'); });
@@ -416,15 +432,6 @@
 
         menuToggle.addEventListener('click', () => menuPanel.classList.toggle('open'));
         document.addEventListener('click', e => { if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) menuPanel.classList.remove('open'); });
-
-        const openEditModal = (keyToEdit) => {
-            const p = participants.find(p => p.key === keyToEdit);
-            if (!p) return;
-            document.getElementById('edit-key').value = p.key;
-            document.getElementById('edit-fullName').value = p.name;
-            document.getElementById('edit-doc').value = `${p.docType.toUpperCase()}: ${p.docNumber}`;
-            editModal.style.display = 'flex';
-        };
 
         editForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -496,7 +503,44 @@
         deleteAllBtn.addEventListener('click', () => { if (confirm('APAGAR LISTA DE PARTICIPANTES?')) { participantsRef.set(null); } menuPanel.classList.remove('open'); });
         resetAllBtn.addEventListener('click', () => { if (confirm('RESETAR TUDO?')) { database.ref().set(null); } menuPanel.classList.remove('open'); });
         
-        importFileInput.addEventListener('change', (e) => { /* ... (código mantido da versão anterior) ... */ });
+        importFileInput.addEventListener('change', (e) => {
+            menuPanel.classList.remove('open');
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!confirm('ATENÇÃO: A importação de um novo arquivo irá APAGAR a lista atual na nuvem e substituí-la por esta. Deseja continuar?')) {
+                e.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                try {
+                    const dataArray = JSON.parse(re.target.result);
+                    if (Array.isArray(dataArray) && dataArray.every(i => 'name' in i && 'docNumber' in i && 'docType' in i && 'luckyNumber' in i)) {
+                        
+                        const dataToUpload = {};
+                        dataArray.forEach(participant => {
+                            // Cria uma chave única para cada um no novo objeto
+                            const newKey = participantsRef.push().key;
+                            dataToUpload[newKey] = participant;
+                        });
+
+                        // Substitui todos os dados no Firebase de uma vez
+                        participantsRef.set(dataToUpload)
+                            .then(() => alert('Lista importada com sucesso para a nuvem!'))
+                            .catch(error => alert('Erro ao enviar dados para a nuvem: ' + error.message));
+
+                    } else {
+                        alert('Arquivo JSON inválido ou formato de dados incorreto.');
+                    }
+                } catch(error) { 
+                    alert('Erro ao ler o arquivo JSON: ' + error.message);
+                }
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        });
 
         document.getElementById('download-json-btn').addEventListener('click', (e) => {
             if(participants.length === 0) { e.preventDefault(); return alert("A lista está vazia."); }
@@ -515,7 +559,11 @@
         });
         
         searchBox.addEventListener('input', renderList);
-        updateButtonStates();
+
+        // -- Execução Inicial --
+        if (localStorage.getItem('showPasteTool') === 'true') {
+            setShowPasteTool(true);
+        }
     });
     </script>
 </body>

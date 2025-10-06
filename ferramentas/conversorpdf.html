@@ -340,21 +340,51 @@
 
         bulkAddBtn.addEventListener('click', () => { bulkAddModal.style.display = 'flex'; menuPanel.classList.remove('open'); });
 
-        processBulkListBtn.addEventListener('click', () => {
-            const parseTextToNameAndDoc = (text) => {
-                let name = text, docNumber = '', docType = '';
-                const numbers = text.match(/\b\d{8,11}\b/);
-                if (numbers && numbers[0]) {
-                    const num = numbers[0].replace(/\D/g, '');
-                    name = text.replace(num, '').replace(/\s+/g, ' ').trim();
-                    docNumber = num;
-                    if (num.length === 11) docType = 'CPF';
-                    else if (num.length === 9) docType = 'RG';
-                    else if (num.length === 8) docType = 'Nascimento';
-                }
-                return { name, docType, docNumber };
-            };
+        const parseTextToNameAndDoc = (text) => {
+            let name = text;
+            let docNumber = '';
+            let docType = '';
+            let originalMatch = '';
 
+            // Regex para encontrar blocos de números que podem conter separadores '.', '-', ou '/'
+            const potentialDocs = text.match(/(\d[.\-/]?){7,}\d/g) || [];
+
+            for (const match of potentialDocs) {
+                const cleanNum = match.replace(/\D/g, ''); // Remove todos os não-dígitos
+                if (cleanNum.length === 11) {
+                    docNumber = cleanNum;
+                    docType = 'CPF';
+                    originalMatch = match;
+                    break; 
+                }
+                if (cleanNum.length === 9) {
+                    docNumber = cleanNum;
+                    docType = 'RG';
+                    originalMatch = match;
+                    break;
+                }
+                if (cleanNum.length === 8) {
+                    docNumber = cleanNum;
+                    docType = 'Nascimento';
+                    originalMatch = match;
+                    break;
+                }
+            }
+
+            if (originalMatch) {
+                // Se encontrou um documento, limpa o texto original para obter o nome
+                name = text
+                    .replace(originalMatch, '') // Remove o número com sua formatação original
+                    .replace(/cpf|rg|nascimento|data/ig, '') // Remove palavras-chave (case-insensitive)
+                    .replace(/[:]/g, '') // Remove dois-pontos
+                    .replace(/\s+/g, ' ') // Substitui múltiplos espaços (incluindo quebras de linha) por um único espaço
+                    .trim();
+            }
+
+            return { name, docType, docNumber };
+        };
+
+        processBulkListBtn.addEventListener('click', () => {
             const lines = bulkPasteArea.value.trim().split('\n');
             let lastLuckyNumber = participants.length > 0 ? Math.max(...participants.map(p => p.luckyNumber)) : 0;
             const updates = {};
@@ -387,7 +417,7 @@
         document.addEventListener('click', e => { if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) menuPanel.classList.remove('open'); });
 
         const openEditModal = (idToEdit) => {
-            const p = participants.find(p => p.id === idToedit);
+            const p = participants.find(p => p.id === idToEdit);
             if (!p) return;
             document.getElementById('edit-id').value = p.id;
             document.getElementById('edit-fullName').value = p.name;
@@ -487,39 +517,20 @@
         document.getElementById('delete-all-btn').addEventListener('click', () => { if (confirm('APAGAR LISTA DE PARTICIPANTES?')) { participantsRef.set(null); } menuPanel.classList.remove('open'); });
         document.getElementById('reset-all-btn').addEventListener('click', () => { if (confirm('RESETAR TUDO? (Apaga participantes E sorteados)')) { database.ref().set(null); } menuPanel.classList.remove('open'); });
         
-        // --- FUNÇÃO DO BOTÃO ANALISAR (PREENCHIMENTO RÁPIDO) ---
         document.getElementById('parse-btn').addEventListener('click', () => {
-            const parseTextToNameAndDoc = (text) => {
-                let name = text, docNumber = '', docType = '';
-                const numbers = text.match(/\b\d{8,11}\b/);
-                if (numbers && numbers[0]) {
-                    const num = numbers[0].replace(/\D/g, '');
-                    name = text.replace(num, '').replace(/\s+/g, ' ').trim();
-                    docNumber = num;
-                    if (num.length === 11) docType = 'CPF';
-                    else if (num.length === 9) docType = 'RG';
-                    else if (num.length === 8) docType = 'Nascimento';
-                }
-                return { name, docType, docNumber };
-            };
             const { name, docType, docNumber } = parseTextToNameAndDoc(document.getElementById('paste-area').value);
             
             if (name) fullNameInput.value = name;
             
-            // **LÓGICA CORRIGIDA AQUI**
             if (docType) {
-                // 1. Define o tipo de documento no select
                 docTypeSelect.value = docType;
-                // 2. Dispara o evento 'change' para atualizar o input (isso também vai limpá-lo)
                 docTypeSelect.dispatchEvent(new Event('change'));
-                // 3. Agora, com o campo já atualizado e limpo, preenche o número
                 if (docNumber) docNumberInput.value = docNumber;
             }
             
             document.getElementById('paste-area').value = '';
         });
 
-        // --- FUNÇÕES DE IMPORTAÇÃO E DOWNLOAD ---
         const setupDownloadsAndImports = () => {
              document.getElementById('import-file-menu').addEventListener('change', (e) => {
                 const file = e.target.files[0]; if (!file) return;

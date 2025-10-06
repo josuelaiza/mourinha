@@ -30,19 +30,20 @@
 
         #menu-toggle { background: none; border: none; cursor: pointer; padding: 10px; z-index: 1001; }
         #menu-toggle .bar { display: block; width: 25px; height: 3px; background-color: var(--primary-color); margin: 5px 0; transition: 0.4s; }
-        #menu-panel { position: absolute; top: 60px; right: 0; background-color: var(--white-color); border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); list-style: none; padding: 10px 0; z-index: 1000; width: 280px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s, visibility 0.3s; }
+        #menu-panel { position: absolute; top: 60px; right: 0; background-color: var(--white-color); border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); list-style: none; padding: 10px 0; z-index: 1000; width: 250px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s, visibility 0.3s; }
         #menu-panel.open { opacity: 1; visibility: visible; transform: translateY(0); }
         #menu-panel li button, #menu-panel li label { display: block; width: 100%; padding: 12px 20px; background: none; border: none; text-align: left; font-size: 1em; cursor: pointer; color: var(--text-color); }
         #menu-panel li button:hover, #menu-panel li label:hover { background-color: #f0f0f0; }
         #menu-panel li.separator { height: 1px; background-color: var(--light-gray-color); margin: 8px 0; }
         #menu-panel li button.danger-text { color: var(--danger-color); font-weight: bold; }
+        #menu-panel li .btn-menu-success { color: var(--success-color); font-weight: bold; }
+        #menu-panel li .btn-menu-secondary { color: var(--primary-color); }
 
         .form-group, .paste-group { margin-bottom: 15px; }
         .form-group label, .paste-group label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--primary-color); }
         .form-group input, .form-group select, .paste-group textarea, #bulk-paste-area { width: 100%; padding: 12px; border: 1px solid var(--light-gray-color); border-radius: 5px; font-size: 1em; font-family: var(--font-family); }
         .form-group input[type="checkbox"] { width: auto; margin-right: 10px; }
         .form-group input:focus, .form-group select:focus, .paste-group textarea:focus, #bulk-paste-area:focus { outline: none; border-color: var(--primary-color); }
-        .paste-group { display: none; } /* Oculto por padrão */
         .paste-group textarea { resize: vertical; min-height: 60px; }
         #bulk-paste-area { min-height: 200px; resize: vertical; }
 
@@ -51,8 +52,11 @@
         .btn:disabled { background-color: #ccc; cursor: not-allowed; transform: none; }
         .btn-full-width { width: 100%; }
         .btn-primary { background-color: var(--primary-color); }
+        .btn-primary:hover:not(:disabled) { background-color: #004c8c; }
         .btn-secondary { background-color: var(--secondary-color); }
+        .btn-secondary:hover:not(:disabled) { background-color: #d88e1a; }
         .btn-success { background-color: var(--success-color); }
+        .btn-success:hover:not(:disabled) { background-color: #449d44; }
 
         .main-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
         #participant-list { margin-top: 25px; display: none; }
@@ -61,8 +65,7 @@
         
         .participant-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--light-gray-color); }
         .participant-info .name { font-weight: bold; font-size: 1.1em; }
-        .participant-info .details { font-size: 0.9em; color: #555; display: flex; align-items: center; }
-        .doc-type-badge { background-color: var(--secondary-color); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold; margin-right: 8px; text-transform: uppercase; }
+        .participant-info .details { font-size: 0.9em; color: #555; }
         .participant-actions button { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 8px; }
         .participant-actions svg { width: 24px; height: 24px; }
         .edit-btn svg { fill: var(--primary-color); }
@@ -89,12 +92,13 @@
                 <span class="bar"></span><span class="bar"></span><span class="bar"></span>
             </button>
             <ul id="menu-panel">
-                <li><button id="draw-btn" class="btn-success" style="width:100%">Realizar Sorteio</button></li>
-                <li><button id="bulk-add-btn" class="btn-secondary" style="width:100%">Cadastro em Lote</button></li>
-                <li><button id="view-winners-btn">Ver Sorteados</button></li>
-                <li><button id="toggle-paste-btn">Exibir Preenchimento Rápido</button></li>
+                <li><button id="draw-btn" class="btn-menu-success">Realizar Sorteio</button></li>
+                <li><button id="bulk-add-btn" class="btn-menu-secondary">Cadastro em Lote</button></li>
                 <li class="separator"></li>
-                <li><label for="import-file-menu" style="cursor: pointer;">Importar Lista (JSON)</label>
+                <li><button id="toggle-smart-add-btn">Exibir Preenchimento Rápido</button></li>
+                <li><button id="view-winners-btn">Ver Sorteados</button></li>
+                <li>
+                    <label for="import-file-menu" style="width: 100%; cursor: pointer;">Importar Lista (JSON)</label>
                     <input type="file" id="import-file-menu" accept=".json" style="display: none;">
                 </li>
                 <li class="separator"></li>
@@ -104,32 +108,30 @@
         </header>
 
         <main>
-            <div class="paste-group">
+            <div id="smart-add-section" class="paste-group" style="display: none;">
                 <label for="paste-area">Preenchimento Rápido (Individual)</label>
-                <textarea id="paste-area" placeholder="Cole o nome e o documento de uma pessoa aqui..."></textarea>
+                <textarea id="paste-area" placeholder="Cole o nome e o documento (CPF, RG ou Data de Nasc.) de uma pessoa aqui..."></textarea>
                 <button id="parse-btn" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Analisar e Preencher</button>
             </div>
             
-            <hr id="form-separator" style="border: none; border-top: 1px dashed var(--light-gray-color); margin: 25px 0; display: none;">
+            <hr id="main-separator" style="border: none; border-top: 1px dashed var(--light-gray-color); margin: 25px 0; display: none;">
 
             <form id="participant-form">
                 <div class="form-group">
                     <label for="fullName">Nome Completo</label>
                     <input type="text" id="fullName" required>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex-basis: 40%;">
-                        <label for="doc-type">Documento</label>
-                        <select id="doc-type">
-                            <option value="cpf" selected>CPF</option>
-                            <option value="rg">RG</option>
-                            <option value="dob">Data Nasc.</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex-grow: 1;">
-                        <label for="doc-number">Número</label>
-                        <input type="tel" id="doc-number" required>
-                    </div>
+                <div class="form-group">
+                    <label for="doc-type">Tipo de Documento</label>
+                    <select id="doc-type">
+                        <option value="CPF" selected>CPF</option>
+                        <option value="RG">RG</option>
+                        <option value="Nascimento">Data de Nascimento</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label id="doc-number-label" for="doc-number">CPF (apenas números)</label>
+                    <input type="tel" id="doc-number" required pattern="\d{11}" title="Digite os 11 dígitos do CPF.">
                 </div>
                 <button type="submit" class="btn btn-primary btn-full-width">Gerar Número da Sorte</button>
             </form>
@@ -152,21 +154,22 @@
 
     <div id="lucky-number-modal" class="modal"><div class="modal-content"><h2>Número da Sorte Gerado!</h2><p>Informe este número para o participante:</p><div id="lucky-number-display"></div><button class="btn btn-primary close-modal-btn">Fechar</button></div></div>
     <div id="winner-modal" class="modal"><div class="modal-content"><h2>🎉 Parabéns ao Vencedor! 🎉</h2><div id="winner-name"></div><div id="winner-details"></div><button class="btn btn-primary close-modal-btn">Fechar</button></div></div>
-    <div id="edit-modal" class="modal"><div class="modal-content"><h2>Editar Participante</h2><form id="edit-form"><input type="hidden" id="edit-key"><div class="form-group" style="text-align: left;"><label for="edit-fullName">Nome Completo</label><input type="text" id="edit-fullName" required></div><div class="form-group" style="text-align: left;"><label for="edit-doc">Documento (não pode ser alterado)</label><input type="text" id="edit-doc" readonly></div><button type="submit" class="btn btn-primary">Salvar</button><button type="button" class="btn btn-secondary close-modal-btn" style="margin-top: 10px;">Cancelar</button></form></div></div>
+    <div id="edit-modal" class="modal"><div class="modal-content"><h2>Editar Participante</h2><form id="edit-form"><input type="hidden" id="edit-id"><div class="form-group" style="text-align: left;"><label for="edit-fullName">Nome Completo</label><input type="text" id="edit-fullName" required></div><div class="form-group" style="text-align: left;"><label for="edit-doc">Documento (não pode ser alterado)</label><input type="text" id="edit-doc" readonly></div><button type="submit" class="btn btn-primary">Salvar</button><button type="button" class="btn btn-secondary close-modal-btn" style="margin-top: 10px;">Cancelar</button></form></div></div>
     <div id="winners-list-modal" class="modal"><div class="modal-content"><h2>🏆 Lista de Sorteados 🏆</h2><div id="winners-list-container"></div><button class="btn btn-primary close-modal-btn" style="margin-top: 20px;">Fechar</button></div></div>
-    <div id="bulk-add-modal" class="modal"><div class="modal-content"><h2>Cadastro de Múltiplos Participantes</h2><p style="margin-bottom:15px; text-align:left;">Cole a lista abaixo (um participante por linha). O sistema identificará o nome e o documento (CPF, RG ou Data Nasc.) em cada linha.</p><textarea id="bulk-paste-area"></textarea><div style="display:flex; gap:10px; margin-top:15px;"><button id="process-bulk-list-btn" class="btn btn-success" style="flex-grow:1;">Processar Lista</button><button type="button" class="btn btn-secondary close-modal-btn" style="flex-grow:1;">Cancelar</button></div></div></div>
+    <div id="bulk-add-modal" class="modal"><div class="modal-content"><h2>Cadastro de Múltiplos Participantes</h2><p style="margin-bottom:15px; text-align:left;">Cole a lista abaixo (um participante por linha). Ex: Nome Completo 12345678901</p><textarea id="bulk-paste-area"></textarea><div style="display:flex; gap:10px; margin-top:15px;"><button id="process-bulk-list-btn" class="btn btn-success" style="flex-grow:1;">Processar Lista</button><button type="button" class="btn btn-secondary close-modal-btn" style="flex-grow:1;">Cancelar</button></div></div></div>
     <div id="draw-options-modal" class="modal"><div class="modal-content"><h2>Opções do Sorteio</h2><form id="draw-options-form"><div class="form-group" style="text-align: left;"><label for="min-lucky-number">Sortear a partir do número:</label><input type="number" id="min-lucky-number" min="1" value="1" placeholder="Ex: 100"></div><div class="form-group" style="text-align: left; display: flex; align-items: center;"><input type="checkbox" id="exclude-winners-checkbox" checked><label for="exclude-winners-checkbox" style="margin-bottom: 0;">Excluir já sorteados</label></div><div style="display:flex; gap:10px; margin-top:15px;"><button type="submit" class="btn btn-success" style="flex-grow:1;">Sortear!</button><button type="button" class="btn btn-secondary close-modal-btn" style="flex-grow:1;">Cancelar</button></div></form></div></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
+    // SUA CHAVE JÁ ESTÁ INSERIDA AQUI
     const firebaseConfig = {
         apiKey: "AIzaSyAWqJlUVobXs859hfxaM6eT_dU5U2YIHQk",
         authDomain: "sorteiobamn.firebaseapp.com",
         databaseURL: "https://sorteiobamn-default-rtdb.firebaseio.com",
         projectId: "sorteiobamn",
-        storageBucket: "sorteiobamn.firebasestorage.app",
+        storageBucket: "sorteiobamn.appspot.com",
         messagingSenderId: "427382818317",
         appId: "1:427382818317:web:9f745b6f0afa86b5093744"
     };
@@ -175,21 +178,18 @@
     const database = firebase.database();
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Variáveis globais
         let participants = [];
         let winners = [];
 
-        // Referências do Firebase
         const participantsRef = database.ref('participants');
         const winnersRef = database.ref('winners');
-        
-        // Elementos do DOM
+
+        // Seletores de elementos
         const form = document.getElementById('participant-form');
         const fullNameInput = document.getElementById('fullName');
         const docTypeSelect = document.getElementById('doc-type');
         const docNumberInput = document.getElementById('doc-number');
-        const pasteGroup = document.querySelector('.paste-group');
-        const formSeparator = document.getElementById('form-separator');
+        const docNumberLabel = document.getElementById('doc-number-label');
         const parseBtn = document.getElementById('parse-btn');
         const drawBtn = document.getElementById('draw-btn');
         const toggleListBtn = document.getElementById('toggle-list-btn');
@@ -199,37 +199,91 @@
         const searchBox = document.getElementById('search-box');
         const menuToggle = document.getElementById('menu-toggle');
         const menuPanel = document.getElementById('menu-panel');
-        const togglePasteBtn = document.getElementById('toggle-paste-btn');
         const importFileInput = document.getElementById('import-file-menu');
         const deleteAllBtn = document.getElementById('delete-all-btn');
         const resetAllBtn = document.getElementById('reset-all-btn');
         const viewWinnersBtn = document.getElementById('view-winners-btn');
         const modals = document.querySelectorAll('.modal');
+        const luckyNumberModal = document.getElementById('lucky-number-modal');
+        const winnerModal = document.getElementById('winner-modal');
         const editModal = document.getElementById('edit-modal');
         const editForm = document.getElementById('edit-form');
+        const winnersListModal = document.getElementById('winners-list-modal');
         const bulkAddModal = document.getElementById('bulk-add-modal');
+        const bulkPasteArea = document.getElementById('bulk-paste-area');
+        const processBulkListBtn = document.getElementById('process-bulk-list-btn');
         const drawOptionsModal = document.getElementById('draw-options-modal');
         const drawOptionsForm = document.getElementById('draw-options-form');
         const connectionStatus = document.getElementById('connection-status');
-        
-        // --- DECLARAÇÃO DE FUNÇÕES ---
-        // (Movidas para o topo para evitar erros de referência)
+        const smartAddSection = document.getElementById('smart-add-section');
+        const toggleSmartAddBtn = document.getElementById('toggle-smart-add-btn');
+        const mainSeparator = document.getElementById('main-separator');
 
-        const closeModal = () => modals.forEach(m => m.style.display = 'none');
+        // --- LÓGICA DE VISIBILIDADE DO PREENCHIMENTO RÁPIDO ---
+        const setupSmartAddVisibility = () => {
+            const isVisible = localStorage.getItem('smartAddVisible') === 'true';
+            smartAddSection.style.display = isVisible ? 'block' : 'none';
+            mainSeparator.style.display = isVisible ? 'block' : 'none';
+            toggleSmartAddBtn.textContent = isVisible ? 'Ocultar Preenchimento Rápido' : 'Exibir Preenchimento Rápido';
+        };
+
+        toggleSmartAddBtn.addEventListener('click', () => {
+            const isVisible = smartAddSection.style.display === 'block';
+            localStorage.setItem('smartAddVisible', !isVisible);
+            setupSmartAddVisibility();
+            menuPanel.classList.remove('open');
+        });
+        
+        setupSmartAddVisibility(); // Executa na inicialização
+
+        // --- LÓGICA DE CONEXÃO COM FIREBASE ---
+        database.ref('.info/connected').on('value', (snap) => {
+            if (snap.val() === true) {
+                connectionStatus.textContent = 'Online';
+                connectionStatus.className = 'connected';
+            } else {
+                connectionStatus.textContent = 'Offline';
+                connectionStatus.className = 'disconnected';
+            }
+        });
+
+        participantsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            participants = data ? Object.values(data) : [];
+            updateButtonStates();
+            if (participantListSection.style.display === 'block') {
+                renderList();
+            }
+        });
+        
+        winnersRef.on('value', (snapshot) => {
+            winners = data ? Object.values(data) : [];
+        });
+        
+        // --- ATUALIZAÇÃO DO FORMULÁRIO DE DOCUMENTO ---
+        docTypeSelect.addEventListener('change', () => {
+            const type = docTypeSelect.value;
+            if (type === 'CPF') {
+                docNumberLabel.textContent = 'CPF (apenas números)';
+                docNumberInput.pattern = '\\d{11}';
+                docNumberInput.title = 'Digite os 11 dígitos do CPF.';
+                docNumberInput.placeholder = '';
+            } else if (type === 'RG') {
+                docNumberLabel.textContent = 'RG (apenas números)';
+                docNumberInput.pattern = '\\d{9}';
+                docNumberInput.title = 'Digite os 9 dígitos do RG.';
+                docNumberInput.placeholder = '';
+            } else { // Nascimento
+                docNumberLabel.textContent = 'Data de Nascimento (DDMMAAAA)';
+                docNumberInput.pattern = '\\d{8}';
+                docNumberInput.title = 'Digite 8 números (DDMMAAAA).';
+                docNumberInput.placeholder = 'Ex: 25121990';
+            }
+            docNumberInput.value = '';
+        });
 
         const updateButtonStates = () => drawBtn.disabled = participants.length === 0;
 
-        const attachActionListeners = () => {
-            document.querySelectorAll('.delete-btn').forEach(b => b.onclick = e => {
-                const keyToDelete = e.currentTarget.getAttribute('data-key');
-                const participant = participants.find(p => p.key === keyToDelete);
-                if (participant && confirm(`Apagar "${participant.name}"?`)) {
-                    participantsRef.child(keyToDelete).remove();
-                }
-            });
-            document.querySelectorAll('.edit-btn').forEach(b => b.onclick = e => openEditModal(e.currentTarget.getAttribute('data-key')));
-        };
-        
         const renderList = () => {
             const searchTerm = searchBox.value.toLowerCase();
             const filtered = participants.filter(p => p.name.toLowerCase().includes(searchTerm) || p.docNumber.includes(searchTerm));
@@ -244,129 +298,55 @@
                 item.innerHTML = `
                     <div class="participant-info">
                         <div class="name">#${p.luckyNumber} - ${p.name}</div>
-                        <div class="details">
-                            <span class="doc-type-badge">${p.docType}</span>
-                            <span>${p.docNumber}</span>
-                        </div>
+                        <div class="details">${p.docType}: ${p.docNumber}</div>
                     </div>
                     <div class="participant-actions">
-                        <button class="edit-btn" data-key="${p.key}" title="Editar"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg></button>
-                        <button class="delete-btn" data-key="${p.key}" title="Apagar"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
+                        <button class="edit-btn" data-id="${p.id}" title="Editar"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg></button>
+                        <button class="delete-btn" data-id="${p.id}" title="Apagar"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
                     </div>`;
                 listContainer.appendChild(item);
             });
             attachActionListeners();
         };
-
-        const openEditModal = (keyToEdit) => {
-            const p = participants.find(p => p.key === keyToEdit);
-            if (!p) return;
-            document.getElementById('edit-key').value = p.key;
-            document.getElementById('edit-fullName').value = p.name;
-            document.getElementById('edit-doc').value = `${p.docType.toUpperCase()}: ${p.docNumber}`;
-            editModal.style.display = 'flex';
-        };
-
-        const setShowPasteTool = (show) => {
-            if (show) {
-                pasteGroup.style.display = 'block';
-                formSeparator.style.display = 'block';
-                togglePasteBtn.textContent = 'Ocultar Preenchimento Rápido';
-                localStorage.setItem('showPasteTool', 'true');
-            } else {
-                pasteGroup.style.display = 'none';
-                formSeparator.style.display = 'none';
-                togglePasteBtn.textContent = 'Exibir Preenchimento Rápido';
-                localStorage.setItem('showPasteTool', 'false');
-            }
-        };
-
-        const updateDocInput = () => {
-            const type = docTypeSelect.value;
-            if (type === 'cpf') {
-                docNumberInput.placeholder = '11 dígitos';
-                docNumberInput.pattern = '\\d{11}';
-                docNumberInput.title = 'Digite os 11 dígitos do CPF.';
-            } else if (type === 'rg') {
-                docNumberInput.placeholder = '9 dígitos';
-                docNumberInput.pattern = '\\d{9}';
-                docNumberInput.title = 'Digite os 9 dígitos do RG.';
-            } else { // dob
-                docNumberInput.placeholder = 'DDMMAAAA';
-                docNumberInput.pattern = '\\d{8}';
-                docNumberInput.title = 'Digite a data no formato DDMMAAAA.';
-            }
-        };
-
-        const parseTextToNameAndDoc = (text) => {
-            let name = '', docNumber = '', docType = '';
-            const docRegex = /\b(\d{11}|\d{9}|\d{8})\b/;
-            const match = text.match(docRegex);
-            
-            if (match && match[0]) {
-                docNumber = match[0];
-                name = text.replace(docNumber, '').replace(/nome|cpf|rg|data|nasc|:/ig, '').replace(/\s+/g, ' ').trim();
-                const len = docNumber.length;
-                if (len === 11) docType = 'cpf';
-                else if (len === 9) docType = 'rg';
-                else if (len === 8) docType = 'dob';
-            }
-            return { name, docNumber, docType };
-        };
-
-        // --- LISTENERS E LÓGICA DE EXECUÇÃO ---
-
-        // Firebase Listeners
-        database.ref('.info/connected').on('value', (snap) => {
-            if (snap.val() === true) {
-                connectionStatus.textContent = 'Online';
-                connectionStatus.className = 'connected';
-            } else {
-                connectionStatus.textContent = 'Offline';
-                connectionStatus.className = 'disconnected';
-            }
-        });
-
-        participantsRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            participants = [];
-            if (data) {
-                for (const key in data) {
-                    participants.push({ key, ...data[key] });
-                }
-            }
-            updateButtonStates();
-            if (participantListSection.style.display === 'block') {
-                renderList();
-            }
-        });
         
-        winnersRef.on('value', (snapshot) => {
-            winners = snapshot.val() ? Object.values(snapshot.val()) : [];
-        });
+        const attachActionListeners = () => {
+            document.querySelectorAll('.delete-btn').forEach(b => b.onclick = e => {
+                const idToDelete = e.currentTarget.getAttribute('data-id');
+                const participant = participants.find(p => p.id === idToDelete);
+                if (participant && confirm(`Apagar "${participant.name}"?`)) {
+                    participantsRef.child(idToDelete).remove();
+                }
+            });
+            document.querySelectorAll('.edit-btn').forEach(b => b.onclick = e => openEditModal(e.currentTarget.getAttribute('data-id')));
+        };
+        
+        const parseTextToNameAndDoc = (text) => {
+            let name = text, docNumber = '', docType = '';
+            const numbers = text.match(/\b\d{8,11}\b/);
+            
+            if (numbers && numbers[0]) {
+                const num = numbers[0].replace(/\D/g, '');
+                name = text.replace(num, '').replace(/\s+/g, ' ').trim();
+                docNumber = num;
 
-        // Event Listeners
-        togglePasteBtn.addEventListener('click', () => {
-            const isHidden = pasteGroup.style.display === 'none';
-            setShowPasteTool(isHidden);
-            menuPanel.classList.remove('open');
-        });
-
-        docTypeSelect.addEventListener('change', updateDocInput);
+                if (num.length === 11) docType = 'CPF';
+                else if (num.length === 9) docType = 'RG';
+                else if (num.length === 8) docType = 'Nascimento';
+            }
+            return { name, docType, docNumber };
+        };
 
         parseBtn.addEventListener('click', () => {
-            const text = document.getElementById('paste-area').value.trim();
-            if (!text) return;
-            const { name, docNumber, docType } = parseTextToNameAndDoc(text);
-            if (name && docNumber && docType) {
-                fullNameInput.value = name;
-                docTypeSelect.value = docType;
-                updateDocInput();
-                docNumberInput.value = docNumber;
-                document.getElementById('paste-area').value = '';
-            } else {
-                alert('Não foi possível identificar um nome e um documento válidos no texto.');
-            }
+            const text = document.getElementById('paste-area').value;
+            const { name, docType, docNumber } = parseTextToNameAndDoc(text);
+
+            if (name) fullNameInput.value = name;
+            if (docType) docTypeSelect.value = docType;
+            if (docNumber) docNumberInput.value = docNumber;
+            
+            // Dispara o evento 'change' para atualizar o formulário
+            docTypeSelect.dispatchEvent(new Event('change'));
+            document.getElementById('paste-area').value = '';
         });
 
         form.addEventListener('submit', (e) => {
@@ -374,71 +354,113 @@
             const name = fullNameInput.value.trim();
             const docType = docTypeSelect.value;
             const docNumber = docNumberInput.value.replace(/\D/g, '');
+
+            if (!name || !docNumberInput.checkValidity()) {
+                return alert('Verifique os dados. Nome é obrigatório e o documento deve seguir o formato correto.');
+            }
             
-            const len = docNumber.length;
-            if (!name || (docType === 'cpf' && len !== 11) || (docType === 'rg' && len !== 9) || (docType === 'dob' && len !== 8)) {
-                return alert('Verifique os dados preenchidos. O número do documento não tem o tamanho correto.');
+            // Verifica duplicidade (ignora para Data de Nascimento)
+            if (docType !== 'Nascimento' && participants.some(p => p.docType === docType && p.docNumber === docNumber)) {
+                return alert(`${docType} já cadastrado.`);
             }
 
-            if (docType !== 'dob' && participants.some(p => p.docNumber === docNumber && p.docType === docType)) {
-                return alert('Este documento (CPF/RG) já foi cadastrado.');
-            }
-            
             const lastLuckyNumber = participants.length > 0 ? Math.max(...participants.map(p => p.luckyNumber)) : 0;
-            const newParticipant = { luckyNumber: lastLuckyNumber + 1, name, docType, docNumber };
             
-            participantsRef.push(newParticipant);
+            // Gera um ID único para o Firebase
+            let firebaseId;
+            if (docType !== 'Nascimento') {
+                firebaseId = `${docType}_${docNumber}`;
+            } else {
+                firebaseId = `Nasc_${docNumber}_${Date.now()}`; // Garante unicidade para datas
+            }
 
+            const newParticipant = { 
+                id: firebaseId,
+                luckyNumber: lastLuckyNumber + 1, 
+                name, 
+                docType,
+                docNumber 
+            };
+            
+            participantsRef.child(firebaseId).set(newParticipant);
             document.getElementById('lucky-number-display').textContent = newParticipant.luckyNumber;
-            document.getElementById('lucky-number-modal').style.display = 'flex';
+            luckyNumberModal.style.display = 'flex';
             form.reset();
-            updateDocInput();
+            docTypeSelect.dispatchEvent(new Event('change')); // Reseta o label do input
             fullNameInput.focus();
         });
         
+        const closeModal = () => modals.forEach(m => m.style.display = 'none');
         document.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
 
         bulkAddBtn.addEventListener('click', () => { bulkAddModal.style.display = 'flex'; menuPanel.classList.remove('open'); });
 
         processBulkListBtn.addEventListener('click', () => {
-            const text = document.getElementById('bulk-paste-area').value.trim();
-            if (!text) return;
-            const lines = text.split('\n');
-            let errorLines = [];
-            let successCount = 0;
+            const lines = bulkPasteArea.value.trim().split('\n');
+            if (lines.length === 0 || (lines.length === 1 && lines[0] === '')) return;
+
             let lastLuckyNumber = participants.length > 0 ? Math.max(...participants.map(p => p.luckyNumber)) : 0;
-            const existingNonDobDocs = new Set(participants.filter(p => p.docType !== 'dob').map(p => `${p.docType}-${p.docNumber}`));
+            const updates = {};
+            const addedDocs = new Set(participants.filter(p => p.docType !== 'Nascimento').map(p => `${p.docType}_${p.docNumber}`));
+            let newParticipantsCount = 0;
+            let skippedCount = 0;
 
-            lines.forEach((line, index) => {
-                const { name, docNumber, docType } = parseTextToNameAndDoc(line.trim());
-                const docId = `${docType}-${docNumber}`;
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const { name, docType, docNumber } = parseTextToNameAndDoc(line);
 
-                if (name && docNumber && docType) {
-                    if (docType !== 'dob' && existingNonDobDocs.has(docId)) {
-                        errorLines.push(index + 1);
-                    } else {
-                        lastLuckyNumber++;
-                        const newParticipant = { name, docType, docNumber, luckyNumber: lastLuckyNumber };
-                        participantsRef.push(newParticipant);
-                        if(docType !== 'dob') existingNonDobDocs.add(docId);
-                        successCount++;
-                    }
-                } else { if(line.trim()) errorLines.push(index + 1); }
+                if (!name || !docType || !docNumber) {
+                    skippedCount++;
+                    return;
+                }
+
+                const docKey = `${docType}_${docNumber}`;
+                if (docType !== 'Nascimento' && (participants.some(p => p.id === docKey) || addedDocs.has(docKey))) {
+                    skippedCount++;
+                    return;
+                }
+                
+                addedDocs.add(docKey);
+
+                lastLuckyNumber++;
+                newParticipantsCount++;
+
+                let firebaseId = (docType !== 'Nascimento') ? docKey : `Nasc_${docNumber}_${Date.now()}_${newParticipantsCount}`;
+
+                const newParticipant = { id: firebaseId, luckyNumber: lastLuckyNumber, name, docType, docNumber };
+                updates[firebaseId] = newParticipant;
             });
             
-            alert(`${successCount} adicionados. ${errorLines.length} linhas com erro (inválido ou duplicado).`);
-            closeModal(); document.getElementById('bulk-paste-area').value = '';
+            if (Object.keys(updates).length > 0) {
+                participantsRef.update(updates);
+            }
+            
+            alert(`${newParticipantsCount} participante(s) adicionado(s).\n${skippedCount} linha(s) ignorada(s) (dados inválidos ou duplicados).`);
+            closeModal();
+            bulkPasteArea.value = '';
         });
 
         menuToggle.addEventListener('click', () => menuPanel.classList.toggle('open'));
         document.addEventListener('click', e => { if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) menuPanel.classList.remove('open'); });
 
+        const openEditModal = (idToEdit) => {
+            const p = participants.find(p => p.id === idToEdit);
+            if (!p) return;
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('edit-fullName').value = p.name;
+            document.getElementById('edit-doc').value = `${p.docType}: ${p.docNumber}`;
+            editModal.style.display = 'flex';
+        };
+
         editForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const keyToEdit = document.getElementById('edit-key').value;
+            const idToEdit = document.getElementById('edit-id').value;
             const newName = document.getElementById('edit-fullName').value.trim();
-            if (!newName) return alert('O nome não pode ser vazio.');
-            participantsRef.child(keyToEdit).child('name').set(newName);
+            if (!newName) {
+                alert('O nome não pode ser vazio.');
+                return;
+            }
+            participantsRef.child(idToEdit).child('name').set(newName);
             closeModal();
         });
         
@@ -451,119 +473,86 @@
             }
         });
 
-        drawBtn.addEventListener('click', () => { if (participants.length > 0) { drawOptionsModal.style.display = 'flex'; } menuPanel.classList.remove('open'); });
-        
+        drawBtn.addEventListener('click', () => {
+            drawOptionsModal.style.display = 'flex';
+            menuPanel.classList.remove('open');
+        });
+
         drawOptionsForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            const minNumber = parseInt(document.getElementById('min-lucky-number').value, 10) || 1;
             const excludeWinners = document.getElementById('exclude-winners-checkbox').checked;
-            const minLuckyNumber = parseInt(document.getElementById('min-lucky-number').value) || 1;
-            
-            let drawingPool = [...participants];
-            if (excludeWinners) { drawingPool = drawingPool.filter(p => !winners.includes(p.luckyNumber)); }
-            drawingPool = drawingPool.filter(p => p.luckyNumber >= minLuckyNumber);
 
-            if (drawingPool.length === 0) {
-                closeModal();
-                return alert("Nenhum participante disponível para sorteio com os critérios selecionados.");
+            let eligible = participants.filter(p => p.luckyNumber >= minNumber);
+            if (excludeWinners) {
+                const winnerLuckyNumbers = new Set(winners.map(w => w.luckyNumber));
+                eligible = eligible.filter(p => !winnerLuckyNumbers.has(p.luckyNumber));
             }
+            if (eligible.length === 0) return alert('Nenhum participante elegível para o sorteio.');
+
+            const winner = eligible[Math.floor(Math.random() * eligible.length)];
             
-            const winner = drawingPool[Math.floor(Math.random() * drawingPool.length)];
-            
-            if (!winners.includes(winner.luckyNumber)) {
-                winnersRef.child(winner.luckyNumber).set(winner.luckyNumber);
-            }
+            winnersRef.push(winner);
 
             document.getElementById('winner-name').textContent = `#${winner.luckyNumber} - ${winner.name}`;
-            document.getElementById('winner-details').textContent = `${winner.docType.toUpperCase()}: ${winner.docNumber}`;
+            document.getElementById('winner-details').textContent = `${winner.docType}: ${winner.docNumber}`;
+            winnerModal.style.display = 'flex';
             closeModal();
-            document.getElementById('winner-modal').style.display = 'flex';
-            if (participantListSection.style.display !== 'block') { toggleListBtn.click(); }
-            setTimeout(() => {
-                const winnerElement = document.getElementById(`participant-${winner.luckyNumber}`);
-                if (winnerElement) { winnerElement.classList.add('winner-highlight'); winnerElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-            }, 100);
         });
         
         viewWinnersBtn.addEventListener('click', () => {
-            menuPanel.classList.remove('open');
             const container = document.getElementById('winners-list-container');
             container.innerHTML = winners.length === 0 ? '<p>Nenhum sorteio realizado.</p>' : '';
-            winners.sort((a, b) => a - b).forEach(luckyNumber => {
-                const winnerData = participants.find(p => p.luckyNumber === luckyNumber);
-                if (winnerData) {
-                    const item = document.createElement('div');
-                    item.className = 'participant-item';
-                    item.innerHTML = `<div class="participant-info"><div class="name">#${winnerData.luckyNumber} - ${winnerData.name}</div></div>`;
-                    container.appendChild(item);
-                }
+            winners.sort((a,b) => b.luckyNumber - a.luckyNumber).forEach(w => {
+                container.innerHTML += `<div class="participant-item">
+                    <div class="participant-info">
+                        <div class="name">#${w.luckyNumber} - ${w.name}</div>
+                        <div class="details">${w.docType}: ${w.docNumber}</div>
+                    </div>
+                </div>`;
             });
-            document.getElementById('winners-list-modal').style.display = 'flex';
+            winnersListModal.style.display = 'flex';
+            menuPanel.classList.remove('open');
         });
 
         deleteAllBtn.addEventListener('click', () => { if (confirm('APAGAR LISTA DE PARTICIPANTES?')) { participantsRef.set(null); } menuPanel.classList.remove('open'); });
         resetAllBtn.addEventListener('click', () => { if (confirm('RESETAR TUDO?')) { database.ref().set(null); } menuPanel.classList.remove('open'); });
-        
+
         importFileInput.addEventListener('change', (e) => {
-            menuPanel.classList.remove('open');
             const file = e.target.files[0];
             if (!file) return;
-
-            if (!confirm('ATENÇÃO: A importação de um novo arquivo irá APAGAR a lista atual na nuvem e substituí-la por esta. Deseja continuar?')) {
-                e.target.value = '';
-                return;
-            }
-
             const reader = new FileReader();
-            reader.onload = (re) => {
+            reader.onload = (event) => {
                 try {
-                    const dataArray = JSON.parse(re.target.result);
-                    if (Array.isArray(dataArray) && dataArray.every(i => 'name' in i && 'docNumber' in i && 'docType' in i && 'luckyNumber' in i)) {
-                        
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData) && confirm(`Importar ${importedData.length} participantes? A lista atual será substituída.`)) {
                         const dataToUpload = {};
-                        dataArray.forEach(participant => {
-                            // Cria uma chave única para cada um no novo objeto
-                            const newKey = participantsRef.push().key;
-                            dataToUpload[newKey] = participant;
-                        });
-
-                        // Substitui todos os dados no Firebase de uma vez
-                        participantsRef.set(dataToUpload)
-                            .then(() => alert('Lista importada com sucesso para a nuvem!'))
-                            .catch(error => alert('Erro ao enviar dados para a nuvem: ' + error.message));
-
-                    } else {
-                        alert('Arquivo JSON inválido ou formato de dados incorreto.');
+                        importedData.forEach(p => { dataToUpload[p.id] = p; });
+                        participantsRef.set(dataToUpload);
                     }
-                } catch(error) { 
-                    alert('Erro ao ler o arquivo JSON: ' + error.message);
-                }
-                e.target.value = '';
+                } catch (error) { alert('Arquivo JSON inválido.'); }
             };
             reader.readAsText(file);
-        });
-
-        document.getElementById('download-json-btn').addEventListener('click', (e) => {
-            if(participants.length === 0) { e.preventDefault(); return alert("A lista está vazia."); }
-            const exportableList = participants.map(({key, ...rest}) => rest);
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportableList, null, 2));
-            e.currentTarget.href = dataStr;
-            e.currentTarget.download = `sorteio_online_${new Date().toISOString().slice(0,10)}.json`;
+            menuPanel.classList.remove('open');
         });
         
+        const createDownloadLink = (data, type) => URL.createObjectURL(new Blob([data], { type }));
+        document.getElementById('download-json-btn').addEventListener('click', (e) => {
+            e.target.href = createDownloadLink(JSON.stringify(participants, null, 2), 'application/json');
+            e.target.download = 'participantes_sorteio.json';
+        });
+
         document.getElementById('download-csv-btn').addEventListener('click', (e) => {
-            if(participants.length === 0) { e.preventDefault(); return alert("A lista está vazia."); }
-            let csv = "NumeroDaSorte;NomeCompleto;TipoDocumento;Documento\n" + participants.map(p => `${p.luckyNumber};"${p.name}";${p.docType.toUpperCase()};"${p.docNumber}"`).join("\n");
-            const createDownloadLink = (data, type) => URL.createObjectURL(new Blob([data], { type }));
-            e.currentTarget.href = createDownloadLink(csv, 'text/csv;charset=utf-8;');
-            e.currentTarget.download = `sorteio_online_${new Date().toISOString().slice(0,10)}.csv`;
+            let csvContent = 'NumeroSorte,Nome,TipoDocumento,Documento\n';
+            participants.forEach(p => {
+                csvContent += `${p.luckyNumber},"${p.name.replace(/"/g, '""')}",${p.docType},${p.docNumber}\n`;
+            });
+            e.target.href = createDownloadLink(csvContent, 'text/csv;charset=utf-8;');
+            e.target.download = 'participantes_sorteio.csv';
         });
         
         searchBox.addEventListener('input', renderList);
-
-        // -- Execução Inicial --
-        if (localStorage.getItem('showPasteTool') === 'true') {
-            setShowPasteTool(true);
-        }
+        updateButtonStates();
     });
     </script>
 </body>

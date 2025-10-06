@@ -77,7 +77,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .modal h2 { margin-bottom: 15px; color: var(--primary-color); }
         #lucky-number-display, #winner-name { font-size: 2.5em; font-weight: bold; color: var(--primary-color); margin: 15px 0; }
-        #winner-details { font-size: 1.2em; margin-bottom: 20px; }
+        #winner-details { font-size: 1.2em; margin-bottom: 20px; line-height: 1.5; }
         .winner-highlight { background-color: #fff3cd !important; border: 2px solid var(--secondary-color); }
     </style>
 </head>
@@ -423,7 +423,7 @@
             e.preventDefault();
             const excludeWinners = document.getElementById('exclude-winners-checkbox').checked;
 
-            let eligible = [...participants]; // Começa com todos
+            let eligible = [...participants];
             if (excludeWinners) {
                 const winnerLuckyNumbers = new Set(winners.map(w => w.luckyNumber));
                 eligible = eligible.filter(p => !winnerLuckyNumbers.has(p.luckyNumber));
@@ -432,18 +432,30 @@
 
             const winner = eligible[Math.floor(Math.random() * eligible.length)];
             
-            // Cria um novo objeto para o vencedor com a data do sorteio
-            const winnerRecord = {
-                ...winner,
-                drawTimestamp: new Date().toISOString()
-            };
-            winnersRef.push(winnerRecord); // Salva o registro completo
+            const winnerRecord = { ...winner, drawTimestamp: new Date().toISOString() };
+            winnersRef.push(winnerRecord);
 
-            drawOptionsModal.style.display = 'none'; // FECHA o modal de opções
+            drawOptionsModal.style.display = 'none';
+
+            // **MODIFICAÇÃO AQUI**
+            const winnerDetailsEl = document.getElementById('winner-details');
+            const regDate = new Date(winner.registrationTimestamp);
+            const manausDateTime = new Intl.DateTimeFormat('pt-BR', {
+                timeZone: 'America/Manaus',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(regDate);
 
             document.getElementById('winner-name').textContent = `#${winner.luckyNumber} - ${winner.name}`;
-            document.getElementById('winner-details').textContent = `${winner.docType}: ${winner.docNumber}`;
-            winnerModal.style.display = 'flex'; // ABRE o modal do vencedor
+            winnerDetailsEl.innerHTML = `
+                ${winner.docType}: ${winner.docNumber}<br>
+                <span style="font-size: 0.85em; color: #555;">Cadastrado em: ${manausDateTime}</span>
+            `;
+            
+            winnerModal.style.display = 'flex';
         });
         
         viewWinnersBtn.addEventListener('click', () => {
@@ -451,7 +463,7 @@
             container.innerHTML = winners.length === 0 ? '<p>Nenhum sorteio realizado.</p>' : '';
             
             winners
-                .sort((a,b) => new Date(b.drawTimestamp) - new Date(a.drawTimestamp)) // Ordena pelos mais recentes
+                .sort((a,b) => new Date(b.drawTimestamp) - new Date(a.drawTimestamp))
                 .forEach(w => {
                     const drawDate = new Date(w.drawTimestamp);
                     const manausTime = new Intl.DateTimeFormat('pt-BR', {
@@ -476,17 +488,10 @@
         document.getElementById('delete-all-btn').addEventListener('click', () => { if (confirm('APAGAR LISTA DE PARTICIPANTES?')) { participantsRef.set(null); } menuPanel.classList.remove('open'); });
         document.getElementById('reset-all-btn').addEventListener('click', () => { if (confirm('RESETAR TUDO? (Apaga participantes E sorteados)')) { database.ref().set(null); } menuPanel.classList.remove('open'); });
         
-        // Funções de importação e download (sem alterações funcionais)
-        document.getElementById('import-file-menu').addEventListener('change', (e) => { /* ... */ });
-        document.getElementById('download-json-btn').addEventListener('click', (e) => { /* ... */ });
-        document.getElementById('download-csv-btn').addEventListener('click', (e) => { /* ... */ });
-        searchBox.addEventListener('input', renderList);
-        
-        // Funções omitidas por brevidade, pois não foram alteradas
+        // Funções de importação e download
         const otherFunctions = () => {
              document.getElementById('import-file-menu').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
+                const file = e.target.files[0]; if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     try {
@@ -509,7 +514,7 @@
             document.getElementById('download-csv-btn').addEventListener('click', (e) => {
                 let csvContent = 'NumeroSorte,Nome,TipoDocumento,Documento,DataRegistro\n';
                 participants.forEach(p => {
-                    const regDate = p.registrationTimestamp ? new Date(p.registrationTimestamp).toLocaleString('pt-BR') : 'N/A';
+                    const regDate = p.registrationTimestamp ? new Date(p.registrationTimestamp).toLocaleString('pt-BR', { timeZone: 'America/Manaus' }) : 'N/A';
                     csvContent += `${p.luckyNumber},"${p.name.replace(/"/g, '""')}",${p.docType},${p.docNumber},"${regDate}"\n`;
                 });
                 e.target.href = createDownloadLink(csvContent, 'text/csv;charset=utf-8;');

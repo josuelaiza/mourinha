@@ -338,19 +338,16 @@
         const closeModal = () => modals.forEach(m => m.style.display = 'none');
         document.querySelectorAll('.close-modal-btn').forEach(btn => btn.onclick = closeModal);
 
-        bulkAddBtn.addEventListener('click', () => { bulkAddModal.style.display = 'flex'; menuPanel.classList.remove('open'); });
-
         const parseTextToNameAndDoc = (text) => {
             let name = text;
             let docNumber = '';
             let docType = '';
             let originalMatch = '';
 
-            // Regex para encontrar blocos de números que podem conter separadores '.', '-', ou '/'
             const potentialDocs = text.match(/(\d[.\-/]?){7,}\d/g) || [];
 
             for (const match of potentialDocs) {
-                const cleanNum = match.replace(/\D/g, ''); // Remove todos os não-dígitos
+                const cleanNum = match.replace(/\D/g, '');
                 if (cleanNum.length === 11) {
                     docNumber = cleanNum;
                     docType = 'CPF';
@@ -372,17 +369,19 @@
             }
 
             if (originalMatch) {
-                // Se encontrou um documento, limpa o texto original para obter o nome
                 name = text
-                    .replace(originalMatch, '') // Remove o número com sua formatação original
-                    .replace(/cpf|rg|nascimento|data/ig, '') // Remove palavras-chave (case-insensitive)
-                    .replace(/[:]/g, '') // Remove dois-pontos
-                    .replace(/\s+/g, ' ') // Substitui múltiplos espaços (incluindo quebras de linha) por um único espaço
+                    .replace(originalMatch, '')
+                    // **MODIFICAÇÃO AQUI**
+                    .replace(/nome|cpf|rg|nascimento|data/ig, '') 
+                    .replace(/[:]/g, '')
+                    .replace(/\s+/g, ' ')
                     .trim();
             }
 
             return { name, docType, docNumber };
         };
+
+        bulkAddBtn.addEventListener('click', () => { bulkAddModal.style.display = 'flex'; menuPanel.classList.remove('open'); });
 
         processBulkListBtn.addEventListener('click', () => {
             const lines = bulkPasteArea.value.trim().split('\n');

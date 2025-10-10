@@ -87,13 +87,21 @@
             font-size: 30px;
             cursor: pointer;
             z-index: 1002;
+            background: var(--white-color);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
         }
 
         #admin-panel {
-            display: none;
+            /* CORREÇÃO: Removido 'display: none'. O painel agora existe, mas está fora da tela. */
             position: fixed;
             top: 0;
-            left: -320px;
+            left: -320px; /* Inicia fora da tela */
             width: 300px;
             height: 100%;
             background: var(--white-color);
@@ -105,7 +113,7 @@
         }
         
         #admin-panel.open {
-            left: 0;
+            left: 0; /* A classe 'open' traz o painel para a tela */
         }
 
         #admin-panel h2 {
@@ -116,6 +124,9 @@
             list-style: none;
             padding: 0;
             text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
         }
         #participants-list li {
             background: #f1f1f1;
@@ -126,7 +137,7 @@
 
         /* Modal */
         .modal {
-            display: none;
+            display: none; /* Modals começam escondidos */
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -178,6 +189,7 @@
             align-items: center;
             justify-content: center;
             font-size: 1.1em;
+            cursor: pointer;
         }
         #winner-confirmation-box input[type="checkbox"] {
             margin-right: 10px;
@@ -191,13 +203,14 @@
     <div id="menu-icon">&#9776;</div>
 
     <div id="admin-panel">
-        <button onclick="document.getElementById('admin-panel').classList.remove('open')" style="float: right;">&times;</button>
+        <button onclick="document.getElementById('admin-panel').classList.remove('open')" style="float: right; font-size: 20px; padding: 5px 10px;">&times;</button>
         <h2>Painel do Admin</h2>
         
         <div id="admin-controls">
-            <h3>Definir Sorteio</h3>
+            <button id="perform-raffle-btn">Realizar Sorteio Agora</button>
+            <h3>Agendar Sorteio</h3>
             <input type="datetime-local" id="raffle-time-input">
-            <button id="set-raffle-btn">Agendar Sorteio</button>
+            <button id="set-raffle-btn">Agendar</button>
 
             <h3>Lista de Participantes (<span id="participant-count">0</span>)</h3>
             <ul id="participants-list"></ul>
@@ -227,7 +240,7 @@
             <form id="registration-form">
                 <input type="text" id="user-name" placeholder="Seu nome completo" required>
                 <input type="text" id="user-cpf" placeholder="Seu CPF (apenas números)" required>
-                <button type="submit">Participar</button>
+                <button type="submit">Participar e Ativar Notificações</button>
             </form>
         </div>
 
@@ -254,7 +267,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
-        // SUA CONFIGURAÇÃO DO FIREBASE AQUI
         const firebaseConfig = {
             apiKey: "AIzaSyAWqJlUVobXs859hfxaM6eT_dU5U2YIHQk",
             authDomain: "sorteiobamn.firebaseapp.com",
@@ -265,11 +277,9 @@
             appId: "1:427382818317:web:9f745b6f0afa86b5093744"
         };
 
-        // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Elementos do DOM
         const registrationSection = document.getElementById('registration-section');
         const statusSection = document.getElementById('status-section');
         const statusScreen = document.getElementById('status-screen');
@@ -284,58 +294,50 @@
         let countdownInterval;
         let userCpf = localStorage.getItem('userCpf');
 
-        // FUNÇÕES GERAIS
         function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
         }
 
-        function formatCpf(cpf) {
-            return cpf.replace(/\D/g, '');
-        }
+        function formatCpf(cpf) { return cpf.replace(/\D/g, ''); }
         
-        function getManausTime() {
-             return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Manaus"}));
-        }
+        function getManausTime() { return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Manaus"})); }
 
-        // PEDIR PERMISSÃO PARA NOTIFICAÇÕES
-        function requestNotificationPermission() {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        console.log('Permissão para notificações concedida.');
-                    } else {
-                        console.log('Permissão para notificações negada.');
-                        alert('Para ser notificado do resultado, por favor, ative as notificações para este site nas configurações do seu navegador.');
-                    }
-                });
+        // CORREÇÃO: Função de notificação melhorada
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                alert('Este navegador não suporta notificações.');
+                return 'denied';
             }
+
+            if (Notification.permission === 'granted') {
+                return 'granted';
+            }
+
+            if (Notification.permission === 'denied') {
+                alert('As notificações estão bloqueadas. Por favor, habilite-as nas configurações do seu navegador para este site.');
+                return 'denied';
+            }
+
+            const permission = await Notification.requestPermission();
+            return permission;
         }
         
         function sendNotification(title, options) {
-            if (Notification.permission === 'granted') {
-                navigator.serviceWorker.ready.then(registration => {
-                    registration.showNotification(title, options);
-                });
-            }
-        }
-        
-        // Simples fallback se service worker não estiver registrado (abre uma notificação simples)
-        if (!('serviceWorker' in navigator)) {
-            sendNotification = (title, options) => {
-                 if (Notification.permission === 'granted') {
-                    new Notification(title, options);
-                 }
-            }
+             if (Notification.permission === 'granted') {
+                new Notification(title, options);
+             }
         }
 
-
-        // CADASTRO DO USUÁRIO
-        document.getElementById('registration-form').addEventListener('submit', (e) => {
+        document.getElementById('registration-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            requestNotificationPermission();
+            
+            // CORREÇÃO: Pede a permissão primeiro
+            const permission = await requestNotificationPermission();
+            if (permission !== 'granted') {
+                // Mesmo que negue, permite o cadastro, mas avisa o usuário.
+                console.warn('Permissão de notificação não concedida. O usuário não será notificado.');
+            }
 
             const name = document.getElementById('user-name').value.trim();
             const cpf = formatCpf(document.getElementById('user-cpf').value);
@@ -357,7 +359,6 @@
             }
         });
 
-        // LÓGICA DA TELA DE STATUS (CLIENT-SIDE)
         database.ref('raffle').on('value', (snapshot) => {
             const raffleData = snapshot.val();
             clearInterval(countdownInterval);
@@ -366,22 +367,29 @@
             winnerConfirmationBox.style.display = 'none';
 
             if (raffleData && raffleData.winner) {
-                // Sorteio finalizado
                 statusScreen.style.display = 'none';
                 winnerAnnouncement.style.display = 'block';
                 winnerNameEl.textContent = raffleData.winner.name;
 
                 if (userCpf && userCpf === raffleData.winner.cpf) {
-                    // O usuário logado é o vencedor
                     winnerConfirmationBox.style.display = 'block';
                     winnerAckCheckbox.checked = !!raffleData.winner.acknowledgedTime;
                     winnerAckCheckbox.disabled = !!raffleData.winner.acknowledgedTime;
                 }
+                
+                // Dispara a notificação se o sorteio acabou de acontecer
+                const notifiedKey = `notified_${raffleData.raffleTime || raffleData.winner.cpf}`;
+                if (!localStorage.getItem(notifiedKey)) {
+                     if(userCpf === raffleData.winner.cpf) {
+                        sendNotification('Você foi o Vencedor!', { body: 'Parabéns! Clique aqui para confirmar seu prêmio.' });
+                     } else {
+                        sendNotification('O Sorteio Acabou!', { body: `O vencedor foi ${raffleData.winner.name}.` });
+                     }
+                     localStorage.setItem(notifiedKey, 'true');
+                }
 
             } else if (raffleData && raffleData.raffleTime) {
-                // Sorteio agendado
                 const raffleTime = new Date(raffleData.raffleTime).getTime();
-
                 countdownInterval = setInterval(() => {
                     const now = getManausTime().getTime();
                     const distance = raffleTime - now;
@@ -389,8 +397,6 @@
                     if (distance < 0) {
                         clearInterval(countdownInterval);
                         statusScreen.innerHTML = '<h2>Sorteio em andamento...</h2>';
-                        // A lógica do sorteio é disparada pelo admin, mas aqui podemos checar se já temos um vencedor
-                        checkIfRaffleHappened(raffleData.raffleTime);
                         return;
                     }
 
@@ -402,52 +408,21 @@
                 }, 1000);
 
             } else {
-                // Nenhum sorteio agendado
                 statusScreen.innerHTML = '<h2>Nenhum sorteio agendado no momento.</h2>';
             }
         });
         
-        // Verifica se o sorteio ocorreu e notifica o usuário
-        function checkIfRaffleHappened(raffleTimeStr) {
-            const raffleTime = new Date(raffleTimeStr).getTime();
-            const now = getManausTime().getTime();
-
-            if (now >= raffleTime) {
-                database.ref('raffle/winner').once('value', snapshot => {
-                    if(snapshot.exists()) {
-                        const winner = snapshot.val();
-                        // Previne múltiplas notificações
-                        if(!localStorage.getItem('notified')) {
-                             if(userCpf === winner.cpf) {
-                                sendNotification('Você foi o Vencedor!', { body: 'Parabéns! Clique aqui para confirmar seu prêmio.' });
-                             } else {
-                                sendNotification('O Sorteio Acabou!', { body: 'Clique para ver quem foi o grande vencedor.' });
-                             }
-                             localStorage.setItem('notified', 'true');
-                        }
-                    } else {
-                        // Se o tempo passou e não há vencedor, o admin precisa sortear
-                        statusScreen.innerHTML = '<h2>Aguardando administrador realizar o sorteio...</h2>';
-                    }
-                });
-            }
-        }
-
-
-        // CHECKBOX DE CONFIRMAÇÃO DO VENCEDOR
         winnerAckCheckbox.addEventListener('change', () => {
             if (winnerAckCheckbox.checked) {
                 const now = getManausTime();
                 const timestamp = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}`;
                 
                 database.ref('raffle/winner/acknowledgedTime').set(timestamp)
-                .then(() => {
-                    winnerAckCheckbox.disabled = true;
-                });
+                .then(() => { winnerAckCheckbox.disabled = true; });
             }
         });
 
-        // LÓGICA DO PAINEL DE ADMINISTRADOR
+        // --- LÓGICA DO ADMIN ---
         document.getElementById('menu-icon').addEventListener('click', () => {
             document.getElementById('admin-password-modal').style.display = 'flex';
         });
@@ -463,9 +438,7 @@
             }
         });
 
-        // Carregar dados para o painel de admin
         function loadAdminData() {
-            // Lista de participantes
             database.ref('participants').on('value', (snapshot) => {
                 participantsListEl.innerHTML = '';
                 const participants = snapshot.val();
@@ -474,14 +447,13 @@
                     count = Object.keys(participants).length;
                     for (const cpf in participants) {
                         const li = document.createElement('li');
-                        li.textContent = `${participants[cpf].name} (CPF: ...${cpf.slice(-4)})`;
+                        li.textContent = `${participants[cpf].name} (...${cpf.slice(-4)})`;
                         participantsListEl.appendChild(li);
                     }
                 }
                 participantCountEl.textContent = count;
             });
 
-            // Status do vencedor
             database.ref('raffle/winner').on('value', (snapshot) => {
                 const winner = snapshot.val();
                 if (winner) {
@@ -498,42 +470,17 @@
             });
         }
         
-        // AGENDAR SORTEIO
         document.getElementById('set-raffle-btn').addEventListener('click', () => {
             const raffleTime = document.getElementById('raffle-time-input').value;
             if (raffleTime) {
-                // Limpa o vencedor anterior para iniciar um novo sorteio
                 database.ref('raffle').set({ raffleTime: raffleTime })
-                .then(() => {
-                    alert('Sorteio agendado com sucesso!');
-                    // Limpa flag de notificação para todos os usuários
-                    localStorage.removeItem('notified');
-                });
+                .then(() => alert('Sorteio agendado com sucesso!'));
             } else {
                 alert('Por favor, escolha uma data e hora.');
             }
         });
-
-        // BOTÕES DE RESET
-        document.getElementById('reset-list-btn').addEventListener('click', () => {
-            if (confirm('Tem certeza que deseja apagar a lista de participantes?')) {
-                database.ref('participants').remove();
-            }
-        });
-        document.getElementById('reset-all-btn').addEventListener('click', () => {
-            if (confirm('TEM CERTEZA? Isso apagará a lista E as informações do sorteio atual (vencedor, horário).')) {
-                database.ref('participants').remove();
-                database.ref('raffle').remove();
-                localStorage.removeItem('notified');
-            }
-        });
         
-        // Disparar o sorteio (a lógica agora está atrelada ao tempo, mas um botão para forçar pode ser útil)
-        // Por simplicidade, o sorteio é disparado quando o tempo acaba.
-        // Adicionando um botão para "REALIZAR SORTEIO AGORA"
-        const performRaffleBtn = document.createElement('button');
-        performRaffleBtn.textContent = 'Realizar Sorteio Agora';
-        performRaffleBtn.onclick = () => {
+        document.getElementById('perform-raffle-btn').addEventListener('click', () => {
             if (!confirm('Isso irá sortear um vencedor imediatamente. Deseja continuar?')) return;
 
             database.ref('participants').once('value', snapshot => {
@@ -545,26 +492,36 @@
                 const participantsArray = Object.values(participants);
                 const winner = participantsArray[Math.floor(Math.random() * participantsArray.length)];
                 
-                database.ref('raffle/winner').set(winner)
-                .then(() => {
-                    alert(`O vencedor é ${winner.name}!`);
-                    // Após definir o vencedor, todos os clientes serão notificados automaticamente pela lógica já implementada.
-                });
+                const raffleTimeForNotificationKey = new Date().toISOString();
+                
+                database.ref('raffle').set({ 
+                    winner: winner,
+                    raffleTime: raffleTimeForNotificationKey // Chave para identificar este sorteio
+                })
+                .then(() => alert(`O vencedor é ${winner.name}!`));
             });
-        };
-        document.querySelector('#admin-controls h3').insertAdjacentElement('afterend', performRaffleBtn);
+        });
 
+        document.getElementById('reset-list-btn').addEventListener('click', () => {
+            if (confirm('Tem certeza que deseja apagar a lista de participantes?')) {
+                database.ref('participants').remove();
+            }
+        });
 
-        // INICIALIZAÇÃO
+        document.getElementById('reset-all-btn').addEventListener('click', () => {
+            if (confirm('TEM CERTEZA? Isso apagará a lista E as informações do sorteio atual.')) {
+                database.ref('participants').remove();
+                database.ref('raffle').remove();
+            }
+        });
+        
         window.onload = () => {
-            loadAdminData(); // Para o admin
-            // Verifica se o usuário já se cadastrou antes
+            loadAdminData();
             if (userCpf) {
                 database.ref('participants/' + userCpf).once('value', (snapshot) => {
                     if (snapshot.exists()) {
                         showSection('status-section');
                     } else {
-                        // O CPF estava no storage mas não no banco (ex: após um reset)
                         localStorage.removeItem('userCpf');
                         showSection('registration-section');
                     }

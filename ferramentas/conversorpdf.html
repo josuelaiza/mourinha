@@ -60,6 +60,8 @@
             cursor: pointer;
             font-size: 16px;
             transition: background-color 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
         }
 
         button:hover {
@@ -79,7 +81,6 @@
             background-color: #5a6268;
         }
 
-        /* Hambúrguer Menu */
         #menu-icon {
             position: fixed;
             top: 20px;
@@ -98,10 +99,9 @@
         }
 
         #admin-panel {
-            /* CORREÇÃO: Removido 'display: none'. O painel agora existe, mas está fora da tela. */
             position: fixed;
             top: 0;
-            left: -320px; /* Inicia fora da tela */
+            left: -320px;
             width: 300px;
             height: 100%;
             background: var(--white-color);
@@ -113,11 +113,11 @@
         }
         
         #admin-panel.open {
-            left: 0; /* A classe 'open' traz o painel para a tela */
+            left: 0;
         }
 
-        #admin-panel h2 {
-            margin-top: 40px;
+        #admin-panel h2, #admin-panel h3 {
+            text-align: left;
         }
 
         #participants-list {
@@ -127,6 +127,7 @@
             max-height: 200px;
             overflow-y: auto;
             border: 1px solid #eee;
+            margin-bottom: 15px;
         }
         #participants-list li {
             background: #f1f1f1;
@@ -135,9 +136,8 @@
             border-radius: 4px;
         }
 
-        /* Modal */
         .modal {
-            display: none; /* Modals começam escondidos */
+            display: none;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -161,7 +161,6 @@
             text-align: center;
         }
 
-        /* Seções */
         .section { display: none; }
         .section.active { display: block; }
         
@@ -203,21 +202,22 @@
     <div id="menu-icon">&#9776;</div>
 
     <div id="admin-panel">
-        <button onclick="document.getElementById('admin-panel').classList.remove('open')" style="float: right; font-size: 20px; padding: 5px 10px;">&times;</button>
+        <button onclick="document.getElementById('admin-panel').classList.remove('open')" style="float: right; font-size: 20px; padding: 5px 10px; width: auto;">&times;</button>
         <h2>Painel do Admin</h2>
         
         <div id="admin-controls">
             <button id="perform-raffle-btn">Realizar Sorteio Agora</button>
+            <hr>
             <h3>Agendar Sorteio</h3>
             <input type="datetime-local" id="raffle-time-input">
             <button id="set-raffle-btn">Agendar</button>
-
+            <hr>
             <h3>Lista de Participantes (<span id="participant-count">0</span>)</h3>
             <ul id="participants-list"></ul>
             
             <h3>Status do Vencedor</h3>
-            <p id="winner-status">Aguardando sorteio...</p>
-
+            <p id="winner-status" style="text-align: left;">Aguardando sorteio...</p>
+            <hr>
             <h3>Controles de Reset</h3>
             <button id="reset-list-btn" class="btn-secondary">Resetar Lista</button>
             <button id="reset-all-btn" class="btn-danger">Reset Geral</button>
@@ -280,8 +280,7 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        const registrationSection = document.getElementById('registration-section');
-        const statusSection = document.getElementById('status-section');
+        // --- Elementos do DOM ---
         const statusScreen = document.getElementById('status-screen');
         const winnerAnnouncement = document.getElementById('winner-announcement');
         const winnerNameEl = document.getElementById('winner-name');
@@ -292,70 +291,50 @@
         const winnerStatusEl = document.getElementById('winner-status');
 
         let countdownInterval;
+        let scheduledRaffleTimeout; // Armazena o sorteio agendado pelo admin
         let userCpf = localStorage.getItem('userCpf');
 
+        // --- Funções Utilitárias ---
         function showSection(sectionId) {
             document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
         }
-
         function formatCpf(cpf) { return cpf.replace(/\D/g, ''); }
-        
         function getManausTime() { return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Manaus"})); }
-
-        // CORREÇÃO: Função de notificação melhorada
+        
         async function requestNotificationPermission() {
             if (!('Notification' in window)) {
                 alert('Este navegador não suporta notificações.');
                 return 'denied';
             }
-
-            if (Notification.permission === 'granted') {
-                return 'granted';
-            }
-
             if (Notification.permission === 'denied') {
                 alert('As notificações estão bloqueadas. Por favor, habilite-as nas configurações do seu navegador para este site.');
                 return 'denied';
             }
-
-            const permission = await Notification.requestPermission();
-            return permission;
+            if (Notification.permission === 'granted') {
+                return 'granted';
+            }
+            return await Notification.requestPermission();
         }
-        
         function sendNotification(title, options) {
-             if (Notification.permission === 'granted') {
-                new Notification(title, options);
-             }
+             if (Notification.permission === 'granted') new Notification(title, options);
         }
 
+        // --- Lógica do Participante ---
         document.getElementById('registration-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // CORREÇÃO: Pede a permissão primeiro
-            const permission = await requestNotificationPermission();
-            if (permission !== 'granted') {
-                // Mesmo que negue, permite o cadastro, mas avisa o usuário.
-                console.warn('Permissão de notificação não concedida. O usuário não será notificado.');
-            }
-
+            await requestNotificationPermission();
             const name = document.getElementById('user-name').value.trim();
             const cpf = formatCpf(document.getElementById('user-cpf').value);
 
             if (name && cpf.length === 11) {
-                const userRef = database.ref('participants/' + cpf);
-                userRef.set({ name: name, cpf: cpf })
-                    .then(() => {
-                        localStorage.setItem('userCpf', cpf);
-                        userCpf = cpf;
-                        showSection('status-section');
-                    })
-                    .catch(error => {
-                        console.error("Erro no cadastro: ", error);
-                        alert("Ocorreu um erro ao realizar o cadastro. Tente novamente.");
-                    });
+                database.ref('participants/' + cpf).set({ name, cpf }).then(() => {
+                    localStorage.setItem('userCpf', cpf);
+                    userCpf = cpf;
+                    showSection('status-section');
+                }).catch(err => alert("Erro no cadastro: " + err.message));
             } else {
-                alert('Por favor, preencha seu nome completo e um CPF válido.');
+                alert('Por favor, preencha nome e CPF válidos.');
             }
         });
 
@@ -371,16 +350,15 @@
                 winnerAnnouncement.style.display = 'block';
                 winnerNameEl.textContent = raffleData.winner.name;
 
-                if (userCpf && userCpf === raffleData.winner.cpf) {
+                if (userCpf === raffleData.winner.cpf) {
                     winnerConfirmationBox.style.display = 'block';
                     winnerAckCheckbox.checked = !!raffleData.winner.acknowledgedTime;
                     winnerAckCheckbox.disabled = !!raffleData.winner.acknowledgedTime;
                 }
                 
-                // Dispara a notificação se o sorteio acabou de acontecer
                 const notifiedKey = `notified_${raffleData.raffleTime || raffleData.winner.cpf}`;
                 if (!localStorage.getItem(notifiedKey)) {
-                     if(userCpf === raffleData.winner.cpf) {
+                     if (userCpf === raffleData.winner.cpf) {
                         sendNotification('Você foi o Vencedor!', { body: 'Parabéns! Clique aqui para confirmar seu prêmio.' });
                      } else {
                         sendNotification('O Sorteio Acabou!', { body: `O vencedor foi ${raffleData.winner.name}.` });
@@ -397,39 +375,53 @@
                     if (distance < 0) {
                         clearInterval(countdownInterval);
                         statusScreen.innerHTML = '<h2>Sorteio em andamento...</h2>';
+                        // A tela ficará assim até que o gatilho automático do admin dispare
+                        // e os dados do vencedor sejam recebidos por este listener.
                         return;
                     }
 
                     const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
                     statusScreen.innerHTML = `<h2>${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</h2>`;
                 }, 1000);
 
             } else {
-                statusScreen.innerHTML = '<h2>Nenhum sorteio agendado no momento.</h2>';
+                statusScreen.innerHTML = '<h2>Nenhum sorteio agendado.</h2>';
             }
         });
         
         winnerAckCheckbox.addEventListener('change', () => {
             if (winnerAckCheckbox.checked) {
-                const now = getManausTime();
-                const timestamp = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}`;
-                
+                const timestamp = getManausTime().toLocaleString('pt-BR');
                 database.ref('raffle/winner/acknowledgedTime').set(timestamp)
                 .then(() => { winnerAckCheckbox.disabled = true; });
             }
         });
 
-        // --- LÓGICA DO ADMIN ---
+        // --- Lógica do Administrador ---
+        function performRaffle() {
+            console.log("Executando a lógica de sorteio...");
+            database.ref('participants').once('value', snapshot => {
+                if (!snapshot.exists()) {
+                    alert('Nenhum participante cadastrado para sortear.');
+                    database.ref('raffle').update({ status: 'error_no_participants' });
+                    return;
+                }
+                const participants = Object.values(snapshot.val());
+                const winner = participants[Math.floor(Math.random() * participants.length)];
+                
+                database.ref('raffle').update({ winner: winner })
+                .then(() => alert(`O vencedor é ${winner.name}!`));
+            });
+        }
+
         document.getElementById('menu-icon').addEventListener('click', () => {
             document.getElementById('admin-password-modal').style.display = 'flex';
         });
 
         document.getElementById('admin-login-btn').addEventListener('click', () => {
-            const pass = document.getElementById('admin-password-input').value;
-            if (pass === '1234') {
+            if (document.getElementById('admin-password-input').value === '1234') {
                 document.getElementById('admin-password-modal').style.display = 'none';
                 document.getElementById('admin-panel').classList.add('open');
                 document.getElementById('admin-password-input').value = '';
@@ -438,6 +430,46 @@
             }
         });
 
+        document.getElementById('set-raffle-btn').addEventListener('click', () => {
+            const raffleTimeValue = document.getElementById('raffle-time-input').value;
+            if (!raffleTimeValue) {
+                alert('Por favor, escolha uma data e hora.');
+                return;
+            }
+            
+            const raffleTime = new Date(raffleTimeValue).getTime();
+            const now = Date.now();
+            const delay = raffleTime - now;
+
+            if (delay <= 0) {
+                alert("Por favor, agende um horário no futuro.");
+                return;
+            }
+
+            database.ref('raffle').set({ raffleTime: raffleTimeValue }).then(() => {
+                alert(`Sorteio agendado! O sorteio acontecerá automaticamente em aproximadamente ${Math.round(delay / 60000)} minutos. Mantenha esta página aberta.`);
+                if (scheduledRaffleTimeout) clearTimeout(scheduledRaffleTimeout);
+                
+                scheduledRaffleTimeout = setTimeout(performRaffle, delay);
+            });
+        });
+        
+        document.getElementById('perform-raffle-btn').addEventListener('click', () => {
+            if (confirm('Isso irá sortear um vencedor imediatamente. Deseja continuar?')) {
+                performRaffle();
+            }
+        });
+
+        document.getElementById('reset-list-btn').addEventListener('click', () => {
+            if (confirm('Apagar a lista de participantes?')) database.ref('participants').remove();
+        });
+        document.getElementById('reset-all-btn').addEventListener('click', () => {
+            if (confirm('TEM CERTEZA? Isso apagará a lista E as informações do sorteio.')) {
+                database.ref('participants').remove();
+                database.ref('raffle').remove();
+            }
+        });
+        
         function loadAdminData() {
             database.ref('participants').on('value', (snapshot) => {
                 participantsListEl.innerHTML = '';
@@ -456,75 +488,26 @@
 
             database.ref('raffle/winner').on('value', (snapshot) => {
                 const winner = snapshot.val();
+                let statusText = 'Aguardando sorteio...';
                 if (winner) {
-                    let statusText = `Vencedor: ${winner.name}.`;
+                    statusText = `Vencedor: ${winner.name}.`;
                     if (winner.acknowledgedTime) {
                         statusText += ` Ciente em: ${winner.acknowledgedTime}.`;
                     } else {
                         statusText += ` Aguardando confirmação.`;
                     }
-                    winnerStatusEl.textContent = statusText;
-                } else {
-                    winnerStatusEl.textContent = 'Aguardando sorteio...';
                 }
+                winnerStatusEl.textContent = statusText;
             });
         }
         
-        document.getElementById('set-raffle-btn').addEventListener('click', () => {
-            const raffleTime = document.getElementById('raffle-time-input').value;
-            if (raffleTime) {
-                database.ref('raffle').set({ raffleTime: raffleTime })
-                .then(() => alert('Sorteio agendado com sucesso!'));
-            } else {
-                alert('Por favor, escolha uma data e hora.');
-            }
-        });
-        
-        document.getElementById('perform-raffle-btn').addEventListener('click', () => {
-            if (!confirm('Isso irá sortear um vencedor imediatamente. Deseja continuar?')) return;
-
-            database.ref('participants').once('value', snapshot => {
-                const participants = snapshot.val();
-                if(!participants) {
-                    alert('Nenhum participante cadastrado para sortear.');
-                    return;
-                }
-                const participantsArray = Object.values(participants);
-                const winner = participantsArray[Math.floor(Math.random() * participantsArray.length)];
-                
-                const raffleTimeForNotificationKey = new Date().toISOString();
-                
-                database.ref('raffle').set({ 
-                    winner: winner,
-                    raffleTime: raffleTimeForNotificationKey // Chave para identificar este sorteio
-                })
-                .then(() => alert(`O vencedor é ${winner.name}!`));
-            });
-        });
-
-        document.getElementById('reset-list-btn').addEventListener('click', () => {
-            if (confirm('Tem certeza que deseja apagar a lista de participantes?')) {
-                database.ref('participants').remove();
-            }
-        });
-
-        document.getElementById('reset-all-btn').addEventListener('click', () => {
-            if (confirm('TEM CERTEZA? Isso apagará a lista E as informações do sorteio atual.')) {
-                database.ref('participants').remove();
-                database.ref('raffle').remove();
-            }
-        });
-        
+        // --- Inicialização ---
         window.onload = () => {
             loadAdminData();
             if (userCpf) {
                 database.ref('participants/' + userCpf).once('value', (snapshot) => {
-                    if (snapshot.exists()) {
-                        showSection('status-section');
-                    } else {
-                        localStorage.removeItem('userCpf');
-                        showSection('registration-section');
-                    }
+                    showSection(snapshot.exists() ? 'status-section' : 'registration-section');
+                    if (!snapshot.exists()) localStorage.removeItem('userCpf');
                 });
             } else {
                 showSection('registration-section');

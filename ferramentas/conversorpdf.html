@@ -3,146 +3,258 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Sorteio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Sorteio Online</title>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --white-color: #fff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        /* Classe customizada para controlar o menu, evitando conflitos */
-        .menu-closed {
-            transform: translateX(100%);
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--white-color);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+        }
+        
+        input[type="text"], input[type="password"], input[type="datetime-local"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        /* Hambúrguer Menu */
+        #menu-icon {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 1002;
+        }
+
+        #admin-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 300px;
+            height: 100%;
+            background: var(--white-color);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            z-index: 1001;
+            transition: left 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+        
+        #admin-panel.open {
+            left: 0;
+        }
+
+        #admin-panel h2 {
+            margin-top: 40px;
+        }
+
+        #participants-list {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+        }
+        #participants-list li {
+            background: #f1f1f1;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        /* Seções */
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        #status-screen h2 {
+            font-size: 2.5em;
+            margin: 20px 0;
+            color: var(--secondary-color);
+        }
+        
+        #winner-announcement {
+            background-color: var(--success-color);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        #winner-confirmation-box {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid var(--success-color);
+            border-radius: 8px;
+        }
+        #winner-confirmation-box label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+        }
+        #winner-confirmation-box input[type="checkbox"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 antialiased">
+<body>
 
-    <!-- Navbar -->
-    <nav class="bg-white shadow-md p-4 flex justify-between items-center fixed top-0 left-0 right-0 z-20">
-        <h1 class="text-xl font-bold text-blue-600">Sorteio B.A.M.N</h1>
-        <button id="hamburger-button" class="md:hidden p-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-        </button>
-    </nav>
+    <div id="menu-icon">&#9776;</div>
 
-    <!-- Menu Lateral (Hamburguer) -->
-    <div id="side-menu" class="fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-30 transform transition-transform duration-300 ease-in-out menu-closed">
-        <div class="p-4 flex justify-end">
-            <button id="close-menu-button" class="p-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-        <ul class="mt-4">
-            <li><a href="#" id="admin-menu-button" class="block py-2 px-4 text-gray-700 hover:bg-gray-200">Administrador</a></li>
-        </ul>
-    </div>
-    <div id="menu-overlay" class="fixed inset-0 bg-black opacity-50 z-20 hidden"></div>
+    <div id="admin-panel">
+        <button onclick="document.getElementById('admin-panel').classList.remove('open')" style="float: right;">&times;</button>
+        <h2>Painel do Admin</h2>
+        
+        <div id="admin-controls">
+            <h3>Definir Sorteio</h3>
+            <input type="datetime-local" id="raffle-time-input">
+            <button id="set-raffle-btn">Agendar Sorteio</button>
 
-
-    <main class="pt-20 flex items-center justify-center min-h-screen">
-        <div class="container mx-auto p-4 max-w-lg w-full">
-
-            <!-- Tela de Carregamento -->
-            <div id="loading-view" class="text-center">
-                <p class="text-lg font-semibold">Carregando...</p>
-            </div>
-
-            <!-- Tela de Cadastro -->
-            <div id="registration-view" class="hidden">
-                <div class="bg-white p-8 rounded-lg shadow-lg">
-                    <h2 class="text-2xl font-bold mb-6 text-center">Cadastro para Sorteio</h2>
-                    <form id="registration-form">
-                        <div class="mb-4">
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
-                            <input type="text" id="name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div class="mb-6">
-                            <label for="cpf" class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
-                            <input type="text" id="cpf" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="000.000.000-00" maxlength="14">
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-300 font-semibold">Participar e Ativar Notificações</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Tela de Espera -->
-            <div id="waiting-view" class="hidden text-center bg-white p-8 rounded-lg shadow-lg">
-                <h2 id="waiting-title" class="text-2xl font-bold mb-4 text-green-600">Cadastro realizado com sucesso!</h2>
-                <p id="waiting-message" class="text-gray-600 mb-6">Aguardando o próximo sorteio.</p>
-                <div id="countdown-timer" class="text-4xl font-bold text-blue-600"></div>
-            </div>
+            <h3>Lista de Participantes (<span id="participant-count">0</span>)</h3>
+            <ul id="participants-list"></ul>
             
-            <!-- Tela de Vencedor -->
-            <div id="winner-view" class="hidden text-center bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-3xl font-bold mb-4 text-yellow-500">Parabéns! Você foi o vencedor!</h2>
-                <p class="text-gray-700 mb-6">Por favor, confirme sua ciência para receber o prêmio.</p>
-                <div class="flex items-center justify-center space-x-3 bg-gray-100 p-4 rounded-md">
-                    <input type="checkbox" id="winner-confirmation-checkbox" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                    <label for="winner-confirmation-checkbox" class="font-medium text-gray-800">Estou ciente que fui sorteado e irei ao palco buscar meu prêmio.</label>
-                </div>
-                 <p id="confirmation-success" class="text-green-600 mt-4 font-semibold hidden">Confirmação enviada com sucesso!</p>
-            </div>
+            <h3>Status do Vencedor</h3>
+            <p id="winner-status">Aguardando sorteio...</p>
 
-            <!-- Tela de Resultado (Não Vencedor) -->
-            <div id="result-view" class="hidden text-center bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold mb-4">Sorteio Realizado!</h2>
-                <p class="text-gray-600 mb-2">O vencedor foi:</p>
-                <p id="winner-name-display" class="text-3xl font-bold text-blue-600"></p>
-            </div>
-
-            <!-- Painel do Administrador -->
-            <div id="admin-panel-view" class="hidden w-full max-w-4xl">
-                 <div class="bg-white p-8 rounded-lg shadow-lg">
-                    <h2 class="text-2xl font-bold mb-6">Painel do Administrador</h2>
-                    <div class="mb-8 border-b pb-6">
-                        <h3 class="text-lg font-semibold mb-3">Agendar Sorteio</h3>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <input type="datetime-local" id="draw-time-input" class="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button id="set-draw-time-button" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300">Agendar</button>
-                        </div>
-                    </div>
-                    <div class="mb-8 border-b pb-6">
-                        <h3 class="text-lg font-semibold mb-3">Status do Vencedor</h3>
-                        <div id="winner-status" class="bg-gray-100 p-4 rounded-md"></div>
-                    </div>
-                    <div class="mb-8 border-b pb-6">
-                        <h3 class="text-lg font-semibold mb-3">Participantes Cadastrados (<span id="participant-count">0</span>)</h3>
-                        <div id="participant-list-container" class="h-64 overflow-y-auto border rounded-md p-2 bg-gray-50">
-                            <ul id="participant-list"></ul>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold mb-3 text-red-600">Área de Perigo</h3>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <button id="reset-participants-button" class="w-full bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition duration-300">Resetar Lista de Candidatos</button>
-                            <button id="general-reset-button" class="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition duration-300">Reset Geral</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            <h3>Controles de Reset</h3>
+            <button id="reset-list-btn" class="btn-secondary">Resetar Lista</button>
+            <button id="reset-all-btn" class="btn-danger">Reset Geral</button>
         </div>
-    </main>
+    </div>
 
-    <!-- Modal de Senha do Admin -->
-    <div id="admin-login-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full">
-            <h3 class="text-xl font-bold mb-4">Acesso Restrito</h3>
-            <p class="text-gray-600 mb-4">Por favor, insira a senha de administrador.</p>
-            <input type="password" id="admin-password-input" class="w-full px-3 py-2 border border-gray-300 rounded-md mb-4">
-            <div class="flex justify-end gap-3">
-                 <button id="cancel-admin-login" class="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400">Cancelar</button>
-                <button id="submit-admin-password" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Entrar</button>
+    <div id="admin-password-modal" class="modal">
+        <div class="modal-content">
+            <h3>Acesso Restrito</h3>
+            <input type="password" id="admin-password-input" placeholder="Digite a senha">
+            <button id="admin-login-btn">Entrar</button>
+            <button onclick="document.getElementById('admin-password-modal').style.display='none'" class="btn-secondary">Cancelar</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="registration-section" class="section active">
+            <h1>Concorra ao Sorteio</h1>
+            <p>Insira seus dados para participar.</p>
+            <form id="registration-form">
+                <input type="text" id="user-name" placeholder="Seu nome completo" required>
+                <input type="text" id="user-cpf" placeholder="Seu CPF (apenas números)" required>
+                <button type="submit">Participar</button>
+            </form>
+        </div>
+
+        <div id="status-section" class="section">
+            <h1>Cadastro Realizado com Sucesso!</h1>
+            <p>Agora é só aguardar. Boa sorte!</p>
+            <div id="status-screen">
+                <h2>--:--:--</h2>
+            </div>
+            <div id="winner-announcement" style="display: none;">
+                <h3>O sorteio acabou!</h3>
+                <p>O vencedor é: <strong id="winner-name"></strong></p>
+            </div>
+            <div id="winner-confirmation-box" style="display: none;">
+                 <label>
+                    <input type="checkbox" id="winner-ack-checkbox">
+                    Estou ciente que fui sorteado e irei ao palco buscar meu prêmio.
+                </label>
             </div>
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
+    <script>
+        // SUA CONFIGURAÇÃO DO FIREBASE AQUI
         const firebaseConfig = {
             apiKey: "AIzaSyAWqJlUVobXs859hfxaM6eT_dU5U2YIHQk",
             authDomain: "sorteiobamn.firebaseapp.com",
@@ -153,264 +265,314 @@
             appId: "1:427382818317:web:9f745b6f0afa86b5093744"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        const views = { loading: document.getElementById('loading-view'), registration: document.getElementById('registration-view'), waiting: document.getElementById('waiting-view'), winner: document.getElementById('winner-view'), result: document.getElementById('result-view'), adminPanel: document.getElementById('admin-panel-view') };
-        const registrationForm = document.getElementById('registration-form');
-        const nameInput = document.getElementById('name');
-        const cpfInput = document.getElementById('cpf');
-        const countdownTimer = document.getElementById('countdown-timer');
-        const waitingMessage = document.getElementById('waiting-message');
-        const winnerNameDisplay = document.getElementById('winner-name-display');
-        const winnerCheckbox = document.getElementById('winner-confirmation-checkbox');
-        const confirmationSuccessMsg = document.getElementById('confirmation-success');
-        const adminLoginModal = document.getElementById('admin-login-modal');
-        const adminMenuButton = document.getElementById('admin-menu-button');
-        const cancelAdminLogin = document.getElementById('cancel-admin-login');
-        const submitAdminPassword = document.getElementById('submit-admin-password');
-        const adminPasswordInput = document.getElementById('admin-password-input');
-        const drawTimeInput = document.getElementById('draw-time-input');
-        const setDrawTimeButton = document.getElementById('set-draw-time-button');
-        const participantList = document.getElementById('participant-list');
-        const participantCount = document.getElementById('participant-count');
-        const winnerStatus = document.getElementById('winner-status');
-        const resetParticipantsButton = document.getElementById('reset-participants-button');
-        const generalResetButton = document.getElementById('general-reset-button');
-        const hamburgerButton = document.getElementById('hamburger-button');
-        const sideMenu = document.getElementById('side-menu');
-        const closeMenuButton = document.getElementById('close-menu-button');
-        const menuOverlay = document.getElementById('menu-overlay');
+        // Elementos do DOM
+        const registrationSection = document.getElementById('registration-section');
+        const statusSection = document.getElementById('status-section');
+        const statusScreen = document.getElementById('status-screen');
+        const winnerAnnouncement = document.getElementById('winner-announcement');
+        const winnerNameEl = document.getElementById('winner-name');
+        const winnerConfirmationBox = document.getElementById('winner-confirmation-box');
+        const winnerAckCheckbox = document.getElementById('winner-ack-checkbox');
+        const participantCountEl = document.getElementById('participant-count');
+        const participantsListEl = document.getElementById('participants-list');
+        const winnerStatusEl = document.getElementById('winner-status');
 
         let countdownInterval;
-        let currentUserCPF = localStorage.getItem('userCPF');
-        let winnerAnnounced = false; // Flag para controlar o envio da notificação
+        let userCpf = localStorage.getItem('userCpf');
 
-        function showView(viewName) {
-            Object.values(views).forEach(view => view.classList.add('hidden'));
-            if (views[viewName]) views[viewName].classList.remove('hidden');
+        // FUNÇÕES GERAIS
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
         }
 
-        function formatCPF(cpf) {
-            return cpf.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        function formatCpf(cpf) {
+            return cpf.replace(/\D/g, '');
         }
-
+        
         function getManausTime() {
-            return new Date().toLocaleString("pt-BR", { timeZone: "America/Manaus", hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+             return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Manaus"}));
+        }
+
+        // PEDIR PERMISSÃO PARA NOTIFICAÇÕES
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Permissão para notificações concedida.');
+                    } else {
+                        console.log('Permissão para notificações negada.');
+                        alert('Para ser notificado do resultado, por favor, ative as notificações para este site nas configurações do seu navegador.');
+                    }
+                });
+            }
         }
         
         function sendNotification(title, options) {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                const notification = new Notification(title, options);
-                notification.onclick = () => window.focus();
-            }
-        }
-
-        function initApp() {
-            onValue(ref(db), (snapshot) => {
-                const data = snapshot.val() || {};
-                const config = data.config || {};
-                const participants = data.participants || {};
-                const winner = data.winner || null;
-                
-                // CORREÇÃO 3: Lógica de notificação baseada na mudança do DB
-                if (winner && !winnerAnnounced) {
-                    winnerAnnounced = true;
-                    sendNotification("O sorteio acabou de acontecer!", { body: "Clique para ver o resultado." });
-                    if (currentUserCPF && currentUserCPF === winner.cpf) {
-                        setTimeout(() => {
-                            sendNotification("🎉 Você foi o vencedor! 🎉", { body: "Parabéns! Clique aqui para confirmar sua ciência." });
-                        }, 1500);
-                    }
-                }
-                
-                if (!winner) winnerAnnounced = false; // Reseta a flag se o sorteio for resetado
-
-                updateAdminPanel(participants, winner, config);
-
-                if (winner) {
-                    if (currentUserCPF && currentUserCPF === winner.cpf) {
-                        showView('winner');
-                        winnerCheckbox.checked = !!winner.confirmed;
-                        winnerCheckbox.disabled = !!winner.confirmed;
-                        if(winner.confirmed) confirmationSuccessMsg.classList.remove('hidden');
-                    } else {
-                        showView('result');
-                        winnerNameDisplay.textContent = winner.name;
-                    }
-                    if (countdownInterval) clearInterval(countdownInterval);
-                    return;
-                }
-
-                if (currentUserCPF && participants[currentUserCPF.replace(/\D/g, '')]) {
-                    showView('waiting');
-                    if (config.drawTime) {
-                        startCountdown(config.drawTime);
-                    } else {
-                        waitingMessage.textContent = "Nenhum sorteio agendado no momento. Aguarde!";
-                        countdownTimer.textContent = "";
-                        if (countdownInterval) clearInterval(countdownInterval);
-                    }
-                } else {
-                    localStorage.removeItem('userCPF');
-                    currentUserCPF = null;
-                    showView('registration');
-                }
-            }, { onlyOnce: false });
-            showView('loading');
-        }
-
-        function startCountdown(drawTime) {
-            if (countdownInterval) clearInterval(countdownInterval);
-            waitingMessage.textContent = "O sorteio acontecerá em:";
-            countdownInterval = setInterval(() => {
-                const distance = drawTime - new Date().getTime();
-                if (distance < 0) {
-                    clearInterval(countdownInterval);
-                    countdownTimer.textContent = "SORTEIO EM ANDAMENTO!";
-                    // Apenas um cliente precisa acionar o sorteio
-                    get(ref(db, 'winner')).then(snapshot => {
-                        if (!snapshot.exists()) triggerDraw();
-                    });
-                    return;
-                }
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                countdownTimer.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-            }, 1000);
-        }
-        
-        async function triggerDraw() {
-            const snapshot = await get(ref(db, 'participants'));
-            const participantsData = snapshot.val();
-            if (participantsData) {
-                const participantsArray = Object.values(participantsData);
-                if (participantsArray.length > 0) {
-                    const winnerIndex = Math.floor(Math.random() * participantsArray.length);
-                    const winner = participantsArray[winnerIndex];
-                    await set(ref(db, 'winner'), { name: winner.name, cpf: winner.cpf, confirmed: false, confirmationTimestamp: null });
-                }
-            }
-        }
-
-        function updateAdminPanel(participants, winner, config) {
-            participantList.innerHTML = '';
-            const participantKeys = Object.keys(participants);
-            participantCount.textContent = participantKeys.length;
-            if (participantKeys.length > 0) {
-                participantKeys.forEach(key => {
-                    const li = document.createElement('li');
-                    li.className = "p-2 border-b text-sm";
-                    li.textContent = `${participants[key].name} - ${participants[key].cpf}`;
-                    participantList.appendChild(li);
+            if (Notification.permission === 'granted') {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification(title, options);
                 });
-            } else {
-                 participantList.innerHTML = '<li class="p-2 text-sm text-gray-500">Nenhum participante cadastrado.</li>';
             }
-
-            if (winner) {
-                const confirmationText = winner.confirmed ? `Confirmado em: ${winner.confirmationTimestamp}` : 'Aguardando confirmação do vencedor.';
-                winnerStatus.innerHTML = `<p><strong>Vencedor:</strong> ${winner.name}</p><p><strong>CPF:</strong> ${winner.cpf}</p><p><strong>Status:</strong> <span class="${winner.confirmed ? 'text-green-600' : 'text-yellow-600'}">${confirmationText}</span></p>`;
-            } else {
-                winnerStatus.innerHTML = `<p>Ainda não houve sorteio ou foi resetado.</p>`;
+        }
+        
+        // Simples fallback se service worker não estiver registrado (abre uma notificação simples)
+        if (!('serviceWorker' in navigator)) {
+            sendNotification = (title, options) => {
+                 if (Notification.permission === 'granted') {
+                    new Notification(title, options);
+                 }
             }
         }
 
-        function saveParticipant(name, cpf) {
-            const cleanCPF = cpf.replace(/\D/g, '');
-            set(ref(db, `participants/${cleanCPF}`), { name, cpf });
-            localStorage.setItem('userCPF', cpf);
-            currentUserCPF = cpf;
-        }
 
-        registrationForm.addEventListener('submit', (e) => {
+        // CADASTRO DO USUÁRIO
+        document.getElementById('registration-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            const name = nameInput.value.trim();
-            const cpf = cpfInput.value.trim();
+            requestNotificationPermission();
 
-            if (name && cpf.length === 14) {
-                // CORREÇÃO 1: Pedir permissão como resultado direto da ação do usuário
-                if ('Notification' in window && Notification.permission !== 'denied') {
-                    Notification.requestPermission().then(() => {
-                        saveParticipant(name, cpf);
+            const name = document.getElementById('user-name').value.trim();
+            const cpf = formatCpf(document.getElementById('user-cpf').value);
+
+            if (name && cpf.length === 11) {
+                const userRef = database.ref('participants/' + cpf);
+                userRef.set({ name: name, cpf: cpf })
+                    .then(() => {
+                        localStorage.setItem('userCpf', cpf);
+                        userCpf = cpf;
+                        showSection('status-section');
+                    })
+                    .catch(error => {
+                        console.error("Erro no cadastro: ", error);
+                        alert("Ocorreu um erro ao realizar o cadastro. Tente novamente.");
                     });
-                } else {
-                    saveParticipant(name, cpf);
-                }
             } else {
-                alert('Por favor, preencha nome e CPF corretamente.');
+                alert('Por favor, preencha seu nome completo e um CPF válido.');
+            }
+        });
+
+        // LÓGICA DA TELA DE STATUS (CLIENT-SIDE)
+        database.ref('raffle').on('value', (snapshot) => {
+            const raffleData = snapshot.val();
+            clearInterval(countdownInterval);
+            statusScreen.style.display = 'block';
+            winnerAnnouncement.style.display = 'none';
+            winnerConfirmationBox.style.display = 'none';
+
+            if (raffleData && raffleData.winner) {
+                // Sorteio finalizado
+                statusScreen.style.display = 'none';
+                winnerAnnouncement.style.display = 'block';
+                winnerNameEl.textContent = raffleData.winner.name;
+
+                if (userCpf && userCpf === raffleData.winner.cpf) {
+                    // O usuário logado é o vencedor
+                    winnerConfirmationBox.style.display = 'block';
+                    winnerAckCheckbox.checked = !!raffleData.winner.acknowledgedTime;
+                    winnerAckCheckbox.disabled = !!raffleData.winner.acknowledgedTime;
+                }
+
+            } else if (raffleData && raffleData.raffleTime) {
+                // Sorteio agendado
+                const raffleTime = new Date(raffleData.raffleTime).getTime();
+
+                countdownInterval = setInterval(() => {
+                    const now = getManausTime().getTime();
+                    const distance = raffleTime - now;
+
+                    if (distance < 0) {
+                        clearInterval(countdownInterval);
+                        statusScreen.innerHTML = '<h2>Sorteio em andamento...</h2>';
+                        // A lógica do sorteio é disparada pelo admin, mas aqui podemos checar se já temos um vencedor
+                        checkIfRaffleHappened(raffleData.raffleTime);
+                        return;
+                    }
+
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    statusScreen.innerHTML = `<h2>${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</h2>`;
+                }, 1000);
+
+            } else {
+                // Nenhum sorteio agendado
+                statusScreen.innerHTML = '<h2>Nenhum sorteio agendado no momento.</h2>';
             }
         });
         
-        cpfInput.addEventListener('input', (e) => { e.target.value = formatCPF(e.target.value); });
+        // Verifica se o sorteio ocorreu e notifica o usuário
+        function checkIfRaffleHappened(raffleTimeStr) {
+            const raffleTime = new Date(raffleTimeStr).getTime();
+            const now = getManausTime().getTime();
 
-        winnerCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                const timestamp = getManausTime();
-                set(ref(db, 'winner/confirmed'), true);
-                set(ref(db, 'winner/confirmationTimestamp'), timestamp);
+            if (now >= raffleTime) {
+                database.ref('raffle/winner').once('value', snapshot => {
+                    if(snapshot.exists()) {
+                        const winner = snapshot.val();
+                        // Previne múltiplas notificações
+                        if(!localStorage.getItem('notified')) {
+                             if(userCpf === winner.cpf) {
+                                sendNotification('Você foi o Vencedor!', { body: 'Parabéns! Clique aqui para confirmar seu prêmio.' });
+                             } else {
+                                sendNotification('O Sorteio Acabou!', { body: 'Clique para ver quem foi o grande vencedor.' });
+                             }
+                             localStorage.setItem('notified', 'true');
+                        }
+                    } else {
+                        // Se o tempo passou e não há vencedor, o admin precisa sortear
+                        statusScreen.innerHTML = '<h2>Aguardando administrador realizar o sorteio...</h2>';
+                    }
+                });
+            }
+        }
+
+
+        // CHECKBOX DE CONFIRMAÇÃO DO VENCEDOR
+        winnerAckCheckbox.addEventListener('change', () => {
+            if (winnerAckCheckbox.checked) {
+                const now = getManausTime();
+                const timestamp = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}`;
+                
+                database.ref('raffle/winner/acknowledgedTime').set(timestamp)
+                .then(() => {
+                    winnerAckCheckbox.disabled = true;
+                });
             }
         });
 
-        adminMenuButton.addEventListener('click', () => {
-            adminLoginModal.classList.remove('hidden');
-            closeMenu();
+        // LÓGICA DO PAINEL DE ADMINISTRADOR
+        document.getElementById('menu-icon').addEventListener('click', () => {
+            document.getElementById('admin-password-modal').style.display = 'flex';
         });
 
-        cancelAdminLogin.addEventListener('click', () => { adminLoginModal.classList.add('hidden'); adminPasswordInput.value = ''; });
-
-        submitAdminPassword.addEventListener('click', () => {
-            if (adminPasswordInput.value === '1234') {
-                adminLoginModal.classList.add('hidden');
-                adminPasswordInput.value = '';
-                showView('adminPanel');
+        document.getElementById('admin-login-btn').addEventListener('click', () => {
+            const pass = document.getElementById('admin-password-input').value;
+            if (pass === '1234') {
+                document.getElementById('admin-password-modal').style.display = 'none';
+                document.getElementById('admin-panel').classList.add('open');
+                document.getElementById('admin-password-input').value = '';
             } else {
                 alert('Senha incorreta!');
             }
         });
 
-        setDrawTimeButton.addEventListener('click', () => {
-            const drawTimeValue = drawTimeInput.value;
-            if (drawTimeValue) {
-                set(ref(db, 'config/drawTime'), new Date(drawTimeValue).getTime());
-                alert('Horário do sorteio definido com sucesso!');
-            } else {
-                alert('Por favor, selecione uma data e hora.');
-            }
-        });
+        // Carregar dados para o painel de admin
+        function loadAdminData() {
+            // Lista de participantes
+            database.ref('participants').on('value', (snapshot) => {
+                participantsListEl.innerHTML = '';
+                const participants = snapshot.val();
+                let count = 0;
+                if (participants) {
+                    count = Object.keys(participants).length;
+                    for (const cpf in participants) {
+                        const li = document.createElement('li');
+                        li.textContent = `${participants[cpf].name} (CPF: ...${cpf.slice(-4)})`;
+                        participantsListEl.appendChild(li);
+                    }
+                }
+                participantCountEl.textContent = count;
+            });
 
-        resetParticipantsButton.addEventListener('click', () => {
-            if (confirm('Tem certeza que deseja apagar a lista de TODOS os candidatos?')) {
-                remove(ref(db, 'participants'));
-                alert('Lista de participantes apagada.');
-            }
-        });
-
-        generalResetButton.addEventListener('click', () => {
-            if (confirm('!! ATENÇÃO !!\nTem certeza que deseja fazer um RESET GERAL? Isso apagará TODOS os dados.')) {
-                remove(ref(db));
-                alert('Reset geral concluído.');
-                localStorage.removeItem('userCPF');
-                window.location.reload();
-            }
-        });
-
-        // CORREÇÃO 2: Lógica do Menu Hamburguer
-        function openMenu() {
-            sideMenu.classList.remove('menu-closed');
-            menuOverlay.classList.remove('hidden');
+            // Status do vencedor
+            database.ref('raffle/winner').on('value', (snapshot) => {
+                const winner = snapshot.val();
+                if (winner) {
+                    let statusText = `Vencedor: ${winner.name}.`;
+                    if (winner.acknowledgedTime) {
+                        statusText += ` Ciente em: ${winner.acknowledgedTime}.`;
+                    } else {
+                        statusText += ` Aguardando confirmação.`;
+                    }
+                    winnerStatusEl.textContent = statusText;
+                } else {
+                    winnerStatusEl.textContent = 'Aguardando sorteio...';
+                }
+            });
         }
-        function closeMenu() {
-            sideMenu.classList.add('menu-closed');
-            menuOverlay.classList.add('hidden');
-        }
-        hamburgerButton.addEventListener('click', openMenu);
-        closeMenuButton.addEventListener('click', closeMenu);
-        menuOverlay.addEventListener('click', closeMenu);
         
-        window.onload = initApp;
+        // AGENDAR SORTEIO
+        document.getElementById('set-raffle-btn').addEventListener('click', () => {
+            const raffleTime = document.getElementById('raffle-time-input').value;
+            if (raffleTime) {
+                // Limpa o vencedor anterior para iniciar um novo sorteio
+                database.ref('raffle').set({ raffleTime: raffleTime })
+                .then(() => {
+                    alert('Sorteio agendado com sucesso!');
+                    // Limpa flag de notificação para todos os usuários
+                    localStorage.removeItem('notified');
+                });
+            } else {
+                alert('Por favor, escolha uma data e hora.');
+            }
+        });
+
+        // BOTÕES DE RESET
+        document.getElementById('reset-list-btn').addEventListener('click', () => {
+            if (confirm('Tem certeza que deseja apagar a lista de participantes?')) {
+                database.ref('participants').remove();
+            }
+        });
+        document.getElementById('reset-all-btn').addEventListener('click', () => {
+            if (confirm('TEM CERTEZA? Isso apagará a lista E as informações do sorteio atual (vencedor, horário).')) {
+                database.ref('participants').remove();
+                database.ref('raffle').remove();
+                localStorage.removeItem('notified');
+            }
+        });
+        
+        // Disparar o sorteio (a lógica agora está atrelada ao tempo, mas um botão para forçar pode ser útil)
+        // Por simplicidade, o sorteio é disparado quando o tempo acaba.
+        // Adicionando um botão para "REALIZAR SORTEIO AGORA"
+        const performRaffleBtn = document.createElement('button');
+        performRaffleBtn.textContent = 'Realizar Sorteio Agora';
+        performRaffleBtn.onclick = () => {
+            if (!confirm('Isso irá sortear um vencedor imediatamente. Deseja continuar?')) return;
+
+            database.ref('participants').once('value', snapshot => {
+                const participants = snapshot.val();
+                if(!participants) {
+                    alert('Nenhum participante cadastrado para sortear.');
+                    return;
+                }
+                const participantsArray = Object.values(participants);
+                const winner = participantsArray[Math.floor(Math.random() * participantsArray.length)];
+                
+                database.ref('raffle/winner').set(winner)
+                .then(() => {
+                    alert(`O vencedor é ${winner.name}!`);
+                    // Após definir o vencedor, todos os clientes serão notificados automaticamente pela lógica já implementada.
+                });
+            });
+        };
+        document.querySelector('#admin-controls h3').insertAdjacentElement('afterend', performRaffleBtn);
+
+
+        // INICIALIZAÇÃO
+        window.onload = () => {
+            loadAdminData(); // Para o admin
+            // Verifica se o usuário já se cadastrou antes
+            if (userCpf) {
+                database.ref('participants/' + userCpf).once('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        showSection('status-section');
+                    } else {
+                        // O CPF estava no storage mas não no banco (ex: após um reset)
+                        localStorage.removeItem('userCpf');
+                        showSection('registration-section');
+                    }
+                });
+            } else {
+                showSection('registration-section');
+            }
+        };
     </script>
 </body>
 </html>

@@ -108,8 +108,8 @@
                     <p class="text-gray-500 mt-2">Boa sorte!</p>
                  </div>
                  <div id="no-draw-wrapper" class="hidden">
-                    <h1 class="text-3xl font-bold mb-4">Olá!</h1>
-                    <p class="text-gray-400">Sua inscrição foi confirmada. No momento, não há nenhum sorteio agendado. Fique de olho nas notificações!</p>
+                    <h1 class="text-3xl font-bold mb-4">Inscrição Confirmada!</h1>
+                    <p class="text-gray-400">No momento, não há nenhum sorteio agendado. Fique de olho nas notificações!</p>
                  </div>
             </div>
         </div>
@@ -138,20 +138,17 @@
                 <!-- Coluna da Esquerda: Controle do Sorteio -->
                 <div>
                     <h2 class="text-2xl font-bold mb-6 text-center">Controle do Sorteio</h2>
-                    <!-- Agendamento -->
                     <div class="bg-gray-700 p-4 rounded-lg mb-6">
                         <h3 class="text-lg font-semibold mb-3">Agendar Sorteio</h3>
                         <input type="datetime-local" id="draw-time-input" class="w-full p-2 rounded bg-gray-600 border border-gray-500 text-white mb-3">
                         <button id="schedule-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Agendar</button>
                     </div>
-                    <!-- Status -->
                     <div class="bg-gray-700 p-4 rounded-lg mb-6">
                         <h3 class="text-lg font-semibold mb-2">Status Atual</h3>
                         <p><strong>Vencedor:</strong> <span id="admin-winner-name">N/A</span></p>
                         <p><strong>Confirmação:</strong> <span id="admin-confirmation-status" class="font-bold">Pendente</span></p>
                         <p><strong>Horário:</strong> <span id="admin-confirmation-time">N/A</span></p>
                     </div>
-                     <!-- Controles de Reset -->
                     <div class="bg-gray-700 p-4 rounded-lg">
                         <h3 class="text-lg font-semibold mb-3">Ações</h3>
                         <div class="space-y-3">
@@ -255,14 +252,23 @@
             }
 
             try {
+                // Salva o participante no Firestore
                 const participantRef = doc(db, 'participants', cpf);
                 await setDoc(participantRef, { name, cpf });
 
+                // Salva o CPF localmente para identificar o usuário
                 localStorage.setItem('userCPF', cpf);
                 currentUserCPF = cpf;
 
+                // Mostra a notificação de sucesso
                 showSuccessNotification();
-                checkUserStatus(); // Atualiza a UI para a tela de status
+                
+                // **** CORREÇÃO APLICADA AQUI ****
+                // Atualiza a UI diretamente para a tela de status, em vez de
+                // chamar checkUserStatus() que dependia da leitura imediata do dado.
+                const drawRef = doc(db, "drawState", "current");
+                const drawDoc = await getDoc(drawRef);
+                updateUI('status', drawDoc.exists() ? drawDoc.data() : null);
 
             } catch (error) {
                 console.error("Erro ao registrar participante: ", error);
@@ -271,14 +277,11 @@
         });
         
         async function conductDraw() {
-            console.log("Realizando sorteio...");
             const drawRef = doc(db, 'drawState', 'current');
             const currentState = await getDoc(drawRef);
 
-            // Evita rodar o sorteio múltiplas vezes
             if (currentState.exists() && currentState.data().status === 'finished') {
-                console.log("Sorteio já finalizado.");
-                return;
+                return; // Sorteio já finalizado
             }
 
             const participantsCol = collection(db, 'participants');
@@ -287,12 +290,10 @@
             const participants = [];
             participantsSnapshot.forEach(doc => participants.push(doc.data()));
 
-            if (participants.length === 0) {
-                await setDoc(drawRef, { status: 'finished', winnerName: 'Ninguém se inscreveu' }, { merge: true });
-                return;
+            let winner = { name: 'Ninguém se inscreveu', cpf: null };
+            if (participants.length > 0) {
+                winner = participants[Math.floor(Math.random() * participants.length)];
             }
-
-            const winner = participants[Math.floor(Math.random() * participants.length)];
 
             await setDoc(drawRef, { 
                 status: 'finished', 
@@ -302,7 +303,7 @@
                 acknowledgementTime: null
             }, { merge: true });
 
-            sendNotifications(winner.cpf);
+            if(winner.cpf) sendNotifications(winner.cpf);
         }
 
         function sendNotifications(winnerCpf) {
@@ -360,10 +361,12 @@
             const drawRef = doc(db, "drawState", "current");
             const drawDoc = await getDoc(drawRef);
 
-            if (drawDoc.exists() && drawDoc.data().status === 'finished') {
-                updateUI('finished', drawDoc.data());
+            const drawData = drawDoc.exists() ? drawDoc.data() : null;
+
+            if (drawData && drawData.status === 'finished') {
+                updateUI('finished', drawData);
             } else if (participantDoc.exists()) {
-                updateUI('status', drawDoc.exists() ? drawDoc.data() : null);
+                updateUI('status', drawData);
             } else {
                 updateUI('register');
             }
@@ -374,9 +377,11 @@
             statusView.classList.add('hidden');
             winnerView.classList.add('hidden');
             winnerConfirmationBox.classList.add('hidden');
-            adminPanel.classList.add('hidden'); // Esconde o admin ao trocar de view
+            if (state !== 'admin') {
+                adminPanel.classList.add('hidden');
+            }
             
-            appContainer.classList.remove('max-w-3xl'); // Default
+            appContainer.classList.remove('max-w-3xl');
             appContainer.classList.add('max-w-4xl');
 
             if (state === 'register') {
@@ -388,8 +393,7 @@
                 if (data && data.status === 'scheduled') {
                     noDrawWrapper.classList.add('hidden');
                     countdownWrapper.classList.remove('hidden');
-                    const endTime = data.drawTime.toDate();
-                    updateCountdown(endTime);
+                    updateCountdown(data.drawTime.toDate());
                 } else {
                     countdownWrapper.classList.add('hidden');
                     noDrawWrapper.classList.remove('hidden');
@@ -412,7 +416,6 @@
         onSnapshot(doc(db, "drawState", "current"), (docSnap) => {
             const drawData = docSnap.exists() ? docSnap.data() : null;
             
-            // Atualiza painel do admin
             if(drawData) {
                 adminWinnerNameEl.textContent = drawData.winnerName || 'N/A';
                 if(drawData.winnerAcknowledged){
@@ -432,7 +435,6 @@
                 adminConfirmationTimeEl.textContent = 'N/A';
             }
 
-            // Atualiza UI do usuário se não for admin
             if (adminPanel.classList.contains('hidden')) {
                 checkUserStatus();
             }
@@ -444,9 +446,13 @@
             if (snapshot.empty) {
                 participantListContainer.innerHTML = '<p class="text-gray-400 text-center">Nenhum participante ainda.</p>';
             } else {
-                snapshot.forEach(doc => {
+                const participants = [];
+                snapshot.forEach(doc => participants.push(doc.data()));
+                // Ordenar por nome
+                participants.sort((a, b) => a.name.localeCompare(b.name));
+
+                participants.forEach(participant => {
                     count++;
-                    const participant = doc.data();
                     const div = document.createElement('div');
                     div.className = 'p-2 border-b border-gray-600 text-sm';
                     div.innerHTML = `<p class="font-semibold">${participant.name}</p><p class="text-gray-400">${participant.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}</p>`;
@@ -498,6 +504,7 @@
             }
 
             try {
+                await resetDrawState(); // Limpa o estado anterior antes de agendar um novo
                 const drawRef = doc(db, 'drawState', 'current');
                 await setDoc(drawRef, {
                     status: 'scheduled',
@@ -510,11 +517,23 @@
             }
         });
         
+        async function resetDrawState() {
+             const drawRef = doc(db, 'drawState', 'current');
+             const drawDoc = await getDoc(drawRef);
+             if (drawDoc.exists()) {
+                 await deleteDoc(drawRef);
+             }
+        }
+
         async function resetParticipants() {
              if (!confirm("Tem certeza que deseja apagar a lista de TODOS os candidatos? O sorteio agendado será mantido.")) return;
              try {
                 const participantsCol = collection(db, 'participants');
                 const participantsSnapshot = await getDocs(participantsCol);
+                if (participantsSnapshot.empty) {
+                    alert("A lista de candidatos já está vazia.");
+                    return;
+                }
                 const batch = writeBatch(db);
                 participantsSnapshot.forEach(doc => batch.delete(doc.ref));
                 await batch.commit();
@@ -528,9 +547,16 @@
         async function resetAll() {
             if (!confirm("!! ATENÇÃO !!\nVocê tem certeza que deseja fazer um reset geral? TODOS os dados (candidatos e sorteio) serão perdidos.")) return;
             try {
-                await resetParticipants(); // Reutiliza a função de apagar participantes
-                await deleteDoc(doc(db, 'drawState', 'current'));
+                const participantsCol = collection(db, 'participants');
+                const participantsSnapshot = await getDocs(participantsCol);
+                const batch = writeBatch(db);
+                participantsSnapshot.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                
+                await resetDrawState();
+
                 localStorage.removeItem('userCPF');
+                currentUserCPF = null;
                 alert("Reset geral concluído com sucesso!");
                 location.reload();
             } catch (error) {
@@ -547,10 +573,8 @@
             document.querySelector(".mobile-menu").classList.toggle("hidden");
         });
 
-        // Define a data mínima para o input de agendamento
-        drawTimeInput.min = new Date().toISOString().slice(0, 16);
+        drawTimeInput.min = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         
-        // Verifica o estado inicial do usuário
         checkUserStatus();
     </script>
 </body>

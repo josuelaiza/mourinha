@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; form-action 'none'; base-uri 'none'; script-src 'sha256-hHmw9Ru+IBDJghWHOZEvpyLzoFRjXpnzL6I2llTpsfk='; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; form-action 'none'; base-uri 'none'; script-src 'sha256-Z/np+iUKZe9imvfXXXHLPOwPav8ZeNWxs01b0TtnF9w='; style-src 'unsafe-inline'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Conferidor de Alterações</title>
 <style>/* Sistema visual aprovado na rodada de design (T4.0; AGENTS.md, Design; ferramentas/design/rodada-2.html).
@@ -1157,6 +1157,9 @@ function colarAntes(verificacao, topicoId, entrada) {
 
 function definirLiberados(verificacao, topicoId, indices, agora) {
   const topico = verificacao.topicos[posicaoDoTopico(verificacao, topicoId)];
+  // Decisão do arquiteto (T5.3): com o resultado à vista, liberar o que a IA mexeu faria o tópico
+  // passar por íntegro. Para recomeçar, cola-se o "antes" de novo (zera liberados e depois).
+  if (topico.depois !== null) throw new Error('As liberações não podem mudar: o texto depois já foi colado.');
   const total = dividirParagrafos(topico.antes.texto).paragrafos.length;
   for (const i of indices) {
     if (!Number.isInteger(i)) throw new TypeError(`Índice de parágrafo inválido: ${JSON.stringify(i)}.`);
@@ -1583,6 +1586,95 @@ function rotuloDoItem(item) {
 
 return { rotuloDoItem };
 })();
+// ---- src/interface/marcacao.js ----
+const { criarMarcacao } = (() => {
+// Marcação do que a IA pode alterar (P3): a liberação é por parágrafo; o item agrupa e marca
+// vários de uma vez. Usada ao adicionar um tópico (T4.3) e ao ajustar as liberações (T5.3).
+
+// Itens maiores que isto vêm dobrados (a tabela de um TR tem centenas de linhas).
+const LINHAS_ANTES_DE_DOBRAR = 14;
+
+// "liberados" é um Set de índices de parágrafo, alterado no lugar a cada clique.
+// Devolve o contador (vai na barra fixa da tela) e a folha com os itens e parágrafos.
+function criarMarcacao(divisao, liberados) {
+  const itens = agruparItens(divisao);
+  const total = divisao.paragrafos.length;
+  const porIndice = new Map(divisao.paragrafos.map(p => [p.indice, p]));
+  const contador = criarElemento('p', { classe: 'contador', dados: { contador: '' }, 'aria-live': 'polite' });
+  const grupos = new Map(); // id do item → { caixa, estado, subitens }
+  const linhas = new Map(); // índice do parágrafo → { linha, caixa }
+
+  function atualizar() {
+    for (const item of itens) {
+      const g = grupos.get(item.id);
+      const quantos = item.paragrafos.filter(i => liberados.has(i)).length;
+      const todo = quantos === item.paragrafos.length;
+      g.caixa.checked = todo;
+      g.caixa.indeterminate = quantos > 0 && !todo;
+      g.estado.textContent = todo ? ' — liberado'
+        : quantos ? ` — parcialmente liberado: ${quantos} de ${item.paragrafos.length} linhas` : '';
+      const filhos = descendentesDoItem(itens, item.id);
+      const faltaFilho = filhos.some(id => itens.find(i => i.id === id).paragrafos.some(p => !liberados.has(p)));
+      g.subitens.hidden = !(todo && faltaFilho);
+    }
+    for (const [indice, { linha, caixa }] of linhas) {
+      caixa.checked = liberados.has(indice);
+      linha.classList.toggle('liberado', liberados.has(indice));
+    }
+    contador.textContent = `${liberados.size} de ${total} parágrafos liberados para a IA alterar. Todo o resto fica protegido.`;
+  }
+
+  const folha = criarElemento('div', { classe: 'folha folha-marcar' });
+  for (const item of itens) {
+    const caixa = criarElemento('input', {
+      type: 'checkbox',
+      aoMudar: () => {
+        for (const i of item.paragrafos) (caixa.checked ? liberados.add(i) : liberados.delete(i));
+        atualizar();
+      },
+    });
+    const estado = criarElemento('span', { classe: 'estado' });
+    const subitens = criarElemento('button', {
+      type: 'button', classe: 'acao-discreta', hidden: true, texto: 'Liberar também os subitens',
+      aoClicar: () => {
+        for (const id of descendentesDoItem(itens, item.id)) for (const i of itens.find(x => x.id === id).paragrafos) liberados.add(i);
+        atualizar();
+      },
+    });
+    const grupo = criarElemento('div', { classe: 'grupo-item', dados: { item: item.id }, style: `margin-left:${Math.min(item.nivel, 4) * 18}px` },
+      criarElemento('div', { classe: 'titulo-item' },
+        criarElemento('label', {}, caixa, ` ${rotuloDoItem(item)}`, estado), subitens));
+    const dobrar = item.paragrafos.length > LINHAS_ANTES_DE_DOBRAR;
+    const escondidos = [];
+    item.paragrafos.forEach((indice, k) => {
+      const caixaLinha = criarElemento('input', {
+        type: 'checkbox', 'aria-label': 'A IA pode alterar este parágrafo',
+        aoMudar: () => { (caixaLinha.checked ? liberados.add(indice) : liberados.delete(indice)); atualizar(); },
+      });
+      const linha = criarElemento('div', { classe: 'par-marcavel', dados: { paragrafo: indice } },
+        criarElemento('label', {}, caixaLinha, criarElemento('span', { classe: 'texto-paragrafo', texto: porIndice.get(indice).texto })));
+      linhas.set(indice, { linha, caixa: caixaLinha });
+      if (dobrar && k >= 12 && k < item.paragrafos.length - 2) { linha.hidden = true; escondidos.push(linha); }
+      grupo.append(linha);
+      if (dobrar && k === 11) {
+        const abrir = criarElemento('button', {
+          type: 'button', classe: 'dobra', dados: { expandir: '' },
+          texto: `Mostrar as outras ${item.paragrafos.length - 14} linhas`,
+          aoClicar: () => { for (const e of escondidos) e.hidden = false; abrir.remove(); },
+        });
+        grupo.append(abrir);
+      }
+    });
+    grupos.set(item.id, { caixa, estado, subitens });
+    folha.append(grupo);
+  }
+
+  atualizar();
+  return { contador, folha };
+}
+
+return { criarMarcacao };
+})();
 // ---- src/interface/telas/adicionar-topico.js ----
 const { telaAdicionarTopico } = (() => {
 // Tela Adicionar tópico (T4.3): colar o texto "antes" e marcar o que a IA pode alterar (P3).
@@ -1591,8 +1683,6 @@ const { telaAdicionarTopico } = (() => {
 
 // Acima disto, provavelmente a página inteira foi copiada por engano.
 const PARAGRAFOS_DEMAIS = 3000;
-// Itens maiores que isto vêm dobrados (a tabela de um TR tem centenas de linhas).
-const LINHAS_ANTES_DE_DOBRAR = 14;
 
 const INSTRUCAO_COPIAR = 'No sistema, abra o tópico, clique dentro do texto, aperte Ctrl+A e depois Ctrl+C. '
   + 'Volte aqui e aperte Ctrl+V.';
@@ -1630,88 +1720,19 @@ async function telaAdicionarTopico(contexto, idDaVerificacao) {
       mostrarZona(MENSAGEM_COLAGEM_SEM_TEXTO);
       return true;
     }
-    colagem = { texto, html, divisao, itens: agruparItens(divisao) };
+    colagem = { texto, html, divisao };
     mostrarMarcacao();
     return true;
   });
 
   // ---------- passo 2: marcar ----------
   function mostrarMarcacao() {
-    const { divisao, itens } = colagem;
-    const total = divisao.paragrafos.length;
-    const porIndice = new Map(divisao.paragrafos.map(p => [p.indice, p]));
+    const total = colagem.divisao.paragrafos.length;
     const mensagem = criarElemento('p', { classe: 'mensagem-erro', role: 'alert' });
     const campoNome = criarElemento('input', {
       type: 'text', id: 'nome-topico', value: sugerirNomeDeTopico(colagem.texto), maxlength: 200, autocomplete: 'off',
     });
-    const contador = criarElemento('p', { classe: 'contador', dados: { contador: '' }, 'aria-live': 'polite' });
-    const grupos = new Map(); // id do item → { caixa, estado, subitens, linhas }
-    const linhas = new Map(); // índice do parágrafo → { linha, caixa }
-
-    function atualizar() {
-      for (const item of itens) {
-        const g = grupos.get(item.id);
-        const quantos = item.paragrafos.filter(i => liberados.has(i)).length;
-        const todo = quantos === item.paragrafos.length;
-        g.caixa.checked = todo;
-        g.caixa.indeterminate = quantos > 0 && !todo;
-        g.estado.textContent = todo ? ' — liberado'
-          : quantos ? ` — parcialmente liberado: ${quantos} de ${item.paragrafos.length} linhas` : '';
-        const filhos = descendentesDoItem(itens, item.id);
-        const faltaFilho = filhos.some(id => itens.find(i => i.id === id).paragrafos.some(p => !liberados.has(p)));
-        g.subitens.hidden = !(todo && faltaFilho);
-      }
-      for (const [indice, { linha, caixa }] of linhas) {
-        caixa.checked = liberados.has(indice);
-        linha.classList.toggle('liberado', liberados.has(indice));
-      }
-      contador.textContent = `${liberados.size} de ${total} parágrafos liberados para a IA alterar. Todo o resto fica protegido.`;
-    }
-
-    const folha = criarElemento('div', { classe: 'folha folha-marcar' });
-    for (const item of itens) {
-      const caixa = criarElemento('input', {
-        type: 'checkbox',
-        aoMudar: () => {
-          for (const i of item.paragrafos) (caixa.checked ? liberados.add(i) : liberados.delete(i));
-          atualizar();
-        },
-      });
-      const estado = criarElemento('span', { classe: 'estado' });
-      const subitens = criarElemento('button', {
-        type: 'button', classe: 'acao-discreta', hidden: true, texto: 'Liberar também os subitens',
-        aoClicar: () => {
-          for (const id of descendentesDoItem(itens, item.id)) for (const i of itens.find(x => x.id === id).paragrafos) liberados.add(i);
-          atualizar();
-        },
-      });
-      const grupo = criarElemento('div', { classe: 'grupo-item', dados: { item: item.id }, style: `margin-left:${Math.min(item.nivel, 4) * 18}px` },
-        criarElemento('div', { classe: 'titulo-item' },
-          criarElemento('label', {}, caixa, ` ${rotuloDoItem(item)}`, estado), subitens));
-      const dobrar = item.paragrafos.length > LINHAS_ANTES_DE_DOBRAR;
-      const escondidos = [];
-      item.paragrafos.forEach((indice, k) => {
-        const caixaLinha = criarElemento('input', {
-          type: 'checkbox', 'aria-label': 'A IA pode alterar este parágrafo',
-          aoMudar: () => { (caixaLinha.checked ? liberados.add(indice) : liberados.delete(indice)); atualizar(); },
-        });
-        const linha = criarElemento('div', { classe: 'par-marcavel', dados: { paragrafo: indice } },
-          criarElemento('label', {}, caixaLinha, criarElemento('span', { classe: 'texto-paragrafo', texto: porIndice.get(indice).texto })));
-        linhas.set(indice, { linha, caixa: caixaLinha });
-        if (dobrar && k >= 12 && k < item.paragrafos.length - 2) { linha.hidden = true; escondidos.push(linha); }
-        grupo.append(linha);
-        if (dobrar && k === 11) {
-          const abrir = criarElemento('button', {
-            type: 'button', classe: 'dobra', dados: { expandir: '' },
-            texto: `Mostrar as outras ${item.paragrafos.length - 14} linhas`,
-            aoClicar: () => { for (const e of escondidos) e.hidden = false; abrir.remove(); },
-          });
-          grupo.append(abrir);
-        }
-      });
-      grupos.set(item.id, { caixa, estado, subitens });
-      folha.append(grupo);
-    }
+    const { contador, folha } = criarMarcacao(colagem.divisao, liberados);
 
     async function salvar() {
       const agora = agoraISO();
@@ -1739,7 +1760,6 @@ async function telaAdicionarTopico(contexto, idDaVerificacao) {
           criarElemento('button', { type: 'button', texto: 'Cancelar', aoClicar: () => contexto.navegar(rotaDaVerificacao) }))),
       criarElemento('p', { classe: 'instrucao', texto: 'Marque a caixa de um item para liberar o item inteiro, ou a caixa ao lado de um parágrafo para liberar só ele. O que não for marcado fica protegido.' }),
       folha);
-    atualizar();
     campoNome.focus();
   }
 
@@ -1752,6 +1772,75 @@ async function telaAdicionarTopico(contexto, idDaVerificacao) {
 }
 
 return { telaAdicionarTopico };
+})();
+// ---- src/interface/telas/ajustar-liberacoes.js ----
+const { telaAjustarLiberacoes } = (() => {
+// Tela Ajustar liberações (T5.3): mudar o que a IA pode alterar num tópico já criado, só enquanto
+// o texto depois não foi colado (decisão do arquiteto em 18/10/2026). A regra mora no domínio
+// (definirLiberados recusa); esta tela só não oferece o que o domínio recusaria.
+
+const MENSAGEM_JA_COLADO = 'O texto depois deste tópico já foi colado. As liberações não mudam depois disso, para a conferência valer.';
+
+async function telaAjustarLiberacoes(contexto, idDaVerificacao, idDoTopico) {
+  const { verificacao: verificacao, problema } = await carregarComValidacao(contexto, idDaVerificacao);
+  if (problema) return telaDanificada(problema, 'ajustar-liberacoes');
+  const topico = verificacao && verificacao.topicos.find(t => t.id === idDoTopico);
+  const rotaDaVerificacao = `#/verificacao/${encodeURIComponent(idDaVerificacao)}`;
+  const tela = (...filhos) => criarElemento('section', { classe: 'tela', dados: { tela: 'ajustar-liberacoes' } },
+    criarElemento('a', { classe: 'voltar', href: verificacao ? rotaDaVerificacao : '#/', texto: verificacao ? `← ${verificacao.nome}` : '← Início' }),
+    ...filhos);
+  if (!topico) {
+    return tela(
+      criarElemento('h1', { texto: 'Tópico não encontrado' }),
+      criarElemento('p', { classe: 'descricao', texto: 'Ele pode ter sido removido desta verificação.' }));
+  }
+  const rotaDoTopico = `/verificacao/${encodeURIComponent(idDaVerificacao)}/topico/${encodeURIComponent(idDoTopico)}`;
+  if (topico.depois !== null) {
+    return tela(
+      criarElemento('h1', { texto: 'Ajustar liberações' }),
+      criarElemento('p', { classe: 'descricao', texto: topico.nome }),
+      criarElemento('p', { classe: 'aviso-fixo', texto: MENSAGEM_JA_COLADO }),
+      criarElemento('div', { classe: 'acoes' },
+        criarElemento('a', { classe: 'botao', href: `#${rotaDoTopico}`, texto: 'Ver resultado' })));
+  }
+
+  const lida = verificacao.atualizadaEm;
+  const liberados = new Set(topico.liberados);
+  const { contador, folha } = criarMarcacao(dividirParagrafos(topico.antes.texto), liberados);
+  const mensagem = criarElemento('p', { classe: 'mensagem-erro', role: 'alert' });
+  const voltar = () => contexto.navegar(`${rotaDoTopico}/depois`);
+
+  async function salvar() {
+    // Relê antes de gravar: se outra aba colou o depois enquanto esta ajustava, o domínio recusa
+    // e o depois colado lá não se perde.
+    const { verificacao: atual, problema: danificada } = await carregarComValidacao(contexto, idDaVerificacao);
+    if (danificada || !atual || !atual.topicos.some(t => t.id === idDoTopico)) {
+      mensagem.textContent = 'Este tópico não existe mais ou foi danificado. Volte à verificação.';
+      return;
+    }
+    if (atual.topicos.find(t => t.id === idDoTopico).depois !== null) {
+      mensagem.textContent = MENSAGEM_JA_COLADO;
+      return;
+    }
+    const nova = definirLiberados(atual, idDoTopico, [...liberados], agoraISO());
+    if (await contexto.salvar(nova, lida)) voltar();
+    else mensagem.textContent = contexto.tomarAviso() || 'Não foi possível guardar as liberações.';
+  }
+
+  return tela(
+    criarElemento('h1', { texto: 'Ajustar liberações' }),
+    criarElemento('p', { classe: 'descricao', texto: topico.nome }),
+    criarElemento('div', { classe: 'barra-fixa' },
+      contador,
+      criarElemento('div', { classe: 'acoes' },
+        criarElemento('button', { type: 'button', classe: 'botao-principal', texto: 'Salvar liberações', aoClicar: salvar }),
+        criarElemento('button', { type: 'button', texto: 'Cancelar', aoClicar: voltar }))),
+    mensagem,
+    criarElemento('p', { classe: 'instrucao', texto: 'Marque a caixa de um item para liberar o item inteiro, ou a caixa ao lado de um parágrafo para liberar só ele. O que não for marcado fica protegido. Depois que o texto depois for colado, as liberações não mudam mais.' }),
+    folha);
+}
+
+return { telaAjustarLiberacoes };
 })();
 // ---- src/interface/telas/conferir-topico.js ----
 const { telaConferirTopico } = (() => {
@@ -1788,7 +1877,10 @@ async function telaConferirTopico(contexto, idDaVerificacao, idDoTopico) {
     substituirConteudo(corpo,
       topico.depois
         ? criarElemento('p', { classe: 'aviso-fixo', texto: `Este tópico já tem um texto depois, colado em ${formatarDataHora(topico.depois.coladoEm)}. Colar de novo substitui.` })
-        : null,
+        // Ainda dá para ajustar as liberações (T5.3): só até o depois ser colado.
+        : criarElemento('p', { classe: 'aviso-fixo' },
+          `${topico.liberados.length} de ${dividirParagrafos(topico.antes.texto).paragrafos.length} parágrafos liberados para a IA alterar. `,
+          criarElemento('a', { href: `#${rotaDoResultado}/liberar`, texto: 'Ajustar liberações' })),
       criarElemento('p', { id: 'instrucao-colar', classe: 'instrucao', texto: 'Depois que a IA terminou: no sistema, abra este mesmo tópico, clique dentro do texto, aperte Ctrl+A e depois Ctrl+C. Volte aqui e aperte Ctrl+V.' }),
       criarZonaDeColar('O resultado aparece logo em seguida.', 'instrucao-colar'),
       mensagem ? criarElemento('p', { classe: 'mensagem-erro', role: 'alert', texto: mensagem }) : null);
@@ -2204,7 +2296,13 @@ async function telaResultado(contexto, idDaVerificacao, idDoTopico) {
     disabled: !(contagem.erro || contagem.aviso),
     aoClicar: () => {
       const problemas = [...folha.querySelectorAll('[data-achado="erro"], [data-achado="aviso"]')];
-      const alvo = problemas.find(e => e.getBoundingClientRect().top > 120) || problemas[0];
+      // Com o foco num problema (ou num botão dele), vai ao seguinte; depois do último, volta ao
+      // primeiro. Sem foco num problema (a pessoa rolou a página), o primeiro abaixo da barra fixa.
+      // Medido na T5.3: só pela posição, o problema recém-centralizado era escolhido de novo.
+      const atual = problemas.indexOf(document.activeElement && document.activeElement.closest('[data-achado]'));
+      const alvo = atual >= 0
+        ? problemas[(atual + 1) % problemas.length]
+        : problemas.find(e => e.getBoundingClientRect().top > 120) || problemas[0];
       alvo.scrollIntoView({ block: 'center' });
       alvo.focus({ preventScroll: true });
     },
@@ -2433,6 +2531,7 @@ function escolherTela(contexto, partes) {
   if (!parte) return telaVerificacao(contexto, id);
   if (parte === 'novo-topico') return telaAdicionarTopico(contexto, id);
   if (parte === 'topico' && topico && final === 'depois') return telaConferirTopico(contexto, id, topico);
+  if (parte === 'topico' && topico && final === 'liberar') return telaAjustarLiberacoes(contexto, id, topico);
   if (parte === 'topico' && topico) return telaResultado(contexto, id, topico);
   return telaVerificacao(contexto, id);
 }
@@ -2527,7 +2626,7 @@ if (typeof document !== 'undefined') iniciar();
 
 return { iniciar };
 })();
-globalThis.Conferidor = Object.freeze({ encontrarAncoras, normalizar, semInvisiveis, detectarMarcador, agruparItens, descendentesDoItem, semMarcadoresDeComentario, compararPalavras, destacarInvisiveis, parearParagrafos, classificarTopico, dividirParagrafos, juntarParagrafos, statusDoTopico, statusDaVerificacao, sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao, exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao, criarArmazenamentoEmMemoria, criarArmazenamentoNoNavegador, abrirArmazenamento, criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId, carregarComValidacao, telaDanificada, MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, rotuloDoItem, telaAdicionarTopico, telaConferirTopico, telaInicio, telaResultado, telaVerificacao, iniciar });
+globalThis.Conferidor = Object.freeze({ encontrarAncoras, normalizar, semInvisiveis, detectarMarcador, agruparItens, descendentesDoItem, semMarcadoresDeComentario, compararPalavras, destacarInvisiveis, parearParagrafos, classificarTopico, dividirParagrafos, juntarParagrafos, statusDoTopico, statusDaVerificacao, sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao, exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao, criarArmazenamentoEmMemoria, criarArmazenamentoNoNavegador, abrirArmazenamento, criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId, carregarComValidacao, telaDanificada, MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, rotuloDoItem, criarMarcacao, telaAdicionarTopico, telaAjustarLiberacoes, telaConferirTopico, telaInicio, telaResultado, telaVerificacao, iniciar });
 })();
 </script>
 </body>

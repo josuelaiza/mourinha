@@ -114,6 +114,28 @@
             border-color: var(--cor-destaque);
         }
 
+        /* Links de download */
+        .downloads {
+            list-style: none;
+            margin-top: 24px;
+            animation: fadeIn 1.2s ease-in-out;
+        }
+
+        .downloads li + li {
+            margin-top: 8px;
+        }
+
+        .downloads a {
+            color: var(--cor-texto-principal);
+            font-size: 0.95rem;
+            text-underline-offset: 3px;
+        }
+
+        .downloads a:hover,
+        .downloads a:focus {
+            color: var(--cor-destaque);
+        }
+
         /* Animações */
         @keyframes fadeInDown {
             from {
@@ -166,6 +188,8 @@
                 <option value="" disabled selected>Escolha uma ferramenta...</option>
                 </select>
         </div>
+
+        <ul id="downloads" class="downloads" hidden></ul>
     </main>
 
     <script>
@@ -174,6 +198,7 @@
             // == ADICIONE SUAS FERRAMENTAS AQUI DENTRO DESTA LISTA            == //
             // ================================================================== //
             // Formato: { nome: "Nome que aparecerá na lista", url: "nome-do-arquivo.html" }
+            // Acrescente baixar: true para a ferramenta ganhar também um link de download.
             // A ordem aqui não importa, a lista será ordenada alfabeticamente.
             
             const minhasFerramentas = [
@@ -181,7 +206,8 @@
                 { nome: "Ordenador de Lista", url: "ferramentas/Ordenador-lista.html" },
                 { nome: "Conferente CAN", url: "ferramentas/conferente.html" },
                 { nome: "Conversor PDF", url: "ferramentas/conversorpdf.html" },
-                { nome: "Calculadora Financeira", url: "ferramentas/calculadora.html" }
+                { nome: "Calculadora Financeira", url: "ferramentas/calculadora.html" },
+                { nome: "Conferidor de Alterações da IA", url: "ferramentas/conferidor.html", baixar: true }
             ];
 
             // ================================================================== //
@@ -203,6 +229,19 @@
                 option.textContent = ferramenta.nome;
                 selectElement.appendChild(option);
             });
+
+            // 2b. Links de download das ferramentas marcadas com baixar: true
+            const listaDownloads = document.getElementById('downloads');
+            minhasFerramentas.filter(ferramenta => ferramenta.baixar).forEach(ferramenta => {
+                const link = document.createElement('a');
+                link.href = ferramenta.url;
+                link.download = ferramenta.url.split('/').pop();
+                link.textContent = 'Baixar ' + ferramenta.nome;
+                const item = document.createElement('li');
+                item.appendChild(link);
+                listaDownloads.appendChild(item);
+            });
+            listaDownloads.hidden = listaDownloads.children.length === 0;
 
             // 3. Adiciona o evento para abrir a ferramenta em uma nova aba
             selectElement.addEventListener('change', function() {

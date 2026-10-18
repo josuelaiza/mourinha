@@ -1,0 +1,2534 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; form-action 'none'; base-uri 'none'; script-src 'sha256-hHmw9Ru+IBDJghWHOZEvpyLzoFRjXpnzL6I2llTpsfk='; style-src 'unsafe-inline'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conferidor de Alterações</title>
+<style>/* Sistema visual aprovado na rodada de design (T4.0; AGENTS.md, Design; ferramentas/design/rodada-2.html).
+   Cores com nome de papel, nunca de aparência. Estado sempre com cor + forma + palavra. */
+:root {
+  --fundo: #f4f3ef; --superficie: #ffffff; --superficie-2: #f9f8f5; --texto: #1c1c1a; --texto-suave: #5d5b55; --borda: #d9d6cd;
+  --acao-primaria: #1f4e8c; --acao-texto: #ffffff;
+  --erro: #a3201c; --erro-fundo: #fbe8e6; --alerta: #8a5a00; --alerta-fundo: #fdf1d8;
+  --ok: #1d6b3a; --ok-fundo: #e4f2e8; --info: #2f5f8a; --info-fundo: #e6eef7; --pendente: #5d5b55; --pendente-fundo: #ecebe6;
+  --removido: #a3201c; --removido-fundo: #fbe1de; --inserido: #1b5e8f; --inserido-fundo: #e1edf8;
+  --raio: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #151514; --superficie: #1f1f1d; --superficie-2: #262624; --texto: #ecebe6; --texto-suave: #a8a69e; --borda: #3a3936;
+    --acao-primaria: #8db4ea; --acao-texto: #10213a;
+    --erro: #f2a097; --erro-fundo: #3a1916; --alerta: #f0c56a; --alerta-fundo: #33270e; --ok: #8fd3a5; --ok-fundo: #173222;
+    --info: #9cc0e6; --info-fundo: #1a2a3b; --pendente: #b8b6ae; --pendente-fundo: #2c2b28;
+    --removido: #f2a097; --removido-fundo: #3a1b18; --inserido: #9cc8f0; --inserido-fundo: #1b2c3e;
+  }
+}
+* { box-sizing: border-box; }
+/* Escondido é escondido: nenhum estilo de componente (ex.: botão com display próprio) pode vencer. */
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--fundo); color: var(--texto); font: 16px/1.55 "Segoe UI", system-ui, sans-serif; }
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+a { color: var(--acao-primaria); }
+:focus-visible { outline: 3px solid var(--acao-primaria); outline-offset: 2px; }
+
+.tela { max-width: 1000px; margin: 0 auto; padding: 28px 16px 48px; }
+.tela > header { margin-bottom: 20px; }
+.tela h1 { font-size: 1.9rem; overflow-wrap: anywhere; }
+.descricao { color: var(--texto-suave); margin: 6px 0 0; }
+.rodape { max-width: 1000px; margin: 0 auto; padding: 0 16px 24px; color: var(--texto-suave); font-size: 0.85rem; }
+.voltar { display: inline-block; margin-bottom: 12px; }
+
+/* Botões: o que pede algo da pessoa é principal; o resto é discreto. */
+button, .botao { font: inherit; font-size: 0.95rem; padding: 7px 14px; border-radius: var(--raio); border: 1px solid var(--acao-primaria); background: var(--superficie); color: var(--acao-primaria); cursor: pointer; text-decoration: none; display: inline-block; }
+.botao-principal { background: var(--acao-primaria); color: var(--acao-texto); }
+.botao-perigo { border-color: var(--erro); color: var(--erro); }
+.acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* Selos de estado: cor + forma + palavra. */
+.selo { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; padding: 2px 8px 2px 4px; border-radius: 999px; }
+.selo .forma { display: inline-grid; place-items: center; width: 18px; height: 18px; font-size: 0.75rem; font-weight: 700; flex: none; }
+.selo-erro { background: var(--erro-fundo); color: var(--erro); } .selo-erro .forma { background: var(--erro); color: var(--erro-fundo); border-radius: 3px; }
+.selo-aviso { background: var(--alerta-fundo); color: var(--alerta); } .selo-aviso .forma { background: var(--alerta); color: var(--alerta-fundo); clip-path: polygon(50% 0, 100% 100%, 0 100%); padding-top: 4px; }
+.selo-ok { background: var(--ok-fundo); color: var(--ok); } .selo-ok .forma { background: var(--ok); color: var(--ok-fundo); border-radius: 50%; }
+.selo-info { background: var(--info-fundo); color: var(--info); } .selo-info .forma { border: 2px solid var(--info); border-radius: 50%; }
+.selo-pendente { background: var(--pendente-fundo); color: var(--pendente); } .selo-pendente .forma { border: 2px dashed var(--pendente); border-radius: 50%; }
+
+/* Avisos de página */
+.aviso-pagina { border-radius: var(--raio); padding: 12px 14px; margin: 14px 0 16px; border-left: 5px solid var(--alerta); background: var(--alerta-fundo); }
+.aviso-pagina strong { display: block; }
+.aviso-pagina small { color: var(--texto-suave); }
+.aviso-fixo { color: var(--texto-suave); font-size: 0.9rem; }
+.mensagem-erro { color: var(--erro); font-weight: 600; margin: 6px 0 0; }
+
+/* Formulário curto */
+.formulario { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 16px; margin: 0 0 16px; }
+.formulario label { display: block; font-weight: 600; margin-bottom: 6px; }
+.formulario input[type=text] { font: inherit; width: 100%; max-width: 560px; padding: 8px 10px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); color: var(--texto); margin-bottom: 10px; }
+
+/* Lista de verificações (Início) */
+.lista-verificacoes { list-style: none; margin: 0; padding: 0; background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); }
+.lista-verificacoes li { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--borda); }
+.lista-verificacoes li:last-child { border-bottom: 0; }
+.lista-verificacoes .nome { font-weight: 600; overflow-wrap: anywhere; }
+.lista-verificacoes .meta { color: var(--texto-suave); font-size: 0.88rem; grid-column: 1; }
+.lista-verificacoes .situacao { grid-column: 1; }
+.lista-verificacoes .acoes { grid-column: 2; grid-row: 1 / span 3; }
+.vazio { background: var(--superficie); border: 1px dashed var(--borda); border-radius: var(--raio); padding: 20px; color: var(--texto-suave); }
+
+/* Ação discreta (ex.: "Ver resultado" de tópico íntegro, "Renomear"): parece link. */
+.acao-discreta { background: none; border: 0; padding: 4px 2px; color: var(--acao-primaria); text-decoration: underline; text-underline-offset: 3px; font: inherit; font-size: 0.95rem; cursor: pointer; }
+
+/* Verificação (T4.2) */
+.titulo-com-acao { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.veredito { font-size: 1.2rem; font-weight: 700; margin: 12px 0 4px; }
+.capa { display: grid; grid-template-columns: 1fr 270px; gap: 28px; align-items: start; }
+.progresso { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 16px; position: sticky; top: 12px; }
+.progresso .barra { height: 10px; border-radius: 999px; background: var(--pendente-fundo); overflow: hidden; display: flex; margin: 10px 0; }
+.progresso .barra span { display: block; height: 100%; }
+.progresso .legenda { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; font-size: 0.9rem; }
+.sumario { list-style: none; margin: 16px 0 0; padding: 0; background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); }
+.sumario li { display: grid; grid-template-columns: 24px 1fr auto auto; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--borda); }
+.sumario li:last-child { border-bottom: 0; }
+.sumario .nome { min-width: 0; overflow-wrap: anywhere; }
+.sumario .situacao { font-weight: 600; font-size: 0.92rem; white-space: nowrap; }
+.sumario .botao { font-size: 0.88rem; padding: 5px 12px; white-space: nowrap; }
+.sumario .organizar { display: flex; gap: 6px; flex-wrap: wrap; }
+.sumario .organizar button { font-size: 0.85rem; padding: 4px 10px; }
+.sumario .organizar button:disabled { opacity: 0.45; cursor: default; }
+.forma-margem { font-weight: 700; text-align: center; }
+.m-erro { color: var(--erro); } .m-aviso { color: var(--alerta); } .m-ok { color: var(--ok); } .m-info { color: var(--info); } .m-pendente { color: var(--pendente); }
+
+.sumario .renomear-topico { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-width: 0; }
+.sumario .renomear-topico input { font: inherit; flex: 1 1 200px; min-width: 0; padding: 5px 8px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); color: var(--texto); }
+
+/* Adicionar tópico (T4.3) */
+.instrucao { margin: 0 0 12px; }
+.zona-colar { display: grid; gap: 4px; place-items: center; text-align: center; padding: 32px 16px; border: 2px dashed var(--acao-primaria); border-radius: var(--raio); background: var(--superficie); cursor: text; }
+.zona-colar:focus { border-style: solid; }
+.barra-fixa { position: sticky; top: 0; z-index: 2; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 10px 14px; margin: 0 0 12px; }
+.contador { margin: 0; font-weight: 600; }
+.folha { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 20px 24px; line-height: 1.7; }
+.grupo-item { border-left: 3px solid var(--borda); padding: 2px 0 4px 12px; margin: 0 0 14px; }
+.titulo-item { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-weight: 700; margin: 0 0 4px; }
+.titulo-item label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.titulo-item .estado { font-weight: 400; font-size: 0.88rem; color: var(--info); }
+.titulo-item input, .par-marcavel input { width: 18px; height: 18px; flex: none; margin-top: 4px; }
+.par-marcavel label { display: flex; gap: 10px; align-items: flex-start; padding: 2px 8px; border-radius: 4px; cursor: pointer; overflow-wrap: anywhere; }
+.par-marcavel.liberado label { background: var(--info-fundo); box-shadow: inset 4px 0 0 var(--info); }
+.par-marcavel label:hover { outline: 1px dashed var(--info); }
+.dobra { display: block; width: 100%; margin: 6px 0; text-align: center; border: 1px dashed var(--borda); background: none; color: var(--texto-suave); }
+
+/* Resultado (T4.5): documento anotado, estilo controle de alterações do Word. */
+del { color: var(--removido); background: var(--removido-fundo); text-decoration: line-through; text-decoration-thickness: 2px; }
+ins { color: var(--inserido); background: var(--inserido-fundo); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.contagem { display: flex; gap: 10px; flex-wrap: wrap; }
+.folha-resultado { padding: 24px 32px 24px 64px; font-size: 1.02rem; line-height: 1.75; }
+.folha-resultado .par { position: relative; margin: 0 0 10px; padding: 2px 10px; border-radius: 4px; overflow-wrap: anywhere; }
+.folha-resultado .par.igual { color: var(--texto-suave); }
+.folha-resultado .par.erro { background: color-mix(in srgb, var(--erro-fundo) 60%, transparent); box-shadow: inset 4px 0 0 var(--erro); }
+.folha-resultado .par.aviso { background: color-mix(in srgb, var(--alerta-fundo) 70%, transparent); box-shadow: inset 4px 0 0 var(--alerta); }
+.folha-resultado .par.info { background: var(--info-fundo); box-shadow: inset 4px 0 0 var(--info); }
+.folha-resultado .par:focus { outline: 3px solid var(--acao-primaria); outline-offset: 2px; }
+.folha-resultado .forma-margem { position: absolute; left: -44px; top: 4px; width: 26px; height: 26px; display: grid; place-items: center; font-size: 0.85rem; }
+.folha-resultado .f-erro { background: var(--erro); color: var(--erro-fundo); border-radius: 4px; }
+.folha-resultado .f-aviso { background: var(--alerta); color: var(--alerta-fundo); clip-path: polygon(50% 0, 100% 100%, 0 100%); padding-top: 6px; }
+.folha-resultado .f-info { border: 2px solid var(--info); color: var(--info); border-radius: 50%; }
+.folha-resultado .cabeca { font-size: 0.85rem; font-weight: 600; margin: 4px 0 2px; }
+.folha-resultado .cabeca .onde { color: var(--texto-suave); font-weight: 400; }
+.acoes-bloco { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; margin: 6px 0 4px; }
+.acoes-bloco button { font-size: 0.85rem; padding: 4px 10px; }
+.resposta-copia { font-size: 0.88rem; color: var(--texto-suave); display: grid; gap: 4px; flex: 1 1 260px; }
+.resposta-copia textarea { font: inherit; width: 100%; padding: 6px 8px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); color: var(--texto); }
+
+@media (max-width: 720px) {
+  .tela h1 { font-size: 1.5rem; }
+  .folha { padding: 14px 10px; }
+  .folha-resultado { padding: 14px 10px 14px 40px; }
+  .folha-resultado .forma-margem { left: -32px; width: 22px; height: 22px; }
+  .lista-verificacoes li { grid-template-columns: 1fr; }
+  .lista-verificacoes .acoes { grid-column: 1; grid-row: auto; }
+  .capa { grid-template-columns: 1fr; }
+  .progresso { position: static; order: -1; }
+  .sumario li { grid-template-columns: 22px 1fr; }
+  .sumario .situacao, .sumario .botao, .sumario .acao-discreta, .sumario .organizar { grid-column: 2; justify-self: start; white-space: normal; }
+}
+
+/* Impressão (T4.6): só o documento; estado continua em cor + forma + palavra. */
+.so-impressao { display: none; }
+@media print {
+  @page { margin: 16mm 14mm; }
+  body { background: #fff; color: #000; font-size: 11pt; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .so-impressao { display: block; color: #333; font-size: 9.5pt; margin: 0 0 6px; }
+  .so-tela { display: none; }
+  button:not([data-dobra]), .botao, .acao-discreta, .voltar, .acoes, .acoes-bloco, .zona-colar, form { display: none !important; }
+  .dobra { border: 0; padding: 2px 0; margin: 4px 0; text-align: left; font-style: italic; color: #555; }
+  .tela { max-width: none; padding: 0; }
+  .barra-fixa, .progresso { position: static; }
+  .capa { grid-template-columns: 1fr; }
+  .progresso { order: -1; }
+  .folha { border: 0; padding-left: 40px; }
+  .folha-resultado .par, .sumario li, .lista-verificacoes li, .progresso { break-inside: avoid; }
+  h1, h2, .veredito, .barra-fixa { break-after: avoid; }
+}
+</style>
+</head>
+<body>
+<main id="app"><p class="tela">Abrindo…</p></main>
+<footer class="rodape">Versão 0.1.0</footer>
+<script>'use strict';
+(() => {
+// ---- src/dominio/ancoras.js ----
+const { encontrarAncoras } = (() => {
+// Âncoras do pareamento antes × depois (plano, seção 6.3, passo 1). Função pura.
+//
+// encontrarAncoras(textosAntes, textosDepois) → [[i, j], ...]
+//   Pares de parágrafos IDÊNTICOS, em ordem crescente dos dois lados, no maior número possível
+//   (maior subsequência comum). É o que faz a comparação ser por conteúdo, não por posição:
+//   um parágrafo inserido no começo não desloca nada.
+//
+// Garantia que nunca pode quebrar: só texto idêntico vira âncora. Achar menos âncoras é
+// seguro (mais coisa vai para as lacunas e é examinada); âncora errada nunca.
+//
+// preferidos (opcional): índices do antes a ancorar de preferência — os protegidos. Entre as
+// soluções com o máximo de âncoras, escolhe a que cobre mais preferidos. Motivo: com gêmeos
+// idênticos ("UN" repetido na tabela), apagar o liberado não pode acusar o protegido.
+
+// Acima disto (parágrafos do miolo antes × depois), troca o alinhamento completo por um mais leve.
+const LIMITE_CELULAS = 16_000_000;
+
+function exigirListaDeTextos(valor, nome) {
+  if (!Array.isArray(valor) || valor.some(t => typeof t !== 'string')) {
+    throw new TypeError(`encontrarAncoras espera uma lista de textos em "${nome}".`);
+  }
+}
+
+// Alinhamento completo (maior subsequência comum) entre a[ai..af) e b[bi..bf).
+// Com preferidos, cada âncora vale K (ou K + 1 se preferida), com K maior que o número de
+// parágrafos: maximizar o total maximiza primeiro o número de âncoras, depois os preferidos.
+function alinharCompleto(a, ai, af, b, bi, bf, preferido, saida) {
+  const n = af - ai;
+  const m = bf - bi;
+  const largura = m + 1;
+  const K = preferido ? n + 1 : 1;
+  const peso = (i) => (preferido && preferido[ai + i] ? K + 1 : K);
+  const Tipo = !preferido && Math.min(n, m) < 65535 ? Uint16Array : Uint32Array;
+  const tabela = new Tipo((n + 1) * largura);
+  for (let i = n - 1; i >= 0; i--) {
+    const p = peso(i);
+    for (let j = m - 1; j >= 0; j--) {
+      const semPar = Math.max(tabela[(i + 1) * largura + j], tabela[i * largura + j + 1]);
+      tabela[i * largura + j] = a[ai + i] === b[bi + j]
+        ? Math.max(semPar, tabela[(i + 1) * largura + j + 1] + p)
+        : semPar;
+    }
+  }
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (a[ai + i] === b[bi + j] && tabela[i * largura + j] === tabela[(i + 1) * largura + j + 1] + peso(i)) {
+      saida.push([ai + i, bi + j]);
+      i++;
+      j++;
+    } else if (tabela[(i + 1) * largura + j] >= tabela[i * largura + j + 1]) i++;
+    else j++;
+  }
+}
+
+// Maior sequência de pares com j crescente (pares já em ordem de i).
+function maiorCrescente(pares) {
+  const pontas = [];
+  const anterior = new Array(pares.length);
+  for (let k = 0; k < pares.length; k++) {
+    const j = pares[k][1];
+    let baixo = 0;
+    let alto = pontas.length;
+    while (baixo < alto) {
+      const meio = (baixo + alto) >> 1;
+      if (pares[pontas[meio]][1] < j) baixo = meio + 1;
+      else alto = meio;
+    }
+    anterior[k] = baixo > 0 ? pontas[baixo - 1] : -1;
+    pontas[baixo] = k;
+  }
+  const resultado = [];
+  for (let k = pontas.length ? pontas[pontas.length - 1] : -1; k !== -1; k = anterior[k]) resultado.push(pares[k]);
+  return resultado.reverse();
+}
+
+// Alinhamento leve para miolos gigantes: ancora só parágrafos que aparecem uma única vez em
+// cada lado, na maior ordem crescente possível, e repete o processo entre essas âncoras.
+function alinharLeve(a, ai, af, b, bi, bf, preferido, saida) {
+  const contaA = new Map();
+  const contaB = new Map();
+  const posicaoB = new Map();
+  for (let i = ai; i < af; i++) contaA.set(a[i], (contaA.get(a[i]) || 0) + 1);
+  for (let j = bi; j < bf; j++) {
+    contaB.set(b[j], (contaB.get(b[j]) || 0) + 1);
+    posicaoB.set(b[j], j);
+  }
+  const unicos = [];
+  for (let i = ai; i < af; i++) {
+    if (contaA.get(a[i]) === 1 && contaB.get(a[i]) === 1) unicos.push([i, posicaoB.get(a[i])]);
+  }
+  let deA = ai;
+  let deB = bi;
+  for (const [i, j] of maiorCrescente(unicos)) {
+    ancorar(a, deA, i, b, deB, j, preferido, saida);
+    saida.push([i, j]);
+    deA = i + 1;
+    deB = j + 1;
+  }
+  if (deA !== ai || deB !== bi) ancorar(a, deA, af, b, deB, bf, preferido, saida);
+}
+
+// Aparar começo e fim iguais é ótimo, mas com preferência só enquanto o parágrafo é preferido:
+// um liberado no começo pode ter um gêmeo protegido mais adiante que deve ficar com a âncora.
+function ancorar(a, ai, af, b, bi, bf, preferido, saida) {
+  const podeAparar = (i) => !preferido || preferido[i] === 1;
+  while (ai < af && bi < bf && a[ai] === b[bi] && podeAparar(ai)) { saida.push([ai, bi]); ai++; bi++; }
+  const final = [];
+  while (ai < af && bi < bf && a[af - 1] === b[bf - 1] && podeAparar(af - 1)) { af--; bf--; final.push([af, bf]); }
+  if (ai < af && bi < bf) {
+    if ((af - ai + 1) * (bf - bi + 1) <= LIMITE_CELULAS) alinharCompleto(a, ai, af, b, bi, bf, preferido, saida);
+    else alinharLeve(a, ai, af, b, bi, bf, preferido, saida);
+  }
+  for (let k = final.length - 1; k >= 0; k--) saida.push(final[k]);
+}
+
+function lerPreferidos(preferidos, total) {
+  if (preferidos === undefined || preferidos === null) return null;
+  if (!(Array.isArray(preferidos) || preferidos instanceof Set)) {
+    throw new TypeError('encontrarAncoras espera os preferidos como lista ou conjunto de índices.');
+  }
+  const marcado = new Uint8Array(total);
+  for (const i of preferidos) {
+    if (!Number.isInteger(i) || i < 0 || i >= total) throw new RangeError(`Índice preferido inválido: ${JSON.stringify(i)}.`);
+    marcado[i] = 1;
+  }
+  return marcado;
+}
+
+function encontrarAncoras(textosAntes, textosDepois, preferidos) {
+  exigirListaDeTextos(textosAntes, 'antes');
+  exigirListaDeTextos(textosDepois, 'depois');
+  const preferido = lerPreferidos(preferidos, textosAntes.length);
+  // Cada texto vira um número (textos iguais, número igual): o miolo compara números, não textos.
+  const numeros = new Map();
+  const numerar = (t) => {
+    if (!numeros.has(t)) numeros.set(t, numeros.size);
+    return numeros.get(t);
+  };
+  const a = Int32Array.from(textosAntes, numerar);
+  const b = Int32Array.from(textosDepois, numerar);
+  const saida = [];
+  ancorar(a, 0, a.length, b, 0, b.length, preferido, saida);
+  return saida;
+}
+
+return { encontrarAncoras };
+})();
+// ---- src/dominio/normalizar.js ----
+const { normalizar, semInvisiveis } = (() => {
+// Normalização (plano, seção 6.1). Funções puras.
+//
+// normalizar: a forma OFICIAL de comparação. Só uniformiza a quebra de linha (CRLF e CR viram LF)
+// e a codificação dos acentos (Unicode NFC). Qualquer outra diferença continua sendo diferença.
+//
+// semInvisiveis: forma usada SÓ para classificar uma diferença já encontrada como "invisível".
+// Nunca serve para aprovar um trecho. Pensada para um parágrafo (uma linha).
+
+// \p{Zs} cobre o espaço comum, o não separável (U+00A0), o estreito (U+202F) e os espaços tipográficos.
+const ESPACOS = /[\p{Zs}\t]+/gu;
+// Largura zero, não-junção, junção, word joiner e BOM.
+const LARGURA_ZERO = /[\u200B-\u200D\u2060\uFEFF]/g;
+
+function exigirTexto(valor, funcao) {
+  if (typeof valor !== 'string') {
+    throw new TypeError(`${funcao} espera texto, recebeu ${valor === null ? 'null' : typeof valor}.`);
+  }
+}
+
+function normalizar(texto) {
+  exigirTexto(texto, 'normalizar');
+  return texto.replace(/\r\n?/g, '\n').normalize('NFC');
+}
+
+function semInvisiveis(texto) {
+  exigirTexto(texto, 'semInvisiveis');
+  return normalizar(texto).replace(LARGURA_ZERO, '').replace(ESPACOS, ' ').trim();
+}
+
+return { normalizar, semInvisiveis };
+})();
+// ---- src/dominio/marcadores.js ----
+const { detectarMarcador } = (() => {
+// Detecção de marcador de numeração no início de um parágrafo (plano, seção 6.2, passo 3). Pura.
+//
+// Devolve null ou { tipo, rotulo, chave, numeros? }:
+//   tipo: 'decimal' | 'clausula' | 'artigo' | 'paragrafo' | 'inciso' | 'alinea'
+//   rotulo: o marcador como foi escrito (sem os espaços antes)
+//   chave: identidade do marcador, sem acento nem pontuação final ("5.1." e "5.1" → "5.1")
+//   numeros: só no decimal, os níveis ([5, 1])
+//
+// Na dúvida, NÃO é marcador. Errar para menos só junta dois itens na tela; errar para mais
+// quebraria um item no meio de uma célula de tabela ("3565→UN") ou de uma frase ("5 dias").
+
+// Decimal com níveis: depois do primeiro, cada nível tem 1 ou 2 dígitos, para "1.000" não virar item.
+const DECIMAL_NIVEIS = /^(\d{1,3}(?:\.\d{1,2})+)([.)])?(?=\s|[–—-]|$)/;
+// Decimal de um nível: exige ponto ou parêntese seguido de espaço, ou um travessão separado.
+const DECIMAL_UM_NIVEL = /^(\d{1,3})(?:([.)])(?=\s|$)|(?=\s*[–—-](?:\s|$)))/;
+const ORDINAL = '(?:primeira|segunda|terceira|quarta|quinta|sexta|s[eé]tima|oitava|nona|d[eé]cima|vig[eé]sima|trig[eé]sima|quadrag[eé]sima|quinquag[eé]sima|[uú]nica)';
+const CLAUSULA = new RegExp(
+  `^(cl[aá]usula\\s+(?:(\\d{1,3})\\s*[ªºao°]?|(${ORDINAL}(?:\\s+${ORDINAL})?)))(?=[\\s.:,–—-]|$)`, 'iu');
+const ARTIGO = /^(art\.?\s*(\d{1,4})\s*[ºo°]?)\.?(?=\s|[–—-]|$)/iu;
+const PARAGRAFO = /^(§\s*(\d{1,3})\s*[ºo°]?)\.?(?=\s|[–—-]|$)/u;
+const PARAGRAFO_UNICO = /^(par[aá]grafo\s+[uú]nico)\.?(?=\s|[–—-]|$)/iu;
+const INCISO = /^([IVXLC]+)\s*[–—-](?=\s|$)/;
+const ROMANO_VALIDO = /^C{0,3}(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$/;
+const ALINEA = /^([a-z])\)(?=\s|$)/;
+
+function semAcentoMaiusculo(texto) {
+  return texto.normalize('NFD').replace(/\p{M}/gu, '').toUpperCase().replace(/\s+/g, ' ');
+}
+
+function detectarMarcador(textoDoParagrafo) {
+  const t = normalizar(textoDoParagrafo).replace(/^\s+/, '');
+  let m;
+
+  if ((m = DECIMAL_NIVEIS.exec(t))) {
+    return { tipo: 'decimal', rotulo: m[1] + (m[2] || ''), chave: m[1], numeros: m[1].split('.').map(Number) };
+  }
+  if ((m = DECIMAL_UM_NIVEL.exec(t))) {
+    return { tipo: 'decimal', rotulo: m[1] + (m[2] || ''), chave: m[1], numeros: [Number(m[1])] };
+  }
+  if ((m = CLAUSULA.exec(t))) {
+    const identidade = m[2] !== undefined ? m[2] : semAcentoMaiusculo(m[3]);
+    return { tipo: 'clausula', rotulo: m[1], chave: `CLAUSULA ${identidade}` };
+  }
+  if ((m = ARTIGO.exec(t))) {
+    return { tipo: 'artigo', rotulo: m[1], chave: `ART ${Number(m[2])}` };
+  }
+  if ((m = PARAGRAFO.exec(t))) {
+    return { tipo: 'paragrafo', rotulo: m[1], chave: `§ ${Number(m[2])}` };
+  }
+  if ((m = PARAGRAFO_UNICO.exec(t))) {
+    return { tipo: 'paragrafo', rotulo: m[1], chave: '§ UNICO' };
+  }
+  if ((m = INCISO.exec(t)) && ROMANO_VALIDO.test(m[1])) {
+    return { tipo: 'inciso', rotulo: m[1], chave: m[1] };
+  }
+  if ((m = ALINEA.exec(t))) {
+    return { tipo: 'alinea', rotulo: `${m[1]})`, chave: m[1] };
+  }
+  return null;
+}
+
+return { detectarMarcador };
+})();
+// ---- src/dominio/itens.js ----
+const { agruparItens, descendentesDoItem } = (() => {
+// Agrupamento de parágrafos em itens e hierarquia (plano, seção 6.2, passos 4 a 7). Funções puras.
+//
+// Item: { id, tipo, marcador, paragrafos, pai, nivel }
+//   id: índice do primeiro parágrafo do item
+//   tipo: 'abertura' (antes do primeiro marcador) | 'marcado' (aberto por marcador)
+//         | 'solto' (texto sem marcador nenhum: cada parágrafo é um item)
+//   paragrafos: índices dos parágrafos do item, em ordem
+//   pai: id do item pai, ou null
+//
+// Item só agrupa para mostrar e marcar vários parágrafos de uma vez (P3). A liberação é
+// guardada por parágrafo, nunca por item.
+
+// Quem pode ser pai de quem nos tipos não decimais: um item só fica sob outro de posto menor.
+const POSTO = { clausula: 0, artigo: 1, decimal: 1, paragrafo: 2, inciso: 3, alinea: 4 };
+
+function ehPrefixoProprio(curto, longo) {
+  return curto.length < longo.length && curto.every((n, i) => n === longo[i]);
+}
+
+function encontrarPai(anteriores, marcador) {
+  for (let i = anteriores.length - 1; i >= 0; i--) {
+    const candidato = anteriores[i];
+    if (candidato.tipo !== 'marcado') continue;
+    const m = candidato.marcador;
+    if (marcador.tipo === 'decimal') {
+      if (m.tipo === 'decimal' && ehPrefixoProprio(m.numeros, marcador.numeros)) return candidato;
+    } else if (POSTO[m.tipo] < POSTO[marcador.tipo]) {
+      return candidato;
+    }
+  }
+  // Decimal sem nenhum prefixo antes: fica sob a cláusula mais próxima, se houver.
+  if (marcador.tipo === 'decimal') {
+    for (let i = anteriores.length - 1; i >= 0; i--) {
+      const candidato = anteriores[i];
+      if (candidato.tipo === 'marcado' && candidato.marcador.tipo === 'clausula') return candidato;
+    }
+  }
+  return null;
+}
+
+function novoItem(tipo, marcador, indice, pai) {
+  return { id: indice, tipo, marcador, paragrafos: [indice], pai: pai ? pai.id : null, nivel: pai ? pai.nivel + 1 : 0 };
+}
+
+function agruparItens({ paragrafos }) {
+  const marcadores = paragrafos.map(p => detectarMarcador(p.texto));
+  if (!marcadores.some(Boolean)) return paragrafos.map(p => novoItem('solto', null, p.indice, null));
+
+  const itens = [];
+  paragrafos.forEach((p, i) => {
+    const marcador = marcadores[i];
+    if (marcador) {
+      itens.push(novoItem('marcado', marcador, p.indice, encontrarPai(itens, marcador)));
+    } else if (itens.length === 0) {
+      itens.push(novoItem('abertura', null, p.indice, null));
+    } else {
+      itens[itens.length - 1].paragrafos.push(p.indice);
+    }
+  });
+  return itens;
+}
+
+// Ids de todos os itens abaixo do item dado (filhos, netos...), na ordem do texto.
+function descendentesDoItem(itens, id) {
+  const porId = new Map(itens.map(i => [i.id, i]));
+  return itens
+    .filter(item => {
+      for (let pai = item.pai; pai !== null; pai = porId.get(pai).pai) {
+        if (pai === id) return true;
+      }
+      return false;
+    })
+    .map(item => item.id);
+}
+
+return { agruparItens, descendentesDoItem };
+})();
+// ---- src/dominio/comentarios.js ----
+const { semMarcadoresDeComentario } = (() => {
+// Marcador de comentário do editor do gov (P2; plano, seção 6.5). Função pura.
+// Na cópia vem só o marcador ("[A1]"), nunca o texto do comentário. Padrão: "[" + 1 a 4
+// letras maiúsculas (com ou sem acento) + 1 a 3 dígitos + "]". "[sic]" e "[1]" são texto comum.
+const MARCADOR = /\[\p{Lu}{1,4}\d{1,3}\]/gu;
+
+function semMarcadoresDeComentario(texto) {
+  if (typeof texto !== 'string') {
+    throw new TypeError(`semMarcadoresDeComentario espera texto, recebeu ${texto === null ? 'null' : typeof texto}.`);
+  }
+  return texto.replace(MARCADOR, '');
+}
+
+return { semMarcadoresDeComentario };
+})();
+// ---- src/dominio/palavras.js ----
+const { compararPalavras, destacarInvisiveis } = (() => {
+// "O que mudou" palavra a palavra (plano, seção 6.5). Funções puras.
+//
+// compararPalavras(antes, depois) → { trechos, semelhanca }
+//   trechos: [{ tipo: 'igual' | 'removido' | 'inserido', texto }], vizinhos nunca do mesmo tipo e,
+//            dentro de cada mudança, primeiro o que saiu e depois o que entrou.
+//   semelhanca: de 0 a 1, contando só caracteres visíveis (espaços em comum não aproximam
+//               textos diferentes). A T2.7 usa para decidir entre "alterado" e "sumiu + novo".
+//
+// Recebe textos já normalizados (vêm dos parágrafos) e não normaliza de novo, porque
+// igual + removido precisa reconstruir o antes exatamente, e igual + inserido, o depois.
+
+// Peças: palavra ou número (letras, dígitos e acentos juntos), cada caractere de espaço, cada sinal.
+const PECAS = /[\p{L}\p{N}\p{M}]+|\s|[^\s\p{L}\p{N}\p{M}]/gu;
+// Acima disto (peças do antes × peças do depois, já sem o começo e o fim iguais), não detalha.
+const LIMITE_CELULAS = 4_000_000;
+// Abaixo disto, o parágrafo foi reescrito: mostrar pedacinhos iguais só confundiria.
+const SEMELHANCA_MINIMA_PARA_DETALHAR = 0.4;
+
+function exigirTextos(antes, depois) {
+  for (const [nome, valor] of [['antes', antes], ['depois', depois]]) {
+    if (typeof valor !== 'string') {
+      throw new TypeError(`compararPalavras espera texto em "${nome}", recebeu ${valor === null ? 'null' : typeof valor}.`);
+    }
+  }
+}
+
+function visiveis(texto) {
+  return texto.replace(/\s/g, '').length;
+}
+
+// Maior subsequência comum entre duas listas de peças. Devolve [tipo, peça] em ordem,
+// ou null se o tamanho passar do limite.
+function alinhar(x, y) {
+  const n = x.length;
+  const m = y.length;
+  if ((n + 1) * (m + 1) > LIMITE_CELULAS) return null;
+  const largura = m + 1;
+  const tabela = new Uint32Array((n + 1) * largura);
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      tabela[i * largura + j] = x[i] === y[j]
+        ? tabela[(i + 1) * largura + j + 1] + 1
+        : Math.max(tabela[(i + 1) * largura + j], tabela[i * largura + j + 1]);
+    }
+  }
+  const passos = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (x[i] === y[j]) { passos.push(['igual', x[i]]); i++; j++; }
+    else if (tabela[(i + 1) * largura + j] >= tabela[i * largura + j + 1]) { passos.push(['removido', x[i]]); i++; }
+    else { passos.push(['inserido', y[j]]); j++; }
+  }
+  while (i < n) passos.push(['removido', x[i++]]);
+  while (j < m) passos.push(['inserido', y[j++]]);
+  return passos;
+}
+
+// Junta os passos em trechos: iguais seguidos viram um; numa mudança, tudo que saiu e depois tudo que entrou.
+function agrupar(passos) {
+  const trechos = [];
+  let saiu = '';
+  let entrou = '';
+  const fecharMudanca = () => {
+    if (saiu) trechos.push({ tipo: 'removido', texto: saiu });
+    if (entrou) trechos.push({ tipo: 'inserido', texto: entrou });
+    saiu = '';
+    entrou = '';
+  };
+  for (const [tipo, peca] of passos) {
+    if (tipo === 'removido') saiu += peca;
+    else if (tipo === 'inserido') entrou += peca;
+    else {
+      fecharMudanca();
+      const ultimo = trechos[trechos.length - 1];
+      if (ultimo && ultimo.tipo === 'igual') ultimo.texto += peca;
+      else trechos.push({ tipo: 'igual', texto: peca });
+    }
+  }
+  fecharMudanca();
+  return trechos;
+}
+
+function compararPalavras(antes, depois) {
+  exigirTextos(antes, depois);
+  if (antes === depois) return { trechos: antes ? [{ tipo: 'igual', texto: antes }] : [], semelhanca: 1 };
+
+  const a = antes.match(PECAS) || [];
+  const b = depois.match(PECAS) || [];
+  let inicio = 0;
+  while (inicio < a.length && inicio < b.length && a[inicio] === b[inicio]) inicio++;
+  let fim = 0;
+  while (fim < a.length - inicio && fim < b.length - inicio && a[a.length - 1 - fim] === b[b.length - 1 - fim]) fim++;
+
+  const meioA = a.slice(inicio, a.length - fim);
+  const meioB = b.slice(inicio, b.length - fim);
+  const meio = alinhar(meioA, meioB)
+    || [...meioA.map(p => ['removido', p]), ...meioB.map(p => ['inserido', p])];
+  const passos = [
+    ...a.slice(0, inicio).map(p => ['igual', p]),
+    ...meio,
+    ...a.slice(a.length - fim).map(p => ['igual', p]),
+  ];
+
+  const total = visiveis(antes) + visiveis(depois);
+  const emComum = passos.filter(([tipo]) => tipo === 'igual').reduce((soma, [, peca]) => soma + visiveis(peca), 0);
+  const semelhanca = total === 0 ? 1 : (2 * emComum) / total;
+
+  if (antes && depois && semelhanca < SEMELHANCA_MINIMA_PARA_DETALHAR) {
+    return { trechos: [{ tipo: 'removido', texto: antes }, { tipo: 'inserido', texto: depois }], semelhanca };
+  }
+  return { trechos: agrupar(passos), semelhanca };
+}
+
+// ---------- Mostrar invisíveis num trecho destacado ----------
+
+const SIMBOLO = new Map([
+  [0x20, '·'],
+  [0x09, '→'],
+  [0xA0, '⍽'],
+  [0x202F, '⍽'],
+]);
+const SEMPRE_VISIVEIS = new Set([0x09, 0xA0, 0x202F]);
+const LARGURA_ZERO = new Set([0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF]);
+
+function codigo(c) {
+  return `[U+${c.toString(16).toUpperCase().padStart(4, '0')}]`;
+}
+
+// Num trecho que mudou: não separável, tabulação e largura zero sempre aparecem; o espaço comum
+// só aparece (como ·) quando o trecho é feito só de espaços, senão o texto ficaria ilegível.
+function destacarInvisiveis(texto) {
+  const soEspacos = /^\s+$/.test(texto);
+  let saida = '';
+  for (const ch of texto) {
+    const c = ch.codePointAt(0);
+    if (LARGURA_ZERO.has(c)) saida += codigo(c);
+    else if (SEMPRE_VISIVEIS.has(c) || (soEspacos && SIMBOLO.has(c))) saida += SIMBOLO.get(c);
+    else if (soEspacos) saida += codigo(c);
+    else saida += ch;
+  }
+  return saida;
+}
+
+return { compararPalavras, destacarInvisiveis };
+})();
+// ---- src/dominio/parear.js ----
+const { parearParagrafos } = (() => {
+// Pareamento completo antes × depois: âncoras + lacunas (plano, seção 6.3, passos 1 e 2). Puro.
+//
+// parearParagrafos(divisaoAntes, divisaoDepois) → { relacoes, separadorFinalMudou }
+//   relacoes: uma por parágrafo ou par, na ordem do documento:
+//     identico  — texto igual (âncora)
+//     invisivel — difere só em espaços e invisíveis (inclui espaço a mais, plano 6.1)
+//     comentario — difere só em marcador de comentário ("[A1]") acrescentado, removido ou
+//                  renumerado, com ou sem invisíveis junto (P2)
+//     alterado  — semelhante o bastante para ser o mesmo parágrafo mudado
+//     sumiu     — estava no antes e não tem par
+//     novo      — está no depois e não tem par
+//     movido    — texto idêntico, mas fora da ordem relativa (um "sumiu" com gêmeo entre os "novo");
+//                 fica na lista onde estava no antes. Movido e alterado ao mesmo tempo continua
+//                 sumiu + novo: só o idêntico é reconhecido como movido.
+//   Pares trazem separadorMudou (as linhas vazias antes dele mudaram, D3); os não idênticos
+//   trazem trechos e semelhanca (compararPalavras).
+//
+// Errar aqui só muda a explicação: o que não é idêntico nunca vira "identico".
+
+// Provisório: calibrar com mais pares reais (T0.4).
+const SEMELHANCA_MINIMA_PARA_PAREAR = 0.5;
+// Lacuna acima disto (parágrafos do antes × do depois) só pareia diferenças invisíveis.
+const LIMITE_LACUNA = 10_000;
+// Parear diferença invisível ou de comentário sempre vale mais que parear por semelhança (no máximo 1).
+const PONTOS_INVISIVEL = 2;
+
+// Forma usada para reconhecer "só mudou comentário": sem marcadores e sem invisíveis.
+function semComentarioNemInvisiveis(texto) {
+  return semInvisiveis(semMarcadoresDeComentario(texto));
+}
+
+// Já se sabe que os dois têm a mesma forma sem comentário nem invisíveis: qual das duas diferenças é?
+function tipoDaDiferencaMenor(textoA, textoB) {
+  return semInvisiveis(textoA) === semInvisiveis(textoB) ? 'invisivel' : 'comentario';
+}
+
+function exigirDivisao(valor, nome) {
+  if (!valor || !Array.isArray(valor.paragrafos) || !Array.isArray(valor.separadorFinal)) {
+    throw new TypeError(`parearParagrafos espera a divisão em parágrafos em "${nome}".`);
+  }
+}
+
+function mesmasLinhas(a, b) {
+  return a.length === b.length && a.every((linha, i) => linha === b[i]);
+}
+
+function contarVisiveis(texto) {
+  return texto.replace(/\s/g, '').length;
+}
+
+function avaliarPar(textoA, textoB) {
+  if (semComentarioNemInvisiveis(textoA) === semComentarioNemInvisiveis(textoB)) {
+    return { tipo: tipoDaDiferencaMenor(textoA, textoB), pontos: PONTOS_INVISIVEL };
+  }
+  // Pela diferença de tamanho já dá para saber se a semelhança não alcança o mínimo.
+  const va = contarVisiveis(textoA);
+  const vb = contarVisiveis(textoB);
+  if (va + vb > 0 && (2 * Math.min(va, vb)) / (va + vb) < SEMELHANCA_MINIMA_PARA_PAREAR) return null;
+  const comparacao = compararPalavras(textoA, textoB);
+  if (comparacao.semelhanca < SEMELHANCA_MINIMA_PARA_PAREAR) return null;
+  return { tipo: 'alterado', pontos: comparacao.semelhanca, comparacao };
+}
+
+// Pares [i, j, avaliação] dentro da lacuna, em ordem crescente dos dois lados.
+function parearLacuna(indicesA, indicesD, A, D) {
+  const p = indicesA.length;
+  const q = indicesD.length;
+  if (p === 0 || q === 0) return [];
+
+  if (p * q > LIMITE_LACUNA) {
+    const pares = [];
+    let ultimoJ = -1;
+    for (const i of indicesA) {
+      const chave = semComentarioNemInvisiveis(A[i].texto);
+      const j = indicesD.find(k => k > ultimoJ && semComentarioNemInvisiveis(D[k].texto) === chave);
+      if (j !== undefined) {
+        pares.push([i, j, { tipo: tipoDaDiferencaMenor(A[i].texto, D[j].texto), pontos: PONTOS_INVISIVEL }]);
+        ultimoJ = j;
+      }
+    }
+    return pares;
+  }
+
+  const avaliacoes = indicesA.map(i => indicesD.map(j => avaliarPar(A[i].texto, D[j].texto)));
+  const largura = q + 1;
+  const melhor = new Float64Array((p + 1) * largura);
+  for (let x = p - 1; x >= 0; x--) {
+    for (let y = q - 1; y >= 0; y--) {
+      const av = avaliacoes[x][y];
+      const comPar = av ? av.pontos + melhor[(x + 1) * largura + y + 1] : -1;
+      melhor[x * largura + y] = Math.max(melhor[(x + 1) * largura + y], melhor[x * largura + y + 1], comPar);
+    }
+  }
+  const pares = [];
+  let x = 0;
+  let y = 0;
+  while (x < p && y < q) {
+    const av = avaliacoes[x][y];
+    if (av && melhor[x * largura + y] === av.pontos + melhor[(x + 1) * largura + y + 1]) {
+      pares.push([indicesA[x], indicesD[y], av]);
+      x++;
+      y++;
+    } else if (melhor[(x + 1) * largura + y] >= melhor[x * largura + y + 1]) x++;
+    else y++;
+  }
+  return pares;
+}
+
+// opcoes.preferidos: parágrafos do antes a ancorar de preferência entre gêmeos idênticos (os protegidos).
+function parearParagrafos(antes, depois, opcoes = {}) {
+  exigirDivisao(antes, 'antes');
+  exigirDivisao(depois, 'depois');
+  const A = antes.paragrafos;
+  const D = depois.paragrafos;
+  const relacoes = [];
+
+  const par = (tipo, i, j, avaliacao) => {
+    const relacao = { tipo, antes: i, depois: j, separadorMudou: !mesmasLinhas(A[i].separadorAntes, D[j].separadorAntes) };
+    if (tipo !== 'identico' && tipo !== 'movido') {
+      const comparacao = (avaliacao && avaliacao.comparacao) || compararPalavras(A[i].texto, D[j].texto);
+      relacao.trechos = comparacao.trechos;
+      relacao.semelhanca = comparacao.semelhanca;
+    }
+    return relacao;
+  };
+
+  let deA = 0;
+  let deD = 0;
+  const fecharLacuna = (ateA, ateD) => {
+    const indicesA = [];
+    const indicesD = [];
+    for (let i = deA; i < ateA; i++) indicesA.push(i);
+    for (let j = deD; j < ateD; j++) indicesD.push(j);
+    let x = deA;
+    let y = deD;
+    for (const [i, j, avaliacao] of parearLacuna(indicesA, indicesD, A, D)) {
+      while (x < i) relacoes.push({ tipo: 'sumiu', antes: x++, depois: null });
+      while (y < j) relacoes.push({ tipo: 'novo', antes: null, depois: y++ });
+      relacoes.push(par(avaliacao.tipo, i, j, avaliacao));
+      x = i + 1;
+      y = j + 1;
+    }
+    while (x < ateA) relacoes.push({ tipo: 'sumiu', antes: x++, depois: null });
+    while (y < ateD) relacoes.push({ tipo: 'novo', antes: null, depois: y++ });
+  };
+
+  for (const [i, j] of encontrarAncoras(A.map(p => p.texto), D.map(p => p.texto), opcoes.preferidos)) {
+    fecharLacuna(i, j);
+    relacoes.push(par('identico', i, j));
+    deA = i + 1;
+    deD = j + 1;
+  }
+  fecharLacuna(A.length, D.length);
+
+  // Fora da ordem: cada "sumiu" com gêmeo idêntico entre os "novo" (o primeiro ainda livre,
+  // para texto repetido ser casado em ordem) vira um "movido", no lugar onde estava no antes.
+  const novosPorTexto = new Map();
+  for (const r of relacoes) {
+    if (r.tipo !== 'novo') continue;
+    const texto = D[r.depois].texto;
+    if (!novosPorTexto.has(texto)) novosPorTexto.set(texto, []);
+    novosPorTexto.get(texto).push(r);
+  }
+  const absorvidos = new Set();
+  const comMovidos = [];
+  for (const r of relacoes) {
+    const fila = r.tipo === 'sumiu' ? novosPorTexto.get(A[r.antes].texto) : undefined;
+    if (fila && fila.length > 0) {
+      const gemeo = fila.shift();
+      absorvidos.add(gemeo);
+      comMovidos.push(par('movido', r.antes, gemeo.depois));
+    } else {
+      comMovidos.push(r);
+    }
+  }
+
+  return {
+    relacoes: comMovidos.filter(r => !absorvidos.has(r)),
+    separadorFinalMudou: !mesmasLinhas(antes.separadorFinal, depois.separadorFinal),
+  };
+}
+
+return { parearParagrafos };
+})();
+// ---- src/dominio/classificar.js ----
+const { classificarTopico } = (() => {
+// Classificação do tópico com os parágrafos liberados (plano, seção 6.4; P3; Gravidade no AGENTS.md).
+// Função pura.
+//
+// classificarTopico(divisaoAntes, divisaoDepois, liberados) → { achados, separadorFinal }
+//   liberados: índices de parágrafos do antes (lista ou conjunto) que a IA podia alterar.
+//   achados: um por relação do pareamento, na mesma ordem:
+//     { gravidade, tipo, antes, depois, liberado, item, trechos?, semelhanca? }
+//     gravidade: 'ok' (✅) | 'aviso' (⚠️) | 'erro' (❌) | 'info' (ℹ️, parágrafo liberado)
+//     tipo: o da relação; "separador" quando o texto é idêntico mas as linhas vazias antes mudaram
+//     item: id do item (do antes) a que o achado pertence; o novo herda o do parágrafo vizinho
+//   separadorFinal: null, ou { gravidade } se as linhas vazias do fim mudaram
+//   fracaoPareada: parte dos parágrafos do antes que acharam par no depois (de 0 a 1)
+//   pareceOutroTopico: antes com 3+ parágrafos e menos de 30% pareado (plano 6.6): o texto
+//     colado provavelmente é de outro tópico, e a tela pergunta em vez de acusar tudo
+
+// Provisórios (plano 6.6): calibrar com mais pares reais.
+const MINIMO_DE_PARAGRAFOS_PARA_JULGAR_TOPICO = 3;
+const FRACAO_MINIMA_DO_MESMO_TOPICO = 0.3;
+
+const GRAVIDADE_PROTEGIDO = {
+  identico: 'ok',
+  separador: 'aviso',
+  invisivel: 'aviso',
+  comentario: 'aviso',
+  movido: 'aviso',
+  alterado: 'erro',
+  sumiu: 'erro',
+};
+
+function lerLiberados(liberados, total) {
+  if (!(Array.isArray(liberados) || liberados instanceof Set)) {
+    throw new TypeError('classificarTopico espera os liberados como lista ou conjunto de índices.');
+  }
+  for (const i of liberados) {
+    if (!Number.isInteger(i)) throw new TypeError(`Índice de parágrafo liberado inválido: ${JSON.stringify(i)}.`);
+    if (i < 0 || i >= total) throw new RangeError(`Parágrafo liberado ${i} não existe (o texto tem ${total}).`);
+  }
+  return new Set(liberados);
+}
+
+function classificarTopico(antes, depois, liberados) {
+  if (!antes || !Array.isArray(antes.paragrafos)) throw new TypeError('classificarTopico espera a divisão em parágrafos do antes.');
+  const liberado = lerLiberados(liberados, antes.paragrafos.length);
+  // Entre gêmeos idênticos, a âncora fica com o protegido: apagar o liberado não acusa o protegido.
+  const protegidos = antes.paragrafos.map(p => p.indice).filter(i => !liberado.has(i));
+  const { relacoes, separadorFinalMudou } = parearParagrafos(antes, depois, { preferidos: protegidos });
+
+  const itemDoParagrafo = new Map();
+  for (const item of agruparItens(antes)) {
+    for (const indice of item.paragrafos) itemDoParagrafo.set(indice, item.id);
+  }
+
+  // Vizinho de um parágrafo novo: o parágrafo do antes que vem logo antes dele no resultado,
+  // pareado ou que sumiu. Assim, um liberado reescrito por inteiro (sumiu + novo) é reconhecido
+  // como a reescrita dele, e não como texto novo fora do liberado (corrigido na T4.5).
+  let ultimoDoAntes = null;
+  const vizinhoDoNovo = relacoes.map((r) => {
+    const vizinho = ultimoDoAntes;
+    if (r.antes !== null) ultimoDoAntes = r.antes;
+    return vizinho;
+  });
+
+  const achados = relacoes.map((r, k) => {
+    if (r.tipo === 'novo') {
+      const vizinho = vizinhoDoNovo[k];
+      // Texto novo depois de um liberado é permitido, desde que não abra um item com outro número:
+      // sem número, ou com o mesmo número do vizinho (o próprio item liberado, reescrito).
+      const marcador = detectarMarcador(depois.paragrafos[r.depois].texto);
+      const doVizinho = vizinho === null ? null : detectarMarcador(antes.paragrafos[vizinho].texto);
+      const mesmoItem = marcador === null || (doVizinho !== null && doVizinho.chave === marcador.chave);
+      const permitido = mesmoItem && vizinho !== null && liberado.has(vizinho);
+      return {
+        gravidade: permitido ? 'info' : 'aviso',
+        tipo: 'novo',
+        antes: null,
+        depois: r.depois,
+        liberado: permitido,
+        item: vizinho === null ? null : itemDoParagrafo.get(vizinho),
+      };
+    }
+    const tipo = r.tipo === 'identico' && r.separadorMudou ? 'separador' : r.tipo;
+    const ehLiberado = liberado.has(r.antes);
+    const achado = {
+      gravidade: ehLiberado ? 'info' : GRAVIDADE_PROTEGIDO[tipo],
+      tipo,
+      antes: r.antes,
+      depois: r.depois,
+      liberado: ehLiberado,
+      item: itemDoParagrafo.get(r.antes),
+    };
+    if (r.trechos) {
+      achado.trechos = r.trechos;
+      achado.semelhanca = r.semelhanca;
+    }
+    return achado;
+  });
+
+  let separadorFinal = null;
+  if (separadorFinalMudou) {
+    const ultimo = antes.paragrafos.length - 1;
+    separadorFinal = { gravidade: ultimo >= 0 && liberado.has(ultimo) ? 'info' : 'aviso' };
+  }
+  const total = antes.paragrafos.length;
+  const pareados = relacoes.filter(r => r.antes !== null && r.depois !== null).length;
+  const fracaoPareada = total === 0 ? 1 : pareados / total;
+  const pareceOutroTopico = total >= MINIMO_DE_PARAGRAFOS_PARA_JULGAR_TOPICO && fracaoPareada < FRACAO_MINIMA_DO_MESMO_TOPICO;
+
+  return { achados, separadorFinal, fracaoPareada, pareceOutroTopico };
+}
+
+return { classificarTopico };
+})();
+// ---- src/dominio/paragrafos.js ----
+const { dividirParagrafos, juntarParagrafos } = (() => {
+// Divisão em parágrafos (plano, seção 6.2, passos 1 e 2). Funções puras.
+//
+// Parágrafo = linha com algo visível. Linhas vazias, ou só com espaços e invisíveis, são
+// separadores: não viram parágrafo, mas ficam guardadas exatamente como vieram, para que
+// juntarParagrafos devolva o texto idêntico e uma mudança nelas possa ser apontada depois.
+//
+// Resultado de dividirParagrafos:
+//   paragrafos: [{ indice, texto, linha, separadorAntes: [linhas separadoras antes dele] }]
+//   separadorFinal: [linhas separadoras depois do último parágrafo]
+
+function dividirParagrafos(texto) {
+  const linhas = normalizar(texto).split('\n');
+  const paragrafos = [];
+  let separador = [];
+  linhas.forEach((conteudo, i) => {
+    if (semInvisiveis(conteudo) === '') {
+      separador.push(conteudo);
+      return;
+    }
+    paragrafos.push({ indice: paragrafos.length, texto: conteudo, linha: i + 1, separadorAntes: separador });
+    separador = [];
+  });
+  return { paragrafos, separadorFinal: separador };
+}
+
+function juntarParagrafos({ paragrafos, separadorFinal }) {
+  const linhas = [];
+  for (const p of paragrafos) linhas.push(...p.separadorAntes, p.texto);
+  linhas.push(...separadorFinal);
+  return linhas.join('\n');
+}
+
+return { dividirParagrafos, juntarParagrafos };
+})();
+// ---- src/dominio/status.js ----
+const { statusDoTopico, statusDaVerificacao } = (() => {
+// Status do tópico e da Verificação (plano, seção 6.7). Funções puras.
+//
+// statusDoTopico(classificacao, confirmouTopicoDiferente) → { status, erros, avisos, infos, oks }
+//   classificacao: resultado de classificarTopico, ou null quando ainda não há "depois"
+//   status: 'aguardando' | 'confirmar-topico' | 'problemas' | 'avisos' | 'integro'
+//
+// statusDaVerificacao(statusDosTopicos) → { status, total, conferidos, pendentes,
+//                                           comProblemas, comAvisos, integros, piorAteAgora }
+//   status: 'vazia' | 'em-andamento' | 'problemas' | 'avisos' | 'integra'
+//   "integra" só quando TODOS os tópicos forem íntegros; com algum pendente, é "em-andamento",
+//   mas a contagem já mostra os problemas encontrados.
+
+const STATUS_DE_TOPICO = ['aguardando', 'confirmar-topico', 'problemas', 'avisos', 'integro'];
+const PENDENTES = new Set(['aguardando', 'confirmar-topico']);
+
+function statusDoTopico(classificacao, confirmouTopicoDiferente = false) {
+  if (classificacao === null) return { status: 'aguardando', erros: 0, avisos: 0, infos: 0, oks: 0 };
+  if (!classificacao || typeof classificacao !== 'object' || !Array.isArray(classificacao.achados)) {
+    throw new TypeError('statusDoTopico espera o resultado de classificarTopico, ou null.');
+  }
+  const contar = (gravidade) => classificacao.achados.filter(a => a.gravidade === gravidade).length;
+  const contagem = { erros: contar('erro'), avisos: contar('aviso'), infos: contar('info'), oks: contar('ok') };
+  if (classificacao.separadorFinal && classificacao.separadorFinal.gravidade === 'aviso') contagem.avisos++;
+
+  let status;
+  if (classificacao.pareceOutroTopico && !confirmouTopicoDiferente) status = 'confirmar-topico';
+  else if (contagem.erros > 0) status = 'problemas';
+  else if (contagem.avisos > 0) status = 'avisos';
+  else status = 'integro';
+  return { status, ...contagem };
+}
+
+function statusDaVerificacao(statusDosTopicos) {
+  if (!Array.isArray(statusDosTopicos) || statusDosTopicos.some(s => !STATUS_DE_TOPICO.includes(s))) {
+    throw new TypeError(`statusDaVerificacao espera uma lista com: ${STATUS_DE_TOPICO.join(', ')}.`);
+  }
+  const quantos = (s) => statusDosTopicos.filter(x => x === s).length;
+  const resumo = {
+    total: statusDosTopicos.length,
+    pendentes: statusDosTopicos.filter(s => PENDENTES.has(s)).length,
+    comProblemas: quantos('problemas'),
+    comAvisos: quantos('avisos'),
+    integros: quantos('integro'),
+  };
+  resumo.conferidos = resumo.total - resumo.pendentes;
+  resumo.piorAteAgora = resumo.comProblemas ? 'problemas' : resumo.comAvisos ? 'avisos' : resumo.integros ? 'integro' : null;
+
+  let status;
+  if (resumo.total === 0) status = 'vazia';
+  else if (resumo.pendentes > 0) status = 'em-andamento';
+  else if (resumo.comProblemas > 0) status = 'problemas';
+  else if (resumo.comAvisos > 0) status = 'avisos';
+  else status = 'integra';
+  return { status, ...resumo };
+}
+
+return { statusDoTopico, statusDaVerificacao };
+})();
+// ---- src/dominio/verificacao.js ----
+const { sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao } = (() => {
+// Operações da Verificação (plano, seção 4; P3). Funções puras.
+//
+// Toda operação recebe uma Verificação e devolve uma NOVA, sem alterar a recebida. Data ("agora",
+// texto ISO) e ids chegam por parâmetro: o domínio não lê relógio nem sorteia nada.
+// Só a entrada é guardada (textos e liberados); o resultado é recalculado por conferirTopico,
+// para que uma correção no algoritmo valha também para Verificações antigas.
+//
+// Verificação: { versaoFormato, id, nome, criadaEm, atualizadaEm, topicos }
+// Tópico:      { id, nome, antes: { texto, html, coladoEm }, liberados, depois, confirmouTopicoDiferente }
+
+const VERSAO_FORMATO = 1;
+const TAMANHO_MAXIMO_DO_NOME_SUGERIDO = 80;
+
+function nomeValido(nome) {
+  if (typeof nome !== 'string') throw new TypeError('O nome precisa ser texto.');
+  const limpo = semInvisiveis(nome);
+  if (limpo === '') throw new RangeError('O nome não pode ficar vazio.');
+  return nome.trim();
+}
+
+function colagemValida({ texto, html, agora }) {
+  if (typeof texto !== 'string' || typeof html !== 'string') throw new TypeError('A colagem precisa trazer texto e html.');
+  const { paragrafos } = dividirParagrafos(texto);
+  if (paragrafos.length === 0) throw new RangeError('A colagem não tem nada visível.');
+  return { colagem: { texto, html, coladoEm: agora }, paragrafos };
+}
+
+// Nome sugerido para um tópico: a primeira linha com texto, até 80 caracteres. null se não há texto.
+// Exposto para a tela mostrar a sugestão, editável, antes de salvar.
+function sugerirNomeDeTopico(texto) {
+  const { paragrafos } = dividirParagrafos(texto);
+  if (paragrafos.length === 0) return null;
+  const primeira = semInvisiveis(paragrafos[0].texto);
+  return primeira.length > TAMANHO_MAXIMO_DO_NOME_SUGERIDO
+    ? `${primeira.slice(0, TAMANHO_MAXIMO_DO_NOME_SUGERIDO - 1)}…`
+    : primeira;
+}
+
+function posicaoDoTopico(verificacao, topicoId) {
+  const posicao = verificacao.topicos.findIndex(t => t.id === topicoId);
+  if (posicao === -1) throw new RangeError(`Tópico "${topicoId}" não existe nesta Verificação.`);
+  return posicao;
+}
+
+// Devolve uma cópia da Verificação com o tópico trocado pelo resultado de "mudar".
+function alterarTopico(verificacao, topicoId, agora, mudar) {
+  const posicao = posicaoDoTopico(verificacao, topicoId);
+  const topicos = verificacao.topicos.slice();
+  topicos[posicao] = mudar(topicos[posicao]);
+  return { ...verificacao, topicos, atualizadaEm: agora };
+}
+
+function criarVerificacao({ id, nome, agora }) {
+  return { versaoFormato: VERSAO_FORMATO, id, nome: nomeValido(nome), criadaEm: agora, atualizadaEm: agora, topicos: [] };
+}
+
+function renomearVerificacao(verificacao, nome, agora) {
+  return { ...verificacao, nome: nomeValido(nome), atualizadaEm: agora };
+}
+
+function adicionarTopico(verificacao, { id, texto, html, agora }) {
+  if (verificacao.topicos.some(t => t.id === id)) throw new RangeError(`Já existe um tópico com o id "${id}".`);
+  const { colagem } = colagemValida({ texto, html, agora });
+  const topico = {
+    id,
+    nome: sugerirNomeDeTopico(texto),
+    antes: colagem,
+    liberados: [],
+    depois: null,
+    confirmouTopicoDiferente: false,
+  };
+  return { ...verificacao, topicos: [...verificacao.topicos, topico], atualizadaEm: agora };
+}
+
+function renomearTopico(verificacao, topicoId, nome, agora) {
+  const valido = nomeValido(nome);
+  return alterarTopico(verificacao, topicoId, agora, t => ({ ...t, nome: valido }));
+}
+
+// O "antes" mudou: a marcação e a conferência anteriores não valem mais.
+function colarAntes(verificacao, topicoId, entrada) {
+  posicaoDoTopico(verificacao, topicoId);
+  const { colagem } = colagemValida(entrada);
+  return alterarTopico(verificacao, topicoId, entrada.agora, t => ({
+    ...t, antes: colagem, liberados: [], depois: null, confirmouTopicoDiferente: false,
+  }));
+}
+
+function definirLiberados(verificacao, topicoId, indices, agora) {
+  const topico = verificacao.topicos[posicaoDoTopico(verificacao, topicoId)];
+  const total = dividirParagrafos(topico.antes.texto).paragrafos.length;
+  for (const i of indices) {
+    if (!Number.isInteger(i)) throw new TypeError(`Índice de parágrafo inválido: ${JSON.stringify(i)}.`);
+    if (i < 0 || i >= total) throw new RangeError(`Parágrafo ${i} não existe (o "antes" tem ${total}).`);
+  }
+  const liberados = [...new Set(indices)].sort((a, b) => a - b);
+  return alterarTopico(verificacao, topicoId, agora, t => ({ ...t, liberados }));
+}
+
+// Colar de novo substitui o "depois" e desfaz a confirmação de tópico, que valia para o texto anterior.
+function colarDepois(verificacao, topicoId, entrada) {
+  posicaoDoTopico(verificacao, topicoId);
+  const { colagem } = colagemValida(entrada);
+  return alterarTopico(verificacao, topicoId, entrada.agora, t => ({ ...t, depois: colagem, confirmouTopicoDiferente: false }));
+}
+
+function confirmarTopicoDiferente(verificacao, topicoId, agora) {
+  return alterarTopico(verificacao, topicoId, agora, t => ({ ...t, confirmouTopicoDiferente: true }));
+}
+
+function removerTopico(verificacao, topicoId, agora) {
+  posicaoDoTopico(verificacao, topicoId);
+  return { ...verificacao, topicos: verificacao.topicos.filter(t => t.id !== topicoId), atualizadaEm: agora };
+}
+
+function moverTopico(verificacao, topicoId, novaPosicao, agora) {
+  const posicao = posicaoDoTopico(verificacao, topicoId);
+  if (!Number.isInteger(novaPosicao) || novaPosicao < 0 || novaPosicao >= verificacao.topicos.length) {
+    throw new RangeError(`Posição ${novaPosicao} não existe (há ${verificacao.topicos.length} tópicos).`);
+  }
+  const topicos = verificacao.topicos.slice();
+  const [movido] = topicos.splice(posicao, 1);
+  topicos.splice(novaPosicao, 0, movido);
+  return { ...verificacao, topicos, atualizadaEm: agora };
+}
+
+// ---------- validação de dados guardados ----------
+
+// O armazenamento em file:// é comum a todos os HTML locais (T0.2): o que volta dele pode ter sido
+// danificado ou adulterado. Devolve null se a Verificação tem a forma certa, ou o problema por extenso.
+function validarVerificacao(v) {
+  const texto = (x) => typeof x === 'string';
+  const colagem = (c) => c !== null && typeof c === 'object' && texto(c.texto) && texto(c.html);
+  if (v === null || typeof v !== 'object' || Array.isArray(v)) return 'não é uma verificação';
+  if (v.versaoFormato !== VERSAO_FORMATO) return `formato ${String(v.versaoFormato)} desconhecido`;
+  if (!texto(v.id) || !texto(v.nome)) return 'sem identificação ou nome';
+  if (!Array.isArray(v.topicos)) return 'lista de tópicos ausente';
+  const ids = new Set();
+  for (const [i, t] of v.topicos.entries()) {
+    const onde = `tópico ${i + 1}`;
+    if (t === null || typeof t !== 'object') return `${onde}: não é um tópico`;
+    if (!texto(t.id) || !texto(t.nome)) return `${onde}: sem identificação ou nome`;
+    if (ids.has(t.id)) return `${onde}: identificação repetida`;
+    ids.add(t.id);
+    if (!colagem(t.antes)) return `${onde}: texto antes ausente`;
+    if (t.depois !== null && !colagem(t.depois)) return `${onde}: texto depois danificado`;
+    if (typeof t.confirmouTopicoDiferente !== 'boolean') return `${onde}: confirmação danificada`;
+    if (!Array.isArray(t.liberados)) return `${onde}: marcação danificada`;
+    const total = dividirParagrafos(t.antes.texto).paragrafos.length;
+    if (t.liberados.some(n => !Number.isInteger(n) || n < 0 || n >= total)) return `${onde}: marcação aponta parágrafo que não existe`;
+  }
+  return null;
+}
+
+// ---------- leitura ----------
+
+function conferirTopico(topico) {
+  if (topico.depois === null) return { classificacao: null, status: statusDoTopico(null) };
+  const classificacao = classificarTopico(
+    dividirParagrafos(topico.antes.texto), dividirParagrafos(topico.depois.texto), topico.liberados);
+  return { classificacao, status: statusDoTopico(classificacao, topico.confirmouTopicoDiferente) };
+}
+
+function resumirVerificacao(verificacao) {
+  const topicos = verificacao.topicos.map(t => {
+    const { status } = conferirTopico(t);
+    return { id: t.id, nome: t.nome, ...status };
+  });
+  return { topicos, geral: statusDaVerificacao(topicos.map(t => t.status)) };
+}
+
+return { sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao };
+})();
+// ---- src/persistencia/comum.js ----
+const { exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao } = (() => {
+// Partes do contrato do armazenamento comuns às versões em memória e no navegador (T3.1, T3.2).
+
+function exigirFormaDeVerificacao(verificacao) {
+  const ok = verificacao !== null && typeof verificacao === 'object'
+    && typeof verificacao.versaoFormato === 'number'
+    && typeof verificacao.id === 'string'
+    && Array.isArray(verificacao.topicos);
+  if (!ok) throw new TypeError('O armazenamento só guarda Verificações (versaoFormato, id e topicos).');
+}
+
+function resumirParaLista(verificacao) {
+  return {
+    id: verificacao.id,
+    nome: verificacao.nome,
+    criadaEm: verificacao.criadaEm,
+    atualizadaEm: verificacao.atualizadaEm,
+    quantidadeDeTopicos: Array.isArray(verificacao.topicos) ? verificacao.topicos.length : 0,
+  };
+}
+
+// Do mais recente para o mais antigo; no empate, por nome.
+function ordenarResumos(resumos) {
+  return resumos.slice().sort((a, b) =>
+    (a.atualizadaEm < b.atualizadaEm ? 1 : a.atualizadaEm > b.atualizadaEm ? -1 : 0)
+    || String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+}
+
+// Outra aba gravou depois que esta leu? (a última gravação vence, mas a pessoa é avisada)
+function sobrescreveOutraVersao(guardada, atualizadaEmLida) {
+  return atualizadaEmLida !== undefined && guardada !== null && guardada !== undefined
+    && guardada.atualizadaEm !== atualizadaEmLida;
+}
+
+return { exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao };
+})();
+// ---- src/persistencia/memoria.js ----
+const { criarArmazenamentoEmMemoria } = (() => {
+// Armazenamento em memória (T3.1): cumpre o contrato, mas some ao fechar a página.
+// Usado nos testes e como reserva quando o navegador não deixa guardar (T3.2).
+// Guarda e devolve cópias, para nenhum objeto de fora alterar o que está guardado.
+
+function criarArmazenamentoEmMemoria() {
+  const guardadas = new Map();
+  return {
+    persistente: false,
+
+    async salvar(verificacao, { atualizadaEmLida } = {}) {
+      exigirFormaDeVerificacao(verificacao);
+      const sobrescreveu = sobrescreveOutraVersao(guardadas.get(verificacao.id), atualizadaEmLida);
+      guardadas.set(verificacao.id, structuredClone(verificacao));
+      return { sobrescreveuOutraVersao: sobrescreveu };
+    },
+
+    async carregar(id) {
+      return guardadas.has(id) ? structuredClone(guardadas.get(id)) : null;
+    },
+
+    async listar() {
+      return ordenarResumos([...guardadas.values()].map(resumirParaLista));
+    },
+
+    async excluir(id) {
+      return guardadas.delete(id);
+    },
+  };
+}
+
+return { criarArmazenamentoEmMemoria };
+})();
+// ---- src/persistencia/navegador.js ----
+const { criarArmazenamentoNoNavegador, abrirArmazenamento } = (() => {
+// Armazenamento no navegador, com IndexedDB (plano, seção 5; decisão D4; T3.2).
+//
+// criarArmazenamentoNoNavegador({ indexedDB, nomeDoBanco }) cumpre o contrato do armazenamento
+// (testes/apoio/contrato-armazenamento.js); o banco só é aberto na primeira operação.
+//
+// abrirArmazenamento({ indexedDB, nomeDoBanco }) → { armazenamento, guardaAoFechar, motivo }
+//   Tenta o navegador; se ele não deixar guardar (sem IndexedDB, bloqueio da TI, modo restrito,
+//   banco travado), devolve a versão em memória com guardaAoFechar: false e o motivo, para a tela
+//   avisar "suas verificações não serão guardadas ao fechar" e a ferramenta seguir funcionando.
+//
+// Armadilha medida na T0.2: em file://, este banco é comum a todos os HTML locais do navegador.
+
+const NOME_DO_BANCO = 'conferidor-ia';
+const VERSAO_DO_BANCO = 1;
+const DEPOSITO = 'verificacoes';
+
+function criarArmazenamentoNoNavegador({ indexedDB = globalThis.indexedDB, nomeDoBanco = NOME_DO_BANCO } = {}) {
+  let banco = null;
+
+  function abrirBanco() {
+    if (!banco) {
+      banco = new Promise((ok, falha) => {
+        if (!indexedDB) {
+          falha(new Error('O navegador não oferece IndexedDB.'));
+          return;
+        }
+        let pedido;
+        try {
+          pedido = indexedDB.open(nomeDoBanco, VERSAO_DO_BANCO);
+        } catch (erro) {
+          falha(erro);
+          return;
+        }
+        pedido.onupgradeneeded = () => pedido.result.createObjectStore(DEPOSITO, { keyPath: 'id' });
+        pedido.onsuccess = () => {
+          const db = pedido.result;
+          db.onversionchange = () => db.close();
+          ok(db);
+        };
+        pedido.onerror = () => falha(pedido.error || new Error('Falha ao abrir o banco.'));
+        pedido.onblocked = () => falha(new Error('Banco bloqueado por outra aba aberta com versão antiga.'));
+      });
+    }
+    return banco;
+  }
+
+  // Roda "trabalho" numa transação e resolve com o valor definido quando ela termina de fato.
+  // O trabalho encadeia pedidos por eventos (não por promessas), para a transação não fechar no
+  // meio; "falhar" guarda o erro original (ex.: espaço cheio) para ele chegar à tela.
+  async function transacao(modo, trabalho) {
+    const db = await abrirBanco();
+    return new Promise((ok, falha) => {
+      let valor;
+      let erroOriginal = null;
+      let tx;
+      const falhar = (erro) => {
+        erroOriginal = erroOriginal || erro;
+        try { tx.abort(); } catch (_) { /* já terminou */ }
+      };
+      try {
+        tx = db.transaction(DEPOSITO, modo);
+        tx.oncomplete = () => ok(valor);
+        tx.onabort = () => falha(erroOriginal || tx.error || new Error('Operação cancelada pelo navegador.'));
+        tx.onerror = () => { erroOriginal = erroOriginal || tx.error; };
+        trabalho(tx.objectStore(DEPOSITO), (v) => { valor = v; }, falhar);
+      } catch (erro) {
+        if (tx) falhar(erro);
+        else falha(erro);
+      }
+    });
+  }
+
+  return {
+    persistente: true,
+
+    async salvar(verificacao, { atualizadaEmLida } = {}) {
+      exigirFormaDeVerificacao(verificacao);
+      const copia = structuredClone(verificacao);
+      return transacao('readwrite', (deposito, definir, falhar) => {
+        const leitura = deposito.get(copia.id);
+        leitura.onsuccess = () => {
+          const sobrescreveu = sobrescreveOutraVersao(leitura.result, atualizadaEmLida);
+          try {
+            deposito.put(copia);
+          } catch (erro) {
+            falhar(erro);
+            return;
+          }
+          definir({ sobrescreveuOutraVersao: sobrescreveu });
+        };
+      });
+    },
+
+    async carregar(id) {
+      return transacao('readonly', (deposito, definir) => {
+        const leitura = deposito.get(id);
+        leitura.onsuccess = () => definir(leitura.result === undefined ? null : leitura.result);
+      });
+    },
+
+    async listar() {
+      return transacao('readonly', (deposito, definir) => {
+        const leitura = deposito.getAll();
+        leitura.onsuccess = () => definir(ordenarResumos(leitura.result.map(resumirParaLista)));
+      });
+    },
+
+    async excluir(id) {
+      return transacao('readwrite', (deposito, definir) => {
+        const contagem = deposito.count(id);
+        contagem.onsuccess = () => {
+          if (contagem.result > 0) deposito.delete(id);
+          definir(contagem.result > 0);
+        };
+      });
+    },
+  };
+}
+
+async function abrirArmazenamento({ indexedDB = globalThis.indexedDB, nomeDoBanco = NOME_DO_BANCO } = {}) {
+  const naMemoria = (motivo) => ({ armazenamento: criarArmazenamentoEmMemoria(), guardaAoFechar: false, motivo });
+  if (!indexedDB) return naMemoria('O navegador não oferece IndexedDB.');
+  const armazenamento = criarArmazenamentoNoNavegador({ indexedDB, nomeDoBanco });
+  try {
+    await armazenamento.listar();
+    return { armazenamento, guardaAoFechar: true, motivo: null };
+  } catch (erro) {
+    const nome = erro && erro.name && erro.name !== 'Error' ? `${erro.name}: ` : '';
+    return naMemoria(`${nome}${(erro && erro.message) || erro}`);
+  }
+}
+
+return { criarArmazenamentoNoNavegador, abrirArmazenamento };
+})();
+// ---- src/interface/dom.js ----
+const { criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId } = (() => {
+// Montagem de tela sem innerHTML (AGENTS.md, proibição 3): todo texto entra como texto puro.
+//
+// criarElemento('button', { classe: 'botao-principal', aoClicar: fn, dados: { id: 'v1' } }, 'Rótulo', filho)
+//   classe → className; texto → textContent; dados → data-*; aoClicar/aoEnviar/aoDigitar/... → evento;
+//   qualquer outra propriedade vira atributo. Filhos: elementos ou textos (viram nós de texto).
+
+const EVENTOS = {
+  aoClicar: 'click', aoEnviar: 'submit', aoDigitar: 'input', aoMudar: 'change', aoColar: 'paste', aoTeclar: 'keydown',
+};
+
+function criarElemento(tag, propriedades = {}, ...filhos) {
+  const elemento = document.createElement(tag);
+  for (const [chave, valor] of Object.entries(propriedades)) {
+    // Atributo de evento (onclick...) com texto é código: nunca. Eventos só por aoClicar/aoEnviar...
+    if (/^on/i.test(chave)) throw new TypeError(`criarElemento não aceita o atributo de evento "${chave}"; use aoClicar, aoEnviar...`);
+    if (valor === undefined || valor === null || valor === false) continue;
+    if (chave === 'classe') elemento.className = valor;
+    else if (chave === 'texto') elemento.textContent = valor;
+    else if (chave === 'dados') for (const [k, v] of Object.entries(valor)) elemento.dataset[k] = String(v);
+    else if (EVENTOS[chave]) elemento.addEventListener(EVENTOS[chave], valor);
+    else elemento.setAttribute(chave, valor === true ? '' : String(valor));
+  }
+  for (const filho of filhos.flat()) {
+    if (filho === null || filho === undefined || filho === false) continue;
+    elemento.append(filho instanceof Node ? filho : document.createTextNode(String(filho)));
+  }
+  return elemento;
+}
+
+function substituirConteudo(alvo, ...filhos) {
+  alvo.replaceChildren(...filhos.flat().filter(f => f !== null && f !== undefined && f !== false));
+}
+
+// Selo de estado: cor + forma + palavra (nunca só cor).
+function criarSelo(classe, forma, palavra) {
+  return criarElemento('span', { classe: `selo selo-${classe}` },
+    criarElemento('span', { classe: 'forma', 'aria-hidden': 'true', texto: forma }), palavra);
+}
+
+function formatarDataHora(iso) {
+  const data = new Date(iso);
+  return Number.isNaN(data.getTime()) ? '' : data.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+// Data e identificador nascem na interface (o domínio os recebe por parâmetro).
+function agoraISO() {
+  return new Date().toISOString();
+}
+
+// Linha que só aparece no papel: o que foi conferido e quando (registro de conferência, não prova).
+function linhaDeImpressao(nomeDaVerificacao) {
+  return `Conferência impressa em ${formatarDataHora(agoraISO())} · Verificação: ${nomeDaVerificacao} · Conferidor de alterações`;
+}
+
+function novoId(prefixo) {
+  const aleatorio = globalThis.crypto && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+  return `${prefixo}-${aleatorio}`;
+}
+
+return { criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId };
+})();
+// ---- src/interface/carregar.js ----
+const { carregarComValidacao, telaDanificada } = (() => {
+// Leitura de uma Verificação guardada, com validação (T5.2). O armazenamento em file:// é comum a
+// todos os HTML locais (T0.2): o que volta dele pode estar danificado ou adulterado. Nenhuma tela
+// usa dado guardado sem passar por aqui.
+
+// { verificacao, problema }: verificacao null e problema null = não existe; problema = danificada.
+async function carregarComValidacao(contexto, id) {
+  const verificacao = await contexto.armazenamento.carregar(id);
+  if (verificacao === null) return { verificacao: null, problema: null };
+  const problema = validarVerificacao(verificacao);
+  return problema ? { verificacao: null, problema } : { verificacao, problema: null };
+}
+
+function telaDanificada(problema, tela) {
+  return criarElemento('section', { classe: 'tela', dados: { tela } },
+    criarElemento('a', { classe: 'voltar', href: '#/', texto: '← Início' }),
+    criarElemento('h1', { texto: 'Verificação danificada' }),
+    criarElemento('p', { classe: 'descricao', texto: 'Esta verificação está danificada e não pode ser aberta. Você pode excluí-la na tela inicial.' }),
+    criarElemento('p', { classe: 'aviso-fixo', texto: `Detalhe: ${problema}.` }));
+}
+
+return { carregarComValidacao, telaDanificada };
+})();
+// ---- src/interface/colagem.js ----
+const { MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem } = (() => {
+// Captura da colagem, comum às telas de colar o "antes" (T4.3) e o "depois" (T4.4).
+// Guarda o texto simples e a formatação (HTML) exatamente como vieram; o HTML nunca entra na página.
+
+const MENSAGEM_COLAGEM_SEM_TEXTO = 'A colagem veio sem texto. Confira se copiou o tópico: '
+  + 'clique dentro do texto no sistema, aperte Ctrl+A e depois Ctrl+C.';
+
+// Área onde a pessoa clica antes do Ctrl+V. A colagem é ouvida na página inteira (ouvirColagem),
+// então funciona mesmo sem clicar aqui.
+function criarZonaDeColar(detalhe, idDaInstrucao) {
+  return criarElemento('div', { classe: 'zona-colar', tabindex: 0, dados: { zonaColar: '' }, 'aria-describedby': idDaInstrucao },
+    criarElemento('strong', { texto: 'Clique aqui e aperte Ctrl+V' }),
+    criarElemento('span', { texto: detalhe }));
+}
+
+// Ouve a colagem enquanto a tela estiver aberta. "receber({ texto, html })" devolve true se usou a
+// colagem (aí o navegador não faz mais nada com ela). Para de ouvir quando a pessoa sai da tela.
+function ouvirColagem(contexto, receber) {
+  const aoColar = (evento) => {
+    if (!evento.clipboardData) return;
+    const usou = receber({ texto: evento.clipboardData.getData('text/plain'), html: evento.clipboardData.getData('text/html') });
+    if (usou) evento.preventDefault();
+  };
+  document.addEventListener('paste', aoColar);
+  contexto.aoSair(() => document.removeEventListener('paste', aoColar));
+}
+
+return { MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem };
+})();
+// ---- src/interface/rotulos.js ----
+const { rotuloDoItem } = (() => {
+// Como cada item aparece para a pessoa ("Item 1.1", "Inciso II", "Alínea a)"...).
+// Usado na marcação (T4.3) e no resultado (T4.5).
+
+function rotuloDoItem(item) {
+  if (!item || item.tipo === 'abertura') return 'Abertura do tópico';
+  if (!item.marcador) return 'Parágrafo';
+  const { tipo, rotulo } = item.marcador;
+  if (tipo === 'decimal') return `Item ${rotulo.replace(/[.)]$/, '')}`;
+  if (tipo === 'inciso') return `Inciso ${rotulo}`;
+  if (tipo === 'alinea') return `Alínea ${rotulo}`;
+  return rotulo;
+}
+
+return { rotuloDoItem };
+})();
+// ---- src/interface/telas/adicionar-topico.js ----
+const { telaAdicionarTopico } = (() => {
+// Tela Adicionar tópico (T4.3): colar o texto "antes" e marcar o que a IA pode alterar (P3).
+// A colagem guarda o texto simples e a formatação (HTML) exatamente como vieram; o HTML nunca
+// entra na página (AGENTS.md, proibição 3). A marcação é por parágrafo; o item agrupa.
+
+// Acima disto, provavelmente a página inteira foi copiada por engano.
+const PARAGRAFOS_DEMAIS = 3000;
+// Itens maiores que isto vêm dobrados (a tabela de um TR tem centenas de linhas).
+const LINHAS_ANTES_DE_DOBRAR = 14;
+
+const INSTRUCAO_COPIAR = 'No sistema, abra o tópico, clique dentro do texto, aperte Ctrl+A e depois Ctrl+C. '
+  + 'Volte aqui e aperte Ctrl+V.';
+
+async function telaAdicionarTopico(contexto, idDaVerificacao) {
+  const { verificacao: verificacao, problema } = await carregarComValidacao(contexto, idDaVerificacao);
+  if (problema) return telaDanificada(problema, 'adicionar-topico');
+  if (!verificacao) {
+    return criarElemento('section', { classe: 'tela', dados: { tela: 'adicionar-topico' } },
+      criarElemento('a', { classe: 'voltar', href: '#/', texto: '← Início' }),
+      criarElemento('h1', { texto: 'Verificação não encontrada' }));
+  }
+  const lida = verificacao.atualizadaEm;
+  const rotaDaVerificacao = `/verificacao/${encodeURIComponent(verificacao.id)}`;
+  const corpo = criarElemento('div');
+  let colagem = null; // { texto, html, divisao, itens }
+  const liberados = new Set();
+
+  // ---------- passo 1: colar ----------
+  function mostrarZona(mensagem = '') {
+    colagem = null;
+    liberados.clear();
+    const zona = criarZonaDeColar('O texto aparece logo abaixo, para você marcar o que a IA pode alterar.', 'instrucao-colar');
+    substituirConteudo(corpo,
+      criarElemento('p', { id: 'instrucao-colar', classe: 'instrucao', texto: INSTRUCAO_COPIAR }),
+      zona,
+      mensagem ? criarElemento('p', { classe: 'mensagem-erro', role: 'alert', texto: mensagem }) : null);
+    zona.focus();
+  }
+
+  ouvirColagem(contexto, ({ texto, html }) => {
+    if (colagem) return false; // na marcação, só "Colar de novo" troca o texto
+    const divisao = dividirParagrafos(texto);
+    if (divisao.paragrafos.length === 0) {
+      mostrarZona(MENSAGEM_COLAGEM_SEM_TEXTO);
+      return true;
+    }
+    colagem = { texto, html, divisao, itens: agruparItens(divisao) };
+    mostrarMarcacao();
+    return true;
+  });
+
+  // ---------- passo 2: marcar ----------
+  function mostrarMarcacao() {
+    const { divisao, itens } = colagem;
+    const total = divisao.paragrafos.length;
+    const porIndice = new Map(divisao.paragrafos.map(p => [p.indice, p]));
+    const mensagem = criarElemento('p', { classe: 'mensagem-erro', role: 'alert' });
+    const campoNome = criarElemento('input', {
+      type: 'text', id: 'nome-topico', value: sugerirNomeDeTopico(colagem.texto), maxlength: 200, autocomplete: 'off',
+    });
+    const contador = criarElemento('p', { classe: 'contador', dados: { contador: '' }, 'aria-live': 'polite' });
+    const grupos = new Map(); // id do item → { caixa, estado, subitens, linhas }
+    const linhas = new Map(); // índice do parágrafo → { linha, caixa }
+
+    function atualizar() {
+      for (const item of itens) {
+        const g = grupos.get(item.id);
+        const quantos = item.paragrafos.filter(i => liberados.has(i)).length;
+        const todo = quantos === item.paragrafos.length;
+        g.caixa.checked = todo;
+        g.caixa.indeterminate = quantos > 0 && !todo;
+        g.estado.textContent = todo ? ' — liberado'
+          : quantos ? ` — parcialmente liberado: ${quantos} de ${item.paragrafos.length} linhas` : '';
+        const filhos = descendentesDoItem(itens, item.id);
+        const faltaFilho = filhos.some(id => itens.find(i => i.id === id).paragrafos.some(p => !liberados.has(p)));
+        g.subitens.hidden = !(todo && faltaFilho);
+      }
+      for (const [indice, { linha, caixa }] of linhas) {
+        caixa.checked = liberados.has(indice);
+        linha.classList.toggle('liberado', liberados.has(indice));
+      }
+      contador.textContent = `${liberados.size} de ${total} parágrafos liberados para a IA alterar. Todo o resto fica protegido.`;
+    }
+
+    const folha = criarElemento('div', { classe: 'folha folha-marcar' });
+    for (const item of itens) {
+      const caixa = criarElemento('input', {
+        type: 'checkbox',
+        aoMudar: () => {
+          for (const i of item.paragrafos) (caixa.checked ? liberados.add(i) : liberados.delete(i));
+          atualizar();
+        },
+      });
+      const estado = criarElemento('span', { classe: 'estado' });
+      const subitens = criarElemento('button', {
+        type: 'button', classe: 'acao-discreta', hidden: true, texto: 'Liberar também os subitens',
+        aoClicar: () => {
+          for (const id of descendentesDoItem(itens, item.id)) for (const i of itens.find(x => x.id === id).paragrafos) liberados.add(i);
+          atualizar();
+        },
+      });
+      const grupo = criarElemento('div', { classe: 'grupo-item', dados: { item: item.id }, style: `margin-left:${Math.min(item.nivel, 4) * 18}px` },
+        criarElemento('div', { classe: 'titulo-item' },
+          criarElemento('label', {}, caixa, ` ${rotuloDoItem(item)}`, estado), subitens));
+      const dobrar = item.paragrafos.length > LINHAS_ANTES_DE_DOBRAR;
+      const escondidos = [];
+      item.paragrafos.forEach((indice, k) => {
+        const caixaLinha = criarElemento('input', {
+          type: 'checkbox', 'aria-label': 'A IA pode alterar este parágrafo',
+          aoMudar: () => { (caixaLinha.checked ? liberados.add(indice) : liberados.delete(indice)); atualizar(); },
+        });
+        const linha = criarElemento('div', { classe: 'par-marcavel', dados: { paragrafo: indice } },
+          criarElemento('label', {}, caixaLinha, criarElemento('span', { classe: 'texto-paragrafo', texto: porIndice.get(indice).texto })));
+        linhas.set(indice, { linha, caixa: caixaLinha });
+        if (dobrar && k >= 12 && k < item.paragrafos.length - 2) { linha.hidden = true; escondidos.push(linha); }
+        grupo.append(linha);
+        if (dobrar && k === 11) {
+          const abrir = criarElemento('button', {
+            type: 'button', classe: 'dobra', dados: { expandir: '' },
+            texto: `Mostrar as outras ${item.paragrafos.length - 14} linhas`,
+            aoClicar: () => { for (const e of escondidos) e.hidden = false; abrir.remove(); },
+          });
+          grupo.append(abrir);
+        }
+      });
+      grupos.set(item.id, { caixa, estado, subitens });
+      folha.append(grupo);
+    }
+
+    async function salvar() {
+      const agora = agoraISO();
+      const idDoTopico = novoId('t');
+      if (semInvisiveis(campoNome.value) === '') { mensagem.textContent = 'Dê um nome ao tópico.'; campoNome.focus(); return; }
+      let nova = adicionarTopico(verificacao, { id: idDoTopico, texto: colagem.texto, html: colagem.html, agora });
+      nova = renomearTopico(nova, idDoTopico, campoNome.value, agora);
+      nova = definirLiberados(nova, idDoTopico, [...liberados], agora);
+      if (await contexto.salvar(nova, lida)) contexto.navegar(rotaDaVerificacao);
+      else mensagem.textContent = contexto.tomarAviso() || 'Não foi possível guardar o tópico.';
+    }
+
+    const grande = total > PARAGRAFOS_DEMAIS;
+    substituirConteudo(corpo,
+      grande ? criarElemento('div', { classe: 'aviso-pagina', role: 'alert' },
+        criarElemento('strong', { texto: `Este texto é muito grande para um tópico (${total} parágrafos).` }),
+        criarElemento('small', { texto: 'Confira se copiou só o texto do tópico: clique dentro do texto no sistema antes do Ctrl+A. Se estiver certo, pode seguir.' })) : null,
+      criarElemento('div', { classe: 'formulario' },
+        criarElemento('label', { for: 'nome-topico', texto: 'Nome do tópico' }), campoNome, mensagem),
+      criarElemento('div', { classe: 'barra-fixa' },
+        contador,
+        criarElemento('div', { classe: 'acoes' },
+          criarElemento('button', { type: 'button', classe: 'botao-principal', texto: 'Salvar tópico', aoClicar: salvar }),
+          criarElemento('button', { type: 'button', texto: 'Colar de novo', aoClicar: () => mostrarZona() }),
+          criarElemento('button', { type: 'button', texto: 'Cancelar', aoClicar: () => contexto.navegar(rotaDaVerificacao) }))),
+      criarElemento('p', { classe: 'instrucao', texto: 'Marque a caixa de um item para liberar o item inteiro, ou a caixa ao lado de um parágrafo para liberar só ele. O que não for marcado fica protegido.' }),
+      folha);
+    atualizar();
+    campoNome.focus();
+  }
+
+  mostrarZona();
+  return criarElemento('section', { classe: 'tela', dados: { tela: 'adicionar-topico' } },
+    criarElemento('a', { classe: 'voltar', href: `#${rotaDaVerificacao}`, texto: `← ${verificacao.nome}` }),
+    criarElemento('h1', { texto: 'Adicionar tópico' }),
+    criarElemento('p', { classe: 'descricao', texto: 'Cole o texto do tópico como ele está no sistema, antes de pedir à IA.' }),
+    corpo);
+}
+
+return { telaAdicionarTopico };
+})();
+// ---- src/interface/telas/conferir-topico.js ----
+const { telaConferirTopico } = (() => {
+// Tela Conferir tópico (T4.4): colar o texto "depois" e ir ao resultado.
+// Se o texto não parece ser deste tópico (plano 6.6), avisa ANTES de gravar: assim uma colagem da
+// tela errada não substitui um "depois" que já existia. A pessoa cola de novo ou confirma.
+
+async function telaConferirTopico(contexto, idDaVerificacao, idDoTopico) {
+  const { verificacao: verificacao, problema } = await carregarComValidacao(contexto, idDaVerificacao);
+  if (problema) return telaDanificada(problema, 'conferir-topico');
+  const topico = verificacao && verificacao.topicos.find(t => t.id === idDoTopico);
+  const rotaDaVerificacao = `#/verificacao/${encodeURIComponent(idDaVerificacao)}`;
+  if (!topico) {
+    return criarElemento('section', { classe: 'tela', dados: { tela: 'conferir-topico' } },
+      criarElemento('a', { classe: 'voltar', href: verificacao ? rotaDaVerificacao : '#/', texto: verificacao ? `← ${verificacao.nome}` : '← Início' }),
+      criarElemento('h1', { texto: 'Tópico não encontrado' }),
+      criarElemento('p', { classe: 'descricao', texto: 'Ele pode ter sido removido desta verificação.' }));
+  }
+  const lida = verificacao.atualizadaEm;
+  const rotaDoResultado = `/verificacao/${encodeURIComponent(idDaVerificacao)}/topico/${encodeURIComponent(idDoTopico)}`;
+  const corpo = criarElemento('div');
+  let suspeita = null; // colagem que parece de outro tópico, esperando a pessoa decidir
+
+  async function gravar(texto, html, confirmado) {
+    const agora = agoraISO();
+    let nova = colarDepois(verificacao, idDoTopico, { texto, html, agora });
+    if (confirmado) nova = confirmarTopicoDiferente(nova, idDoTopico, agora);
+    if (await contexto.salvar(nova, lida)) contexto.navegar(rotaDoResultado);
+    else mostrarZona(contexto.tomarAviso() || 'Não foi possível guardar o texto.');
+  }
+
+  function mostrarZona(mensagem = '') {
+    suspeita = null;
+    substituirConteudo(corpo,
+      topico.depois
+        ? criarElemento('p', { classe: 'aviso-fixo', texto: `Este tópico já tem um texto depois, colado em ${formatarDataHora(topico.depois.coladoEm)}. Colar de novo substitui.` })
+        : null,
+      criarElemento('p', { id: 'instrucao-colar', classe: 'instrucao', texto: 'Depois que a IA terminou: no sistema, abra este mesmo tópico, clique dentro do texto, aperte Ctrl+A e depois Ctrl+C. Volte aqui e aperte Ctrl+V.' }),
+      criarZonaDeColar('O resultado aparece logo em seguida.', 'instrucao-colar'),
+      mensagem ? criarElemento('p', { classe: 'mensagem-erro', role: 'alert', texto: mensagem }) : null);
+  }
+
+  function mostrarSuspeita(fracao) {
+    const percentual = Math.round(fracao * 100);
+    const encontrados = percentual === 0
+      ? 'Nenhum parágrafo do texto antes foi encontrado nele.'
+      : `Só ${percentual}% dos parágrafos do texto antes foram encontrados nele.`;
+    substituirConteudo(corpo,
+      criarElemento('div', { classe: 'aviso-pagina', role: 'alert' },
+        criarElemento('strong', { texto: `Este texto não parece ser do tópico "${topico.nome}".` }),
+        criarElemento('p', { style: 'margin:6px 0 0', texto: `${encontrados} Confira se copiou a tela certa no sistema.` })),
+      criarElemento('div', { classe: 'acoes' },
+        criarElemento('button', { type: 'button', classe: 'botao-principal', texto: 'Colar de novo', aoClicar: () => mostrarZona() }),
+        criarElemento('button', { type: 'button', texto: 'É este mesmo, mostrar resultado',
+          aoClicar: () => gravar(suspeita.texto, suspeita.html, true) })));
+  }
+
+  ouvirColagem(contexto, ({ texto, html }) => {
+    if (suspeita) return false; // decidindo sobre a colagem anterior
+    const depois = dividirParagrafos(texto);
+    if (depois.paragrafos.length === 0) { mostrarZona(MENSAGEM_COLAGEM_SEM_TEXTO); return true; }
+    const classificacao = classificarTopico(dividirParagrafos(topico.antes.texto), depois, topico.liberados);
+    if (classificacao.pareceOutroTopico) {
+      suspeita = { texto, html };
+      mostrarSuspeita(classificacao.fracaoPareada);
+    } else {
+      gravar(texto, html, false);
+    }
+    return true;
+  });
+
+  mostrarZona();
+  return criarElemento('section', { classe: 'tela', dados: { tela: 'conferir-topico' } },
+    criarElemento('a', { classe: 'voltar', href: rotaDaVerificacao, texto: `← ${verificacao.nome}` }),
+    criarElemento('h1', { texto: 'Colar o texto depois' }),
+    criarElemento('p', { classe: 'descricao', texto: topico.nome }),
+    corpo);
+}
+
+return { telaConferirTopico };
+})();
+// ---- src/interface/telas/inicio.js ----
+const { telaInicio } = (() => {
+// Tela Início (T4.1): as Verificações guardadas, criar uma nova, excluir, e onde os dados ficam.
+
+// A situação de cada Verificação, por extenso (cor + forma + palavra).
+function seloDaVerificacao(geral) {
+  switch (geral.status) {
+    case 'vazia': return criarSelo('pendente', '…', 'Nenhum tópico ainda');
+    case 'em-andamento': {
+      const extra = geral.comProblemas ? ` · ${geral.comProblemas} com alteração não autorizada` : '';
+      return criarSelo(geral.comProblemas ? 'erro' : 'pendente', geral.comProblemas ? '✕' : '…',
+        `Em andamento: ${geral.conferidos} de ${geral.total} conferidos${extra}`);
+    }
+    case 'problemas': return criarSelo('erro', '✕', 'Alteração não autorizada');
+    case 'avisos': return criarSelo('aviso', '!', 'Com avisos');
+    default: return criarSelo('ok', '✓', 'Todos os tópicos íntegros');
+  }
+}
+
+function linhaDaVerificacao(resumo, contexto, aoExcluir) {
+  const situacao = criarElemento('span', { classe: 'situacao' }, criarSelo('pendente', '…', 'Calculando a situação…'));
+  const topicos = resumo.quantidadeDeTopicos === 1 ? '1 tópico' : `${resumo.quantidadeDeTopicos} tópicos`;
+  const linha = criarElemento('li', { dados: { verificacao: resumo.id } },
+    criarElemento('span', { classe: 'nome', texto: resumo.nome }),
+    criarElemento('span', { classe: 'meta', texto: `${topicos} · atualizada em ${formatarDataHora(resumo.atualizadaEm)}` }),
+    situacao,
+    criarElemento('span', { classe: 'acoes' },
+      criarElemento('a', { classe: 'botao', href: `#/verificacao/${encodeURIComponent(resumo.id)}`, texto: 'Abrir' }),
+      criarElemento('button', {
+        classe: 'botao-perigo',
+        texto: 'Excluir',
+        aoClicar: async () => {
+          const ok = window.confirm(`Excluir a verificação "${resumo.nome}" e todos os textos dela? Isso não pode ser desfeito.`);
+          if (!ok) return;
+          await contexto.armazenamento.excluir(resumo.id);
+          aoExcluir(linha);
+        },
+      })));
+  // A situação exige recalcular os tópicos: chega depois, sem segurar a lista.
+  setTimeout(async () => {
+    const { verificacao, problema } = await carregarComValidacao(contexto, resumo.id);
+    if (problema) substituirConteudo(situacao, criarSelo('erro', '✕', 'Não foi possível ler esta verificação (está danificada)'));
+    else if (verificacao) substituirConteudo(situacao, seloDaVerificacao(resumirVerificacao(verificacao).geral));
+  }, 0);
+  return linha;
+}
+
+function formularioNovaVerificacao(contexto) {
+  const mensagem = criarElemento('p', { classe: 'mensagem-erro', role: 'alert' });
+  const campo = criarElemento('input', {
+    type: 'text', id: 'nome-nova-verificacao', autocomplete: 'off', maxlength: 200,
+    placeholder: 'Ex.: TR Limpeza – ajustes de 17/10',
+  });
+  const formulario = criarElemento('form', {
+    classe: 'formulario',
+    hidden: true,
+    aoEnviar: async (evento) => {
+      evento.preventDefault();
+      let verificacao;
+      try {
+        verificacao = criarVerificacao({ id: novoId('v'), nome: campo.value, agora: agoraISO() });
+      } catch (erro) {
+        if (erro instanceof RangeError) { mensagem.textContent = 'Dê um nome à verificação.'; campo.focus(); return; }
+        throw erro;
+      }
+      await contexto.armazenamento.salvar(verificacao);
+      contexto.navegar(`/verificacao/${encodeURIComponent(verificacao.id)}`);
+    },
+  },
+  criarElemento('label', { for: 'nome-nova-verificacao', texto: 'Nome da verificação' }),
+  campo,
+  criarElemento('div', { classe: 'acoes' },
+    criarElemento('button', { type: 'submit', classe: 'botao-principal', texto: 'Criar verificação' }),
+    criarElemento('button', { type: 'button', texto: 'Cancelar', aoClicar: () => { formulario.hidden = true; abrir.hidden = false; } })),
+  mensagem);
+  const abrir = criarElemento('button', {
+    classe: 'botao-principal',
+    texto: 'Nova verificação',
+    aoClicar: () => { formulario.hidden = false; abrir.hidden = true; campo.focus(); },
+  });
+  return [abrir, formulario];
+}
+
+async function telaInicio(contexto) {
+  const resumos = await contexto.armazenamento.listar();
+  const vazio = () => criarElemento('p', { classe: 'vazio', texto: 'Nenhuma verificação ainda. Crie a primeira para começar.' });
+  const lista = criarElemento('ul', { classe: 'lista-verificacoes' });
+  const area = criarElemento('div', {}, resumos.length ? lista : vazio());
+  const aoExcluir = (linha) => {
+    linha.remove();
+    if (!lista.children.length) substituirConteudo(area, vazio());
+  };
+  for (const resumo of resumos) lista.append(linhaDaVerificacao(resumo, contexto, aoExcluir));
+
+  return criarElemento('section', { classe: 'tela', dados: { tela: 'inicio' } },
+    criarElemento('header', {},
+      criarElemento('h1', { texto: 'Conferidor de alterações' }),
+      criarElemento('p', { classe: 'descricao', texto: 'Confira, tópico por tópico, se a IA mexeu só no que você liberou.' })),
+    contexto.guardaAoFechar
+      ? null
+      : criarElemento('div', { classe: 'aviso-pagina', role: 'alert' },
+        criarElemento('strong', { texto: 'Este navegador não está deixando guardar: suas verificações vão sumir ao fechar a página.' }),
+        criarElemento('small', { texto: `Motivo informado pelo navegador: ${contexto.motivo}` })),
+    formularioNovaVerificacao(contexto),
+    criarElemento('h2', { texto: 'Suas verificações', style: 'font-size:1.1rem;margin:20px 0 10px' }),
+    area,
+    contexto.guardaAoFechar
+      ? criarElemento('p', { classe: 'aviso-fixo', texto: 'Suas verificações ficam guardadas neste navegador, neste computador. Para apagar, use Excluir.' })
+      : null);
+}
+
+return { telaInicio };
+})();
+// ---- src/interface/telas/resultado.js ----
+const { telaResultado } = (() => {
+// Tela Resultado do tópico (T4.5): o documento anotado, como aprovado na rodada de design.
+// O tópico inteiro na ordem do texto, com as mudanças marcadas no lugar (riscado = saiu,
+// sublinhado = entrou), 3 parágrafos de contexto em volta de cada mudança e o resto dobrado.
+
+const CONTEXTO = 3;
+const GRAVIDADE = {
+  erro: { palavra: 'Alteração não autorizada', forma: '✕', posto: 3 },
+  aviso: { palavra: 'Aviso', forma: '!', posto: 2 },
+  info: { palavra: 'Parte liberada', forma: 'i', posto: 1 },
+};
+const NOMES_INVISIVEIS = new Map([
+  [0x20, 'espaço comum'], [0x09, 'tabulação'], [0xA0, 'espaço não separável'], [0x202F, 'espaço não separável estreito'],
+  [0x200B, 'caractere de largura zero'], [0x200C, 'caractere de largura zero'], [0x200D, 'caractere de largura zero'],
+  [0x2060, 'caractere de largura zero'], [0xFEFF, 'marca invisível'],
+]);
+const MARCADOR_DE_COMENTARIO = /\[\p{Lu}{1,4}\d{1,3}\]/u;
+
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+
+// "Item 1.9" → "item 1.9", para caber no meio da frase; rótulos em maiúsculas ficam como estão.
+function noMeioDaFrase(rotulo) {
+  return /^(Item|Inciso|Alínea|Abertura|Parágrafo)\b/.test(rotulo) ? rotulo[0].toLowerCase() + rotulo.slice(1) : rotulo;
+}
+
+// Achados do domínio → blocos da tela. "Sumiu" seguido de "novo" vira "trocado por" (T2.7).
+function montarBlocos(achados) {
+  const blocos = [];
+  for (let i = 0; i < achados.length; i++) {
+    const a = achados[i];
+    const b = achados[i + 1];
+    if (a.tipo === 'sumiu' && b && b.tipo === 'novo') {
+      const gravidade = GRAVIDADE[a.gravidade].posto >= GRAVIDADE[b.gravidade].posto ? a.gravidade : b.gravidade;
+      blocos.push({ ...a, tipo: 'trocado', gravidade, depois: b.depois });
+      i++;
+    } else {
+      blocos.push({ ...a, semMudanca: a.gravidade === 'ok' || (a.gravidade === 'info' && a.tipo === 'identico') });
+    }
+  }
+  return blocos;
+}
+
+function nomesDosInvisiveis(texto) {
+  const nomes = [];
+  for (const ch of texto) {
+    const nome = NOMES_INVISIVEIS.get(ch.codePointAt(0)) || (/\s/.test(ch) ? 'espaço especial' : null);
+    if (nome && !nomes.includes(nome)) nomes.push(nome);
+  }
+  return nomes;
+}
+
+function fraseDoInvisivel(trechos) {
+  const juntar = (tipo) => nomesDosInvisiveis(trechos.filter(t => t.tipo === tipo).map(t => t.texto).join(''));
+  const saiu = juntar('removido');
+  const entrou = juntar('inserido');
+  const partes = [];
+  if (saiu.length) partes.push(`Saiu: ${saiu.join(', ')}.`);
+  if (entrou.length) partes.push(`Entrou: ${entrou.join(', ')}.`);
+  return `${partes.join(' ') || 'Só espaços ou caracteres invisíveis mudaram.'} O texto visível é o mesmo.`;
+}
+
+function fraseDoComentario(trechos) {
+  const tem = (tipo) => trechos.some(t => t.tipo === tipo && MARCADOR_DE_COMENTARIO.test(t.texto));
+  if (tem('inserido') && tem('removido')) return 'Marcador de comentário trocado';
+  return tem('inserido') ? 'Marcador de comentário acrescentado' : 'Marcador de comentário removido';
+}
+
+// Só o que mudou, para trechos curtos (ex.: célula "4→" que virou "5→"): começo e fim iguais
+// ficam de fora do destaque, e a tabulação que existe dos dois lados não aparece.
+function trechosDeTroca(antes, depois) {
+  let inicio = 0;
+  while (inicio < antes.length && inicio < depois.length && antes[inicio] === depois[inicio]) inicio++;
+  let fim = 0;
+  while (fim < antes.length - inicio && fim < depois.length - inicio && antes[antes.length - 1 - fim] === depois[depois.length - 1 - fim]) fim++;
+  return [
+    { tipo: 'igual', texto: antes.slice(0, inicio) },
+    { tipo: 'removido', texto: antes.slice(inicio, antes.length - fim) },
+    { tipo: 'inserido', texto: depois.slice(inicio, depois.length - fim) },
+    { tipo: 'igual', texto: antes.slice(antes.length - fim) },
+  ].filter(t => t.texto);
+}
+
+function desenharTrechos(trechos) {
+  return trechos.map(t => (t.tipo === 'igual' ? t.texto
+    : criarElemento(t.tipo === 'removido' ? 'del' : 'ins', { texto: destacarInvisiveis(t.texto) })));
+}
+
+function botaoCopiar(texto) {
+  const resposta = criarElemento('span', { classe: 'resposta-copia', 'aria-live': 'polite' });
+  const botao = criarElemento('button', {
+    type: 'button',
+    texto: 'Copiar texto original',
+    aoClicar: async () => {
+      try {
+        if (!navigator.clipboard) throw new Error('sem área de transferência');
+        await navigator.clipboard.writeText(texto);
+        resposta.replaceChildren('Copiado. Agora cole no sistema, no lugar do texto alterado.');
+      } catch {
+        const area = criarElemento('textarea', { readonly: true, rows: 3, dados: { copiaManual: '' }, 'aria-label': 'Texto original para copiar' });
+        area.value = texto;
+        resposta.replaceChildren(criarElemento('span', { texto: 'O navegador não deixou copiar sozinho. Selecione o texto abaixo e aperte Ctrl+C:' }), area);
+        area.focus();
+        area.select();
+      }
+    },
+  });
+  return criarElemento('div', { classe: 'acoes-bloco' }, botao, resposta);
+}
+
+async function telaResultado(contexto, idDaVerificacao, idDoTopico) {
+  const { verificacao: verificacao, problema } = await carregarComValidacao(contexto, idDaVerificacao);
+  if (problema) return telaDanificada(problema, 'resultado');
+  const topico = verificacao && verificacao.topicos.find(t => t.id === idDoTopico);
+  const rotaDaVerificacao = `#/verificacao/${encodeURIComponent(idDaVerificacao)}`;
+  const rotaDoDepois = `${rotaDaVerificacao}/topico/${encodeURIComponent(idDoTopico)}/depois`;
+  const secao = (...filhos) => criarElemento('section', { classe: 'tela', dados: { tela: 'resultado' } },
+    criarElemento('a', { classe: 'voltar', href: verificacao ? rotaDaVerificacao : '#/', texto: verificacao ? `← ${verificacao.nome}` : '← Início' }),
+    ...filhos);
+  if (!topico) return secao(criarElemento('h1', { texto: 'Tópico não encontrado' }));
+
+  const titulo = criarElemento('h1', { texto: topico.nome });
+  const { classificacao, status } = conferirTopico(topico);
+
+  if (status.status === 'aguardando') {
+    return secao(titulo,
+      criarElemento('p', { classe: 'veredito' }, criarSelo('pendente', '…', 'Aguardando o texto depois')),
+      criarElemento('p', { texto: 'Depois que a IA terminar, cole aqui o texto do tópico como ficou no sistema.' }),
+      criarElemento('a', { classe: 'botao botao-principal', href: rotaDoDepois, texto: 'Colar texto depois' }));
+  }
+
+  if (status.status === 'confirmar-topico') {
+    const percentual = Math.round(classificacao.fracaoPareada * 100);
+    return secao(titulo,
+      criarElemento('div', { classe: 'aviso-pagina', role: 'alert' },
+        criarElemento('strong', { texto: `O texto depois não parece ser do tópico "${topico.nome}".` }),
+        criarElemento('p', { style: 'margin:6px 0 0', texto: `${percentual === 0 ? 'Nenhum parágrafo do texto antes foi encontrado nele.' : `Só ${percentual}% dos parágrafos do texto antes foram encontrados nele.`} Confira se copiou a tela certa no sistema.` })),
+      criarElemento('div', { classe: 'acoes' },
+        criarElemento('a', { classe: 'botao botao-principal', href: rotaDoDepois, texto: 'Colar de novo' }),
+        criarElemento('button', {
+          type: 'button', texto: 'É este mesmo, mostrar resultado',
+          aoClicar: async () => {
+            await contexto.salvar(confirmarTopicoDiferente(verificacao, idDoTopico, agoraISO()), verificacao.atualizadaEm);
+            contexto.redesenhar();
+          },
+        })));
+  }
+
+  const textosAntes = dividirParagrafos(topico.antes.texto).paragrafos.map(p => p.texto);
+  const textosDepois = dividirParagrafos(topico.depois.texto).paragrafos.map(p => p.texto);
+  const itens = new Map(agruparItens(dividirParagrafos(topico.antes.texto)).map(i => [i.id, i]));
+  const rotulo = (idDoItem) => (idDoItem === null || idDoItem === undefined ? 'Início do tópico' : rotuloDoItem(itens.get(idDoItem)));
+  const blocos = montarBlocos(classificacao.achados);
+  if (classificacao.separadorFinal) {
+    blocos.push({ tipo: 'separador-final', gravidade: classificacao.separadorFinal.gravidade, antes: null, depois: null });
+  }
+
+  function descricao(b) {
+    switch (b.tipo) {
+      case 'novo': {
+        const marcador = detectarMarcador(textosDepois[b.depois]);
+        const onde = b.item === null || b.item === undefined ? 'no início do tópico' : `depois do ${noMeioDaFrase(rotulo(b.item))}`;
+        return marcador ? `${rotuloDoItem({ tipo: 'marcado', marcador })} novo, ${onde}`.replace(/^Item (\S+) novo/, 'Item novo $1') : `Texto novo, ${onde}`;
+      }
+      case 'separador-final': return 'As linhas em branco no fim do tópico mudaram';
+      case 'alterado': return `${rotulo(b.item)} — Texto alterado`;
+      case 'sumiu': return `${rotulo(b.item)} — Parágrafo apagado`;
+      case 'trocado': return `${rotulo(b.item)} — Trocado por outro texto`;
+      case 'movido': return `${rotulo(b.item)} — Fora da ordem original: o texto é o mesmo, mudou de lugar.`;
+      case 'invisivel': return `${rotulo(b.item)} — ${fraseDoInvisivel(b.trechos)}`;
+      case 'comentario': return `${rotulo(b.item)} — ${fraseDoComentario(b.trechos)}`;
+      case 'separador': return `${rotulo(b.item)} — As linhas em branco antes deste parágrafo mudaram`;
+      default: return rotulo(b.item);
+    }
+  }
+
+  function corpoDoBloco(b) {
+    switch (b.tipo) {
+      case 'sumiu': return [criarElemento('del', { texto: textosAntes[b.antes] })];
+      case 'novo': return [criarElemento('ins', { texto: textosDepois[b.depois] })];
+      case 'trocado': {
+        // Texto longo: palavra a palavra (não corta palavras no meio). Célula curta ("4→" virou
+        // "5→"): só os caracteres que mudaram. Reescrito por inteiro: o que saiu e o que entrou.
+        const antes = textosAntes[b.antes];
+        const depois = textosDepois[b.depois];
+        const palavras = compararPalavras(antes, depois);
+        if (palavras.semelhanca >= 0.4) return desenharTrechos(palavras.trechos);
+        if (antes.length <= 40 && depois.length <= 40) return desenharTrechos(trechosDeTroca(antes, depois));
+        return [criarElemento('del', { texto: antes }), ' ', criarElemento('ins', { texto: depois })];
+      }
+      case 'separador-final': return [];
+      default: return b.trechos ? desenharTrechos(b.trechos) : [textosAntes[b.antes]];
+    }
+  }
+
+  // Monta o documento: mudanças em faixa, com 3 parágrafos de contexto; o resto dobrado.
+  const ehMudanca = blocos.map(b => !b.semMudanca);
+  const visivel = blocos.map((_, i) => {
+    for (let k = Math.max(0, i - CONTEXTO); k <= Math.min(blocos.length - 1, i + CONTEXTO); k++) if (ehMudanca[k]) return true;
+    return false;
+  });
+  const folha = criarElemento('div', { classe: 'folha folha-resultado' });
+  let dobrados = [];
+  const fecharDobra = () => {
+    if (!dobrados.length) return;
+    const escondidos = dobrados;
+    const dobra = criarElemento('button', {
+      type: 'button', classe: 'dobra', dados: { dobra: escondidos.length },
+      aoClicar: () => { for (const e of escondidos) e.hidden = false; dobra.remove(); },
+    },
+    `··· ${plural(escondidos.length, 'parágrafo sem mudança', 'parágrafos sem mudança')} `,
+    criarElemento('span', { classe: 'so-tela', texto: '(mostrar) ' }),
+    '···');
+    escondidos[0].before(dobra);
+    dobrados = [];
+  };
+  const contagem = { erro: 0, aviso: 0, info: 0 };
+  blocos.forEach((b, i) => {
+    if (b.semMudanca) {
+      const p = criarElemento('p', { classe: 'par igual', dados: { semMudanca: '' }, texto: textosAntes[b.antes] });
+      folha.append(p);
+      if (!visivel[i]) { p.hidden = true; dobrados.push(p); } else fecharDobra();
+      return;
+    }
+    fecharDobra();
+    contagem[b.gravidade]++;
+    const g = GRAVIDADE[b.gravidade];
+    const podeCopiar = (b.gravidade === 'erro' || b.gravidade === 'aviso') && b.antes !== null && b.tipo !== 'movido';
+    folha.append(criarElemento('div', { classe: `par ${b.gravidade}`, dados: { achado: b.gravidade }, tabindex: -1 },
+      criarElemento('span', { classe: `forma-margem f-${b.gravidade}`, 'aria-hidden': 'true', texto: g.forma }),
+      criarElemento('div', { classe: 'cabeca' }, g.palavra, criarElemento('span', { classe: 'onde', texto: ` · ${descricao(b)}` })),
+      criarElemento('div', { classe: 'texto-bloco' }, corpoDoBloco(b)),
+      podeCopiar ? botaoCopiar(textosAntes[b.antes]) : null));
+  });
+  fecharDobra();
+
+  let frase;
+  if (contagem.erro || contagem.aviso) {
+    frase = contagem.erro && contagem.aviso
+      ? `${plural(contagem.erro, 'alteração não autorizada', 'alterações não autorizadas')} e ${plural(contagem.aviso, 'aviso', 'avisos')} neste tópico.`
+      : contagem.erro ? `${plural(contagem.erro, 'alteração não autorizada', 'alterações não autorizadas')} neste tópico.`
+        : `Nenhuma alteração não autorizada. ${plural(contagem.aviso, 'aviso', 'avisos')} para olhar.`;
+  } else {
+    frase = `Nada mudou fora do que foi liberado.${contagem.info ? ` ${plural(contagem.info, 'parte liberada mudou', 'partes liberadas mudaram')}.` : ''}`;
+  }
+
+  const selos = [];
+  if (contagem.erro) selos.push(criarSelo('erro', '✕', plural(contagem.erro, 'alteração não autorizada', 'alterações não autorizadas')));
+  if (contagem.aviso) selos.push(criarSelo('aviso', '!', plural(contagem.aviso, 'aviso', 'avisos')));
+  if (contagem.info) selos.push(criarSelo('info', 'i', plural(contagem.info, 'parte liberada mudou', 'partes liberadas mudaram')));
+  if (!selos.length) selos.push(criarSelo('ok', '✓', 'Íntegro'));
+
+  const proximo = criarElemento('button', {
+    type: 'button',
+    texto: 'Próximo problema ↓',
+    disabled: !(contagem.erro || contagem.aviso),
+    aoClicar: () => {
+      const problemas = [...folha.querySelectorAll('[data-achado="erro"], [data-achado="aviso"]')];
+      const alvo = problemas.find(e => e.getBoundingClientRect().top > 120) || problemas[0];
+      alvo.scrollIntoView({ block: 'center' });
+      alvo.focus({ preventScroll: true });
+    },
+  });
+
+  return secao(
+    criarElemento('p', { classe: 'so-impressao', dados: { horaImpressao: verificacao.nome }, texto: linhaDeImpressao(verificacao.nome) }),
+    titulo,
+    criarElemento('p', { classe: 'veredito', texto: frase }),
+    criarElemento('div', { classe: 'barra-fixa' },
+      criarElemento('span', { classe: 'contagem', dados: { contagem: '' } }, selos),
+      criarElemento('span', { classe: 'acoes' }, proximo,
+        criarElemento('button', { type: 'button', texto: 'Imprimir', aoClicar: () => window.print() }),
+        criarElemento('a', { classe: 'acao-discreta', href: rotaDoDepois, texto: 'Colar o texto depois de novo' }))),
+    folha,
+    criarElemento('p', { classe: 'aviso-fixo', texto: 'Mudanças só de formatação (negrito, itálico) ainda não são detectadas.' }));
+}
+
+return { telaResultado };
+})();
+// ---- src/interface/telas/verificacao.js ----
+const { telaVerificacao } = (() => {
+// Tela da Verificação (T4.2): veredito, quadro de progresso (aprovado na rodada de design),
+// tópicos com situação e uma ação cada; renomear; organizar (subir, descer, remover).
+
+const SITUACAO = {
+  problemas: { classe: 'erro', forma: '✕', palavra: 'Alteração não autorizada' },
+  avisos: { classe: 'aviso', forma: '!', palavra: 'Com avisos' },
+  integro: { classe: 'ok', forma: '✓', palavra: 'Íntegro' },
+  aguardando: { classe: 'pendente', forma: '…', palavra: 'Aguardando o texto depois' },
+  'confirmar-topico': { classe: 'pendente', forma: '?', palavra: 'Confirmar se é este tópico' },
+};
+
+function fraseDoVeredito(geral) {
+  const topicosTem = (n) => (n === 1 ? '1 tópico tem' : `${n} tópicos têm`);
+  switch (geral.status) {
+    case 'vazia': return 'Nenhum tópico ainda.';
+    case 'em-andamento':
+      return `Em andamento: ${geral.conferidos} de ${geral.total} tópicos conferidos.`
+        + (geral.comProblemas ? ` ${topicosTem(geral.comProblemas)} alteração não autorizada.` : '');
+    case 'problemas': return `${topicosTem(geral.comProblemas)} alteração não autorizada.`;
+    case 'avisos': return `Nenhuma alteração não autorizada. ${topicosTem(geral.comAvisos)} avisos para olhar.`;
+    default: return 'Todos os tópicos íntegros.';
+  }
+}
+
+// Quadro de progresso: mantido como aprovado pelo arquiteto na rodada de design.
+function quadroDeProgresso(geral) {
+  const partes = [['erro', geral.comProblemas], ['alerta', geral.comAvisos], ['ok', geral.integros]];
+  const item = (s, n) => criarElemento('li', {}, criarSelo(SITUACAO[s].classe, SITUACAO[s].forma, SITUACAO[s].palavra), ` ${n}`);
+  return criarElemento('aside', { classe: 'progresso', dados: { quadroProgresso: '' } },
+    criarElemento('strong', { texto: `${geral.conferidos} de ${geral.total} conferidos` }),
+    criarElemento('div', { classe: 'barra', 'aria-hidden': 'true' },
+      partes.map(([cor, n]) => criarElemento('span', { style: `width:${(n / geral.total) * 100}%;background:var(--${cor})` }))),
+    criarElemento('ul', { classe: 'legenda' },
+      item('problemas', geral.comProblemas), item('avisos', geral.comAvisos), item('integro', geral.integros),
+      item('aguardando', geral.pendentes)));
+}
+
+function acaoDoTopico(idDaVerificacao, topico) {
+  const base = `#/verificacao/${encodeURIComponent(idDaVerificacao)}/topico/${encodeURIComponent(topico.id)}`;
+  switch (topico.status) {
+    case 'aguardando': return criarElemento('a', { classe: 'botao botao-principal', href: `${base}/depois`, texto: 'Colar texto depois' });
+    case 'confirmar-topico': return criarElemento('a', { classe: 'botao botao-principal', href: base, texto: 'Confirmar tópico' });
+    case 'integro': return criarElemento('a', { classe: 'acao-discreta', href: base, texto: 'Ver resultado' });
+    default: return criarElemento('a', { classe: 'botao', href: base, texto: 'Ver resultado' });
+  }
+}
+
+async function telaVerificacao(contexto, id) {
+  const { verificacao: verificacao, problema } = await carregarComValidacao(contexto, id);
+  if (problema) return telaDanificada(problema, 'verificacao');
+  const voltar = criarElemento('a', { classe: 'voltar', href: '#/', texto: '← Início' });
+  if (!verificacao) {
+    return criarElemento('section', { classe: 'tela', dados: { tela: 'verificacao' } }, voltar,
+      criarElemento('h1', { texto: 'Verificação não encontrada' }),
+      criarElemento('p', { classe: 'descricao', texto: 'Ela pode ter sido excluída, ou ter ficado guardada em outro navegador.' }));
+  }
+
+  const lida = verificacao.atualizadaEm; // para saber, ao gravar, se outra aba mexeu nela
+  const { topicos, geral } = resumirVerificacao(verificacao);
+  const estado = contexto.estado;
+  const organizando = estado.organizandoVerificacao === id;
+  const aviso = contexto.tomarAviso();
+
+  const gravar = async (nova) => {
+    await contexto.salvar(nova, lida);
+    await contexto.redesenhar();
+  };
+
+  // Renomear
+  const mensagemNome = criarElemento('p', { classe: 'mensagem-erro', role: 'alert' });
+  const campoNome = criarElemento('input', { type: 'text', id: 'novo-nome-verificacao', value: verificacao.nome, maxlength: 200, autocomplete: 'off' });
+  const formularioNome = criarElemento('form', {
+    classe: 'formulario',
+    hidden: true,
+    aoEnviar: async (evento) => {
+      evento.preventDefault();
+      let renomeada;
+      try {
+        renomeada = renomearVerificacao(verificacao, campoNome.value, agoraISO());
+      } catch (erro) {
+        if (erro instanceof RangeError) { mensagemNome.textContent = 'Dê um nome à verificação.'; campoNome.focus(); return; }
+        throw erro;
+      }
+      await gravar(renomeada);
+    },
+  },
+  criarElemento('label', { for: 'novo-nome-verificacao', texto: 'Novo nome da verificação' }),
+  campoNome,
+  criarElemento('div', { classe: 'acoes' },
+    criarElemento('button', { type: 'submit', classe: 'botao-principal', texto: 'Salvar nome' }),
+    criarElemento('button', { type: 'button', texto: 'Cancelar', aoClicar: () => { formularioNome.hidden = true; } })),
+  mensagemNome);
+
+  // Renomear um tópico (no modo organizar): o nome vira um campo, com Salvar e Cancelar.
+  function nomeEditavel(t) {
+    const mensagem = criarElemento('span', { classe: 'mensagem-erro', role: 'alert' });
+    const campo = criarElemento('input', { type: 'text', value: t.nome, maxlength: 200, 'aria-label': 'Novo nome do tópico' });
+    return criarElemento('form', {
+      classe: 'renomear-topico',
+      aoEnviar: async (evento) => {
+        evento.preventDefault();
+        let nova;
+        try {
+          nova = renomearTopico(verificacao, t.id, campo.value, agoraISO());
+        } catch (erro) {
+          if (erro instanceof RangeError) { mensagem.textContent = 'Dê um nome ao tópico.'; return; }
+          throw erro;
+        }
+        estado.renomeandoTopico = null;
+        await gravar(nova);
+      },
+    },
+    campo,
+    criarElemento('button', { type: 'submit', classe: 'botao-principal', texto: 'Salvar' }),
+    criarElemento('button', { type: 'button', texto: 'Cancelar', aoClicar: () => { estado.renomeandoTopico = null; contexto.redesenhar(); } }),
+    mensagem);
+  }
+
+  // Tópicos
+  const linhas = topicos.map((t, posicao) => {
+    const s = SITUACAO[t.status];
+    const renomeando = organizando && estado.renomeandoTopico === t.id;
+    const controles = organizando
+      ? criarElemento('span', { classe: 'organizar' },
+        criarElemento('button', { type: 'button', texto: 'Renomear', hidden: renomeando,
+          aoClicar: () => { estado.renomeandoTopico = t.id; contexto.redesenhar(); } }),
+        criarElemento('button', { type: 'button', texto: 'Subir', disabled: posicao === 0,
+          aoClicar: () => gravar(moverTopico(verificacao, t.id, posicao - 1, agoraISO())) }),
+        criarElemento('button', { type: 'button', texto: 'Descer', disabled: posicao === topicos.length - 1,
+          aoClicar: () => gravar(moverTopico(verificacao, t.id, posicao + 1, agoraISO())) }),
+        criarElemento('button', { type: 'button', classe: 'botao-perigo', texto: 'Remover',
+          aoClicar: () => {
+            if (window.confirm(`Remover o tópico "${t.nome}" desta verificação? Os textos dele serão apagados.`)) {
+              gravar(removerTopico(verificacao, t.id, agoraISO()));
+            }
+          } }))
+      : acaoDoTopico(id, t);
+    return criarElemento('li', { dados: { topico: t.id } },
+      criarElemento('span', { classe: `forma-margem m-${s.classe}`, 'aria-hidden': 'true', texto: s.forma }),
+      renomeando ? nomeEditavel(t) : criarElemento('span', { classe: 'nome', texto: t.nome }),
+      criarElemento('span', { classe: `situacao m-${s.classe}`, texto: s.palavra }),
+      controles);
+  });
+
+  const adicionar = criarElemento('a', {
+    classe: 'botao botao-principal', href: `#/verificacao/${encodeURIComponent(id)}/novo-topico`, texto: 'Adicionar tópico',
+  });
+
+  const conteudoPrincipal = topicos.length
+    ? [
+      criarElemento('ol', { classe: 'sumario' }, linhas),
+      criarElemento('div', { classe: 'acoes', style: 'margin-top:12px' },
+        adicionar,
+        criarElemento('button', { type: 'button', texto: 'Imprimir', aoClicar: () => window.print() }),
+        criarElemento('button', {
+          type: 'button',
+          texto: organizando ? 'Concluir organização' : 'Organizar tópicos',
+          aoClicar: () => { estado.organizandoVerificacao = organizando ? null : id; contexto.redesenhar(); },
+        })),
+    ]
+    : [criarElemento('div', { classe: 'vazio' },
+      criarElemento('p', { texto: 'Nenhum tópico ainda.', style: 'margin:0 0 6px;font-weight:600' }),
+      criarElemento('p', { style: 'margin:0 0 12px', texto: 'Comece pelo texto do tópico como ele está no sistema, antes de pedir à IA: clique dentro do texto, aperte Ctrl+A e depois Ctrl+C.' }),
+      adicionar)];
+
+  return criarElemento('section', { classe: 'tela', dados: { tela: 'verificacao' } },
+    voltar,
+    criarElemento('p', { classe: 'so-impressao', dados: { horaImpressao: verificacao.nome }, texto: linhaDeImpressao(verificacao.nome) }),
+    aviso ? criarElemento('div', { classe: 'aviso-pagina', role: 'alert' }, criarElemento('strong', { texto: aviso })) : null,
+    criarElemento('div', { classe: topicos.length ? 'capa' : '' },
+      criarElemento('div', {},
+        criarElemento('div', { classe: 'titulo-com-acao' },
+          criarElemento('h1', { texto: verificacao.nome }),
+          criarElemento('button', { type: 'button', classe: 'acao-discreta', texto: 'Renomear',
+            aoClicar: () => { formularioNome.hidden = false; campoNome.focus(); campoNome.select(); } })),
+        formularioNome,
+        topicos.length ? criarElemento('p', { classe: 'veredito', texto: fraseDoVeredito(geral) }) : null,
+        criarElemento('p', { classe: 'aviso-fixo', texto: 'A conferência cobre apenas os tópicos desta verificação. Alterações em tópicos que você não adicionou não aparecem aqui.' }),
+        conteudoPrincipal),
+      topicos.length ? quadroDeProgresso(geral) : null));
+}
+
+return { telaVerificacao };
+})();
+// ---- src/interface/app.js ----
+const { iniciar } = (() => {
+// Ponto de entrada da interface: abre o armazenamento, lê o endereço (#/...) e desenha a tela.
+// O endereço permite usar o "voltar" do navegador mesmo com o arquivo aberto do computador.
+//   #/                                     Início
+//   #/verificacao/<id>                     Verificação
+//   #/verificacao/<id>/novo-topico         Adicionar tópico
+//   #/verificacao/<id>/topico/<t>/depois   Colar o texto depois
+//   #/verificacao/<id>/topico/<t>          Resultado do tópico
+
+const MENSAGEM_ESPACO_CHEIO = 'Não foi possível guardar: o espaço deste navegador para a ferramenta acabou. '
+  + 'O que está na tela continua aqui; exclua verificações antigas e tente de novo.';
+const MENSAGEM_OUTRA_ABA = 'Esta verificação foi alterada em outra aba; a versão desta aba foi gravada por cima.';
+
+function escolherTela(contexto, partes) {
+  // Endereço malformado (ex.: %E0 solto) vira um id que não existe: a tela diz "não encontrada".
+  const decodificar = (p) => { try { return decodeURIComponent(p); } catch { return "#endereço-inválido"; } };
+  const [raiz, id, parte, topico, final] = partes.map(decodificar);
+  if (raiz !== 'verificacao' || !id) return telaInicio(contexto);
+  if (!parte) return telaVerificacao(contexto, id);
+  if (parte === 'novo-topico') return telaAdicionarTopico(contexto, id);
+  if (parte === 'topico' && topico && final === 'depois') return telaConferirTopico(contexto, id, topico);
+  if (parte === 'topico' && topico) return telaResultado(contexto, id, topico);
+  return telaVerificacao(contexto, id);
+}
+
+async function iniciar() {
+  const raiz = document.getElementById('app');
+  const { armazenamento, guardaAoFechar, motivo } = await abrirArmazenamento();
+  let desenhoAtual = 0;
+  let avisoPendente = null;
+  let aoSairDaTela = [];
+
+  const contexto = {
+    armazenamento,
+    guardaAoFechar,
+    motivo,
+    // Estado da tela que sobrevive a um redesenho (ex.: modo de organizar tópicos).
+    estado: {},
+    navegar(rota) {
+      if (location.hash === `#${rota}`) desenhar();
+      else location.hash = rota;
+    },
+    redesenhar() { return desenhar(); },
+    // Limpeza a fazer quando a tela atual for trocada (ex.: parar de ouvir a colagem).
+    aoSair(fn) { aoSairDaTela.push(fn); },
+    // Aviso para a próxima tela desenhada (sobrevive a um redesenho ou a uma navegação).
+    avisar(texto) { avisoPendente = texto; },
+    tomarAviso() { const t = avisoPendente; avisoPendente = null; return t; },
+    // Grava avisando de outra aba e de espaço cheio. Devolve true se gravou.
+    async salvar(verificacao, atualizadaEmLida) {
+      try {
+        const { sobrescreveuOutraVersao } = await armazenamento.salvar(verificacao, { atualizadaEmLida });
+        if (sobrescreveuOutraVersao) contexto.avisar(MENSAGEM_OUTRA_ABA);
+        return true;
+      } catch (erro) {
+        if (erro && erro.name === 'QuotaExceededError') { contexto.avisar(MENSAGEM_ESPACO_CHEIO); return false; }
+        throw erro;
+      }
+    },
+  };
+
+  let rotaDesenhada = null;
+
+  async function desenhar() {
+    const este = ++desenhoAtual;
+    const rota = location.hash || '#/';
+    const partes = (rota.replace(/^#/, '') || '/').split('/').filter(Boolean);
+    const foco = lembrarFoco();
+    const limpezasAnteriores = aoSairDaTela;
+    aoSairDaTela = [];
+    for (const limpar of limpezasAnteriores) limpar();
+    const tela = await escolherTela(contexto, partes);
+    if (este !== desenhoAtual) return; // a pessoa já navegou para outra tela enquanto esta carregava
+    substituirConteudo(raiz, tela);
+    const titulo = raiz.querySelector('h1');
+    if (titulo) document.title = `${titulo.textContent} — Conferidor de alterações`;
+    if (rota !== rotaDesenhada) {
+      // Tela nova: o foco vai para o título (quem usa teclado ou leitor de tela "chega" nela).
+      if (titulo) { titulo.setAttribute('tabindex', '-1'); titulo.focus({ preventScroll: true }); }
+    } else {
+      // Mesma tela redesenhada (ex.: "Descer"): o foco volta para o controle equivalente.
+      devolverFoco(foco);
+    }
+    rotaDesenhada = rota;
+  }
+
+  // O controle com foco, descrito pelo bloco a que pertence e pelo seu texto (o DOM é refeito).
+  function lembrarFoco() {
+    const e = document.activeElement;
+    if (!e || e === document.body || !raiz.contains(e)) return null;
+    const bloco = e.closest('[data-topico], [data-verificacao], [data-item], [data-paragrafo]');
+    return { bloco: bloco ? [...bloco.attributes].find(a => a.name.startsWith('data-'))?.name : null,
+      valor: bloco ? bloco.getAttribute([...bloco.attributes].find(a => a.name.startsWith('data-')).name) : null,
+      tag: e.tagName, texto: (e.innerText || '').trim() };
+  }
+
+  function devolverFoco(foco) {
+    if (!foco) return;
+    const base = foco.bloco ? raiz.querySelector(`[${foco.bloco}="${CSS.escape(foco.valor)}"]`) : raiz;
+    const alvo = base && [...base.querySelectorAll(foco.tag)].find(e => (e.innerText || '').trim() === foco.texto && !e.disabled);
+    if (alvo) alvo.focus({ preventScroll: true });
+  }
+
+  window.addEventListener('hashchange', () => { window.scrollTo(0, 0); desenhar(); });
+  // No papel, a data e a hora são as do momento da impressão.
+  window.addEventListener('beforeprint', () => {
+    for (const e of document.querySelectorAll('[data-hora-impressao]')) e.textContent = linhaDeImpressao(e.dataset.horaImpressao);
+  });
+  await desenhar();
+}
+
+if (typeof document !== 'undefined') iniciar();
+
+return { iniciar };
+})();
+globalThis.Conferidor = Object.freeze({ encontrarAncoras, normalizar, semInvisiveis, detectarMarcador, agruparItens, descendentesDoItem, semMarcadoresDeComentario, compararPalavras, destacarInvisiveis, parearParagrafos, classificarTopico, dividirParagrafos, juntarParagrafos, statusDoTopico, statusDaVerificacao, sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao, exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao, criarArmazenamentoEmMemoria, criarArmazenamentoNoNavegador, abrirArmazenamento, criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId, carregarComValidacao, telaDanificada, MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, rotuloDoItem, telaAdicionarTopico, telaConferirTopico, telaInicio, telaResultado, telaVerificacao, iniciar });
+})();
+</script>
+</body>
+</html>

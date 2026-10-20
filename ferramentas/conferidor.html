@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; form-action 'none'; base-uri 'none'; script-src 'sha256-Z/np+iUKZe9imvfXXXHLPOwPav8ZeNWxs01b0TtnF9w='; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; form-action 'none'; base-uri 'none'; script-src 'sha256-C3l3Y3J0eacp12OWkAFZ7Bvh5HAonH7zGliSdxHDMtQ='; style-src 'unsafe-inline'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Conferidor de Alterações</title>
 <style>/* Sistema visual aprovado na rodada de design (T4.0; AGENTS.md, Design; ferramentas/design/rodada-2.html).
@@ -73,7 +73,7 @@ button, .botao { font: inherit; font-size: 0.95rem; padding: 7px 14px; border-ra
 .lista-verificacoes .nome { font-weight: 600; overflow-wrap: anywhere; }
 .lista-verificacoes .meta { color: var(--texto-suave); font-size: 0.88rem; grid-column: 1; }
 .lista-verificacoes .situacao { grid-column: 1; }
-.lista-verificacoes .acoes { grid-column: 2; grid-row: 1 / span 3; }
+.lista-verificacoes .acoes { grid-column: 2; grid-row: 1 / span 4; }
 .vazio { background: var(--superficie); border: 1px dashed var(--borda); border-radius: var(--raio); padding: 20px; color: var(--texto-suave); }
 
 /* Ação discreta (ex.: "Ver resultado" de tópico íntegro, "Renomear"): parece link. */
@@ -171,11 +171,24 @@ ins { color: var(--inserido); background: var(--inserido-fundo); text-decoration
   .folha-resultado .par, .sumario li, .lista-verificacoes li, .progresso { break-inside: avoid; }
   h1, h2, .veredito, .barra-fixa { break-after: avoid; }
 }
+
+/* Pós-MVP: trecho cuja formatação mudou, e os itens seguintes de um grupo de renumeração. */
+mark.mudou-formatacao { background: var(--alerta-fundo); color: var(--texto); outline: 2px dashed var(--alerta); outline-offset: 1px; border-radius: 2px; }
+.folha-resultado .par.grupo-renumerado { box-shadow: inset 4px 0 0 var(--borda); }
+.folha-resultado .par.grupo-renumerado .cabeca { color: var(--texto-suave); font-size: 0.85rem; }
+.escolha-arquivo { margin-top: 10px; color: var(--texto-suave); font-size: 0.95rem; }
+.escolha-arquivo .acao-discreta { font-size: inherit; }
+.mensagem-arquivo { margin: 6px 0 0; color: var(--texto); }
+.mensagem-arquivo:empty { display: none; }
+.acoes-em-lote { margin: 0 0 10px; }
+.mensagem-inicio { margin: 0 0 10px; }
+.mensagem-inicio:empty { display: none; }
+.lista-verificacoes .antiga { grid-column: 1; color: var(--alerta); font-size: 0.9rem; }
 </style>
 </head>
 <body>
 <main id="app"><p class="tela">Abrindo…</p></main>
-<footer class="rodape">Versão 0.1.0</footer>
+<footer class="rodape">Versão 1.1.0</footer>
 <script>'use strict';
 (() => {
 // ---- src/dominio/ancoras.js ----
@@ -897,6 +910,52 @@ function lerLiberados(liberados, total) {
   return new Set(liberados);
 }
 
+// Parágrafo protegido em que só o número decimal mudou (último nível), o resto idêntico.
+function soNumeroMudou(achado, antes, depois) {
+  if (achado.tipo !== 'alterado' || achado.liberado) return null;
+  const ta = antes.paragrafos[achado.antes].texto;
+  const td = depois.paragrafos[achado.depois].texto;
+  const ma = detectarMarcador(ta);
+  const md = detectarMarcador(td);
+  if (!ma || !md || ma.tipo !== 'decimal' || md.tipo !== 'decimal' || ma.numeros.length !== md.numeros.length) return null;
+  const ia = ta.indexOf(ma.rotulo);
+  const id = td.indexOf(md.rotulo);
+  if (ta.slice(0, ia) !== td.slice(0, id) || ta.slice(ia + ma.rotulo.length) !== td.slice(id + md.rotulo.length)) return null;
+  const prefixo = ma.numeros.slice(0, -1).join('.');
+  if (prefixo !== md.numeros.slice(0, -1).join('.')) return null;
+  const delta = md.numeros[md.numeros.length - 1] - ma.numeros[ma.numeros.length - 1];
+  return delta === 0 ? null : { delta, prefixo, rotulo: ma.chave };
+}
+
+// Decisão do arquiteto (20/10/2026): dois ou mais itens seguidos renumerados do mesmo jeito viram
+// um grupo de aviso ("itens 5.3 a 5.9 renumerados (+1)"). Entre eles só pode haver parágrafo sem
+// mudança. Continua impedindo "íntegro". Altera os achados no lugar.
+function agruparRenumeracao(achados, antes, depois) {
+  let grupo = [];
+  const fecharGrupo = () => {
+    if (grupo.length >= 2) {
+      const base = { primeiro: grupo[0].info.rotulo, ultimo: grupo[grupo.length - 1].info.rotulo, delta: grupo[0].info.delta, quantos: grupo.length };
+      grupo.forEach(({ achado }, k) => {
+        achado.tipo = 'renumerado';
+        achado.gravidade = 'aviso';
+        achado.renumeracao = { ...base, inicio: k === 0 };
+      });
+    }
+    grupo = [];
+  };
+  for (const achado of achados) {
+    const info = soNumeroMudou(achado, antes, depois);
+    if (info) {
+      const ultimo = grupo[grupo.length - 1];
+      if (ultimo && (ultimo.info.delta !== info.delta || ultimo.info.prefixo !== info.prefixo)) fecharGrupo();
+      grupo.push({ achado, info });
+    } else if (!(achado.gravidade === 'ok' || (achado.gravidade === 'info' && achado.tipo === 'identico'))) {
+      fecharGrupo();
+    }
+  }
+  fecharGrupo();
+}
+
 function classificarTopico(antes, depois, liberados) {
   if (!antes || !Array.isArray(antes.paragrafos)) throw new TypeError('classificarTopico espera a divisão em parágrafos do antes.');
   const liberado = lerLiberados(liberados, antes.paragrafos.length);
@@ -954,6 +1013,8 @@ function classificarTopico(antes, depois, liberados) {
     return achado;
   });
 
+  agruparRenumeracao(achados, antes, depois);
+
   let separadorFinal = null;
   if (separadorFinalMudou) {
     const ultimo = antes.paragrafos.length - 1;
@@ -1004,6 +1065,256 @@ function juntarParagrafos({ paragrafos, separadorFinal }) {
 }
 
 return { dividirParagrafos, juntarParagrafos };
+})();
+// ---- src/dominio/html.js ----
+const { assinaturaDasMarcas, lerHtmlColado, diferencasDeFormatacao } = (() => {
+// Leitura do HTML colado (pós-MVP): formatação e célula de tabela de cada letra visível. Pura.
+//
+// O HTML NUNCA entra na página: aqui ele é só lido como texto, por um leitor próprio e tolerante.
+// Antes e depois vêm do mesmo editor, então o que importa é a coerência, não a fidelidade visual.
+//
+// lerHtmlColado(html, texto) → { paragrafos, motivo }
+//   paragrafos: null (motivo diz por quê), ou um por parágrafo de dividirParagrafos(texto):
+//     { marcas: [assinatura de formatação de cada letra visível], celula: null | { tabela, linha, coluna, nomeDaColuna } }
+//   Letra visível = tudo que não é espaço nem caractere invisível. O HTML e o texto simples são
+//   casados letra visível a letra visível; se alguma não bater, nada é comparado (motivo).
+
+const NOMES_DAS_MARCAS = { negrito: 'negrito', italico: 'itálico', sublinhado: 'sublinhado', tachado: 'tachado', cor: 'cor' };
+
+// Entidades mais comuns em HTML de editor; as outras ficam como estão e o casamento falha (seguro).
+const ENTIDADES = new Map(Object.entries({
+  nbsp: 0xA0, amp: 0x26, lt: 0x3C, gt: 0x3E, quot: 0x22, apos: 0x27, ordm: 0xBA, ordf: 0xAA, sect: 0xA7, deg: 0xB0,
+  ndash: 0x2013, mdash: 0x2014, laquo: 0xAB, raquo: 0xBB, ldquo: 0x201C, rdquo: 0x201D, lsquo: 0x2018, rsquo: 0x2019,
+  hellip: 0x2026, bull: 0x2022, middot: 0xB7, shy: 0xAD, copy: 0xA9, reg: 0xAE, euro: 0x20AC, times: 0xD7,
+  aacute: 0xE1, agrave: 0xE0, acirc: 0xE2, atilde: 0xE3, eacute: 0xE9, ecirc: 0xEA, iacute: 0xED, oacute: 0xF3,
+  ocirc: 0xF4, otilde: 0xF5, uacute: 0xFA, uuml: 0xFC, ccedil: 0xE7, Aacute: 0xC1, Agrave: 0xC0, Acirc: 0xC2,
+  Atilde: 0xC3, Eacute: 0xC9, Ecirc: 0xCA, Iacute: 0xCD, Oacute: 0xD3, Ocirc: 0xD4, Otilde: 0xD5, Uacute: 0xDA,
+  Uuml: 0xDC, Ccedil: 0xC7,
+}));
+const SEM_CONTEUDO = new Set(['style', 'script', 'head', 'title', 'template', 'noscript', 'xml']);
+const VAZIOS = new Set(['br', 'hr', 'img', 'meta', 'link', 'input', 'col', 'wbr', 'area', 'base', 'source']);
+const CORES_PADRAO = new Set(['', 'black', 'windowtext', 'initial', 'inherit', 'currentcolor', 'auto', 'rgb(0,0,0)', 'rgba(0,0,0,1)', '#000', '#000000']);
+const LARGURA_ZERO = new Set([0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF, 0xAD]);
+// Comentário escrito como <!-{2}...: o texto literal dele fecharia o script no arquivo final.
+const TOKEN = /<!-{2}[\s\S]*?(?:-{2}>|$)|<![^>]*>|<\?[^>]*>|<(\/?)([a-zA-Z][\w:-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>|([^<]+)|</g;
+const ATRIBUTO = /([^\s=/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+
+function decodificar(texto) {
+  return texto.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (inteiro, nome) => {
+    if (nome[0] === '#') {
+      const n = nome[1] === 'x' || nome[1] === 'X' ? parseInt(nome.slice(2), 16) : parseInt(nome.slice(1), 10);
+      return Number.isFinite(n) && n > 0 && n <= 0x10FFFF ? String.fromCodePoint(n) : inteiro;
+    }
+    return ENTIDADES.has(nome) ? String.fromCodePoint(ENTIDADES.get(nome)) : inteiro;
+  });
+}
+
+const ignoravel = (ch) => /\s/u.test(ch) || LARGURA_ZERO.has(ch.codePointAt(0));
+
+function lerAtributos(texto) {
+  const atributos = {};
+  for (const m of texto.matchAll(ATRIBUTO)) atributos[m[1].toLowerCase()] = decodificar(m[2] ?? m[3] ?? m[4] ?? '');
+  return atributos;
+}
+
+function normalizarCor(valor) {
+  const v = valor.toLowerCase().replace(/\s+/g, '').replace(/!important$/, '');
+  return CORES_PADRAO.has(v) ? null : v;
+}
+
+// O que um elemento muda na formatação herdada.
+function aplicarElemento(nome, atributos, herdadas) {
+  const m = { ...herdadas };
+  if (nome === 'b' || nome === 'strong') m.negrito = true;
+  if (nome === 'i' || nome === 'em' || nome === 'cite' || nome === 'dfn') m.italico = true;
+  if (nome === 'u' || nome === 'ins') m.sublinhado = true;
+  if (nome === 's' || nome === 'strike' || nome === 'del') m.tachado = true;
+  if (nome === 'font' && atributos.color !== undefined) m.cor = normalizarCor(atributos.color);
+  for (const declaracao of (atributos.style || '').split(';')) {
+    const dois = declaracao.indexOf(':');
+    if (dois < 0) continue;
+    const prop = declaracao.slice(0, dois).trim().toLowerCase();
+    const valor = declaracao.slice(dois + 1).trim().toLowerCase();
+    if (prop === 'font-weight') {
+      if (/^(bold|bolder)/.test(valor) || /^[6-9]00/.test(valor)) m.negrito = true;
+      else if (/^(normal|lighter)/.test(valor) || /^[1-5]00/.test(valor)) m.negrito = false;
+    } else if (prop === 'font-style') {
+      m.italico = /^(italic|oblique)/.test(valor);
+    } else if (prop === 'text-decoration' || prop === 'text-decoration-line') {
+      if (/underline/.test(valor)) m.sublinhado = true;
+      if (/line-through/.test(valor)) m.tachado = true;
+      if (/^none/.test(valor)) { m.sublinhado = false; m.tachado = false; }
+    } else if (prop === 'color') {
+      m.cor = normalizarCor(valor);
+    }
+  }
+  return m;
+}
+
+function assinaturaDasMarcas(m) {
+  return [m.negrito ? 'n' : '', m.italico ? 'i' : '', m.sublinhado ? 's' : '', m.tachado ? 't' : '', m.cor ? `c${m.cor}` : ''].join('|');
+}
+
+// O HTML em letras visíveis, cada uma com a formatação e a célula de tabela em que está.
+function letrasDoHtml(html) {
+  const letras = [];
+  const pilha = [{ nome: '#raiz', marcas: {} }];
+  const tabelas = []; // pilha de tabelas abertas: { numero, linha, coluna, proximaColuna, cabecalho }
+  let numeroDeTabelas = 0;
+  let semConteudo = 0;
+  const fechar = (nome) => {
+    for (let k = pilha.length - 1; k > 0; k--) {
+      if (pilha[k].nome === nome) { pilha.length = k; return; }
+    }
+  };
+  for (const m of html.matchAll(TOKEN)) {
+    const [inteiro, barra, nomeBruto, atributosBrutos, texto] = m;
+    if (nomeBruto) {
+      const nome = nomeBruto.toLowerCase();
+      if (SEM_CONTEUDO.has(nome)) { semConteudo += barra ? (semConteudo > 0 ? -1 : 0) : 1; continue; }
+      if (semConteudo > 0) continue;
+      if (barra) {
+        if (nome === 'table') tabelas.pop();
+        fechar(nome);
+        continue;
+      }
+      const atributos = lerAtributos(atributosBrutos);
+      const tabela = tabelas[tabelas.length - 1];
+      if (nome === 'table') tabelas.push({ numero: ++numeroDeTabelas, linha: 0, coluna: 0, proximaColuna: 1, cabecalho: [] });
+      else if (nome === 'tr' && tabela) { tabela.linha++; tabela.proximaColuna = 1; tabela.coluna = 0; }
+      else if ((nome === 'td' || nome === 'th') && tabela) {
+        if (tabela.linha === 0) tabela.linha = 1;
+        tabela.coluna = tabela.proximaColuna;
+        tabela.proximaColuna += Math.max(1, parseInt(atributos.colspan, 10) || 1);
+      }
+      const autoFechado = VAZIOS.has(nome) || /\/\s*$/.test(atributosBrutos);
+      if (!autoFechado) pilha.push({ nome, marcas: aplicarElemento(nome, atributos, pilha[pilha.length - 1].marcas) });
+      continue;
+    }
+    if (semConteudo > 0 || inteiro.startsWith('<!') || inteiro.startsWith('<?')) continue;
+    const conteudo = decodificar(texto ?? inteiro).normalize('NFC');
+    const marcas = assinaturaDasMarcas(pilha[pilha.length - 1].marcas);
+    const tabela = tabelas[tabelas.length - 1];
+    const celula = tabela && tabela.coluna > 0
+      ? { tabela: tabela.numero, linha: tabela.linha, coluna: tabela.coluna, cabecalho: tabela.cabecalho } : null;
+    const noCabecalho = celula && celula.linha === 1;
+    for (const ch of conteudo) {
+      if (noCabecalho) tabela.cabecalho[celula.coluna] = (tabela.cabecalho[celula.coluna] || '') + (ignoravel(ch) ? ' ' : ch);
+      if (!ignoravel(ch)) letras.push({ ch, marcas, celula });
+    }
+  }
+  return letras;
+}
+
+function lerHtmlColado(html, texto) {
+  if (typeof html !== 'string' || typeof texto !== 'string') throw new TypeError('lerHtmlColado espera o HTML e o texto colados.');
+  if (html.trim() === '') return { paragrafos: null, motivo: 'o texto veio sem formatação' };
+  const letras = letrasDoHtml(html);
+  const divisao = dividirParagrafos(texto);
+  let k = 0;
+  const paragrafos = [];
+  for (const p of divisao.paragrafos) {
+    const marcas = [];
+    let celula = null;
+    for (const ch of p.texto) {
+      if (ignoravel(ch)) continue;
+      const letra = letras[k++];
+      if (!letra || letra.ch !== ch) return { paragrafos: null, motivo: 'a formatação colada não corresponde ao texto' };
+      if (marcas.length === 0 && letra.celula) {
+        const { tabela, linha, coluna, cabecalho } = letra.celula;
+        const nome = (cabecalho[coluna] || '').replace(/\s+/g, ' ').trim();
+        celula = { tabela, linha, coluna, nomeDaColuna: linha === 1 ? '' : nome };
+      }
+      marcas.push(letra.marcas);
+    }
+    paragrafos.push({ marcas, celula });
+  }
+  if (k !== letras.length) return { paragrafos: null, motivo: 'a formatação colada não corresponde ao texto' };
+  return { paragrafos, motivo: null };
+}
+
+// Diferenças de formatação num parágrafo cujo texto visível é o mesmo dos dois lados.
+// Devolve [] ou [{ texto, saiu: [nomes], entrou: [nomes] }], em trechos contínuos do texto depois.
+function diferencasDeFormatacao(textoDepois, marcasAntes, marcasDepois) {
+  if (marcasAntes.length !== marcasDepois.length) return [];
+  const posicoes = []; // posição (em código de caractere) de cada letra visível do texto depois
+  let pos = 0;
+  for (const ch of textoDepois) { if (!ignoravel(ch)) posicoes.push(pos); pos += ch.length; }
+  const conjunto = (assinatura) => {
+    const [n, i, s, t, c] = assinatura.split('|');
+    return { negrito: !!n, italico: !!i, sublinhado: !!s, tachado: !!t, cor: c || '' };
+  };
+  const mudancas = [];
+  let atual = null;
+  for (let j = 0; j < marcasAntes.length; j++) {
+    if (marcasAntes[j] === marcasDepois[j]) { atual = null; continue; }
+    const chave = `${marcasAntes[j]}>${marcasDepois[j]}`;
+    if (atual && atual.chave === chave && atual.ultima === j - 1) {
+      atual.ultima = j;
+      atual.fim = posicoes[j] + String.fromCodePoint(textoDepois.codePointAt(posicoes[j])).length;
+      continue;
+    }
+    const a = conjunto(marcasAntes[j]);
+    const d = conjunto(marcasDepois[j]);
+    const saiu = [];
+    const entrou = [];
+    for (const marca of ['negrito', 'italico', 'sublinhado', 'tachado']) {
+      if (a[marca] && !d[marca]) saiu.push(NOMES_DAS_MARCAS[marca]);
+      if (!a[marca] && d[marca]) entrou.push(NOMES_DAS_MARCAS[marca]);
+    }
+    const corMudou = a.cor !== d.cor;
+    atual = { chave, ultima: j, inicio: posicoes[j], fim: posicoes[j] + String.fromCodePoint(textoDepois.codePointAt(posicoes[j])).length, saiu, entrou, corMudou };
+    mudancas.push(atual);
+  }
+  return mudancas.map(({ inicio, fim, saiu, entrou, corMudou }) => ({ inicio, fim, texto: textoDepois.slice(inicio, fim), saiu, entrou, corMudou }));
+}
+
+return { assinaturaDasMarcas, lerHtmlColado, diferencasDeFormatacao };
+})();
+// ---- src/dominio/formatacao.js ----
+const { completarComHtml } = (() => {
+// Formatação e célula de tabela nos achados (pós-MVP). Pura.
+//
+// Gravidade (decisão do arquiteto, 20/10/2026): mudança só de formatação (negrito, itálico,
+// sublinhado, tachado, cor) em parágrafo protegido é ⚠️; em parágrafo liberado, ℹ️.
+// Só se compara a formatação de parágrafos com o mesmo texto visível dos dois lados; os que
+// mudaram de texto já são acusados pelo texto.
+//
+// completarComHtml(classificacao, topico) → a classificação com:
+//   formatacao: { comparada: true } | { comparada: false, motivo }
+//   achados: com "celula" quando o parágrafo está numa tabela, e "formatacao" (lista de mudanças)
+//     quando a formatação mudou; um parágrafo idêntico com formatação mudada vira tipo "formatacao".
+
+const MESMO_TEXTO_VISIVEL = new Set(['identico', 'separador', 'invisivel', 'movido']);
+
+function completarComHtml(classificacao, topico) {
+  const antes = lerHtmlColado(topico.antes.html, topico.antes.texto);
+  const depois = lerHtmlColado(topico.depois.html, topico.depois.texto);
+  const textosDepois = dividirParagrafos(topico.depois.texto).paragrafos.map(p => p.texto);
+  const comparada = antes.paragrafos !== null && depois.paragrafos !== null;
+  const celulaDe = (lado, i) => (lado.paragrafos && i !== null && lado.paragrafos[i] ? lado.paragrafos[i].celula : null);
+
+  const achados = classificacao.achados.map((a) => {
+    const novo = { ...a };
+    const celula = a.antes !== null ? celulaDe(antes, a.antes) : celulaDe(depois, a.depois);
+    if (celula) novo.celula = celula;
+    if (comparada && a.antes !== null && a.depois !== null && MESMO_TEXTO_VISIVEL.has(a.tipo)) {
+      const mudancas = diferencasDeFormatacao(textosDepois[a.depois], antes.paragrafos[a.antes].marcas, depois.paragrafos[a.depois].marcas);
+      if (mudancas.length) {
+        novo.formatacao = mudancas;
+        if (a.tipo === 'identico') {
+          novo.tipo = 'formatacao';
+          novo.gravidade = a.liberado ? 'info' : 'aviso';
+        }
+      }
+    }
+    return novo;
+  });
+  const motivo = antes.paragrafos === null ? antes.motivo : depois.motivo;
+  return { ...classificacao, achados, formatacao: comparada ? { comparada: true } : { comparada: false, motivo } };
+}
+
+return { completarComHtml };
 })();
 // ---- src/dominio/status.js ----
 const { statusDoTopico, statusDaVerificacao } = (() => {
@@ -1228,8 +1539,8 @@ function validarVerificacao(v) {
 
 function conferirTopico(topico) {
   if (topico.depois === null) return { classificacao: null, status: statusDoTopico(null) };
-  const classificacao = classificarTopico(
-    dividirParagrafos(topico.antes.texto), dividirParagrafos(topico.depois.texto), topico.liberados);
+  const classificacao = completarComHtml(classificarTopico(
+    dividirParagrafos(topico.antes.texto), dividirParagrafos(topico.depois.texto), topico.liberados), topico);
   return { classificacao, status: statusDoTopico(classificacao, topico.confirmouTopicoDiferente) };
 }
 
@@ -1242,6 +1553,51 @@ function resumirVerificacao(verificacao) {
 }
 
 return { sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao };
+})();
+// ---- src/dominio/exportacao.js ----
+const { montarExportacao, lerExportacao } = (() => {
+// Exportar e importar Verificações em arquivo (pós-MVP). Puro: monta e lê o conteúdo do arquivo.
+// O arquivo leva os textos inteiros do documento; guardá-lo é responsabilidade de quem exporta.
+// Na importação, cada Verificação passa pela mesma validação do armazenamento: arquivo adulterado
+// ou danificado é recusado inteiro, sem gravar nada pela metade.
+
+const FORMATO = 'conferidor-de-alteracoes';
+const VERSAO_DO_ARQUIVO = 1;
+
+function montarExportacao(verificacoes, agora) {
+  if (!Array.isArray(verificacoes) || verificacoes.length === 0) throw new RangeError('Nada para exportar.');
+  for (const v of verificacoes) {
+    const problema = validarVerificacao(v);
+    if (problema) throw new TypeError(`A verificação "${v && v.nome}" está danificada e não pode ser exportada: ${problema}.`);
+  }
+  return JSON.stringify({ formato: FORMATO, versao: VERSAO_DO_ARQUIVO, exportadoEm: agora, verificacoes }, null, 2);
+}
+
+// → { verificacoes }. Erros têm mensagem pronta para a pessoa.
+function lerExportacao(texto) {
+  const recusa = (motivo) => { const e = new Error(motivo); e.paraPessoa = true; return e; };
+  let conteudo;
+  try {
+    conteudo = JSON.parse(texto);
+  } catch {
+    throw recusa('Este arquivo não foi exportado pelo Conferidor (ou está danificado).');
+  }
+  if (!conteudo || conteudo.formato !== FORMATO || !Array.isArray(conteudo.verificacoes)) {
+    throw recusa('Este arquivo não foi exportado pelo Conferidor (ou está danificado).');
+  }
+  if (conteudo.versao !== VERSAO_DO_ARQUIVO) throw recusa('Este arquivo veio de outra versão do Conferidor e não pode ser aberto por esta.');
+  if (conteudo.verificacoes.length === 0) throw recusa('O arquivo não tem nenhuma verificação.');
+  const ids = new Set();
+  conteudo.verificacoes.forEach((v, i) => {
+    const problema = validarVerificacao(v);
+    if (problema) throw recusa(`A verificação ${i + 1} do arquivo está danificada (${problema}). Nada foi importado.`);
+    if (ids.has(v.id)) throw recusa('O arquivo tem a mesma verificação duas vezes. Nada foi importado.');
+    ids.add(v.id);
+  });
+  return { verificacoes: conteudo.verificacoes };
+}
+
+return { montarExportacao, lerExportacao };
 })();
 // ---- src/persistencia/comum.js ----
 const { exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao } = (() => {
@@ -1539,8 +1895,198 @@ function telaDanificada(problema, tela) {
 
 return { carregarComValidacao, telaDanificada };
 })();
+// ---- src/interface/arquivos.js ----
+const { lerDocx, lerArquivoDeTexto, lerArquivoEscolhido } = (() => {
+// Abrir arquivo em vez de colar (pós-MVP): .docx, .txt e .md.
+// Sem biblioteca: o .docx é um pacote ZIP, aberto com o descompactador que o próprio navegador
+// já traz (DecompressionStream). Do Word saem o texto e um HTML só com as marcas que a ferramenta
+// compara (negrito, itálico, sublinhado, tachado, cor, tabelas); esse HTML nunca entra na página.
+// Decisão do arquiteto (20/10/2026): .docx com controle de alterações pendente é recusado.
+
+const ASSINATURA_FIM_DO_ZIP = 0x06054b50;
+const ASSINATURA_ENTRADA = 0x02014b50;
+const ASSINATURA_LOCAL = 0x04034b50;
+const MUDANCAS_PENDENTES = new Set(['w:ins', 'w:del', 'w:moveFrom', 'w:moveTo', 'w:rPrChange', 'w:pPrChange', 'w:tblPrChange', 'w:trPrChange', 'w:tcPrChange', 'w:sectPrChange']);
+const IGNORAR_CONTEUDO = new Set(['w:instrText', 'w:delText', 'mc:Fallback', 'w:txbxContent', 'w:footnoteReference', 'w:endnoteReference']);
+const XML = /<!-{2}[\s\S]*?-{2}>|<\?[\s\S]*?\?>|<(\/?)([\w:.-]+)((?:\s+[\w:.-]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>|([^<]+)/g;
+
+function erroParaPessoa(mensagem) {
+  const erro = new Error(mensagem);
+  erro.paraPessoa = true;
+  return erro;
+}
+
+function decodificarXml(texto) {
+  return texto.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (inteiro, nome) => {
+    const fixos = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+    if (fixos[nome.toLowerCase()]) return fixos[nome.toLowerCase()];
+    const n = nome[1] === 'x' || nome[1] === 'X' ? parseInt(nome.slice(2), 16) : parseInt(nome.slice(1), 10);
+    return Number.isFinite(n) && n > 0 && n <= 0x10FFFF ? String.fromCodePoint(n) : inteiro;
+  });
+}
+
+const escaparHtml = (texto) => texto.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+async function inflar(dados) {
+  const fluxo = new Blob([dados]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(fluxo).arrayBuffer());
+}
+
+// Lê um arquivo de dentro do ZIP pelo nome; null se não existir.
+async function lerDoZip(bytes, procurado) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let fim = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
+    if (dv.getUint32(i, true) === ASSINATURA_FIM_DO_ZIP) { fim = i; break; }
+  }
+  if (fim < 0) throw erroParaPessoa('Este arquivo não é um documento do Word (.docx) válido.');
+  const total = dv.getUint16(fim + 10, true);
+  let p = dv.getUint32(fim + 16, true);
+  const nomes = new TextDecoder();
+  for (let k = 0; k < total; k++) {
+    if (p + 46 > bytes.length || dv.getUint32(p, true) !== ASSINATURA_ENTRADA) break;
+    const metodo = dv.getUint16(p + 10, true);
+    const tamanho = dv.getUint32(p + 20, true);
+    const tamanhoDoNome = dv.getUint16(p + 28, true);
+    const extra = dv.getUint16(p + 30, true);
+    const comentario = dv.getUint16(p + 32, true);
+    const local = dv.getUint32(p + 42, true);
+    const nome = nomes.decode(bytes.subarray(p + 46, p + 46 + tamanhoDoNome));
+    p += 46 + tamanhoDoNome + extra + comentario;
+    if (nome !== procurado) continue;
+    if (dv.getUint32(local, true) !== ASSINATURA_LOCAL) break;
+    const inicio = local + 30 + dv.getUint16(local + 26, true) + dv.getUint16(local + 28, true);
+    const dados = bytes.subarray(inicio, inicio + tamanho);
+    if (metodo === 0) return dados;
+    if (metodo === 8) return inflar(dados);
+    throw erroParaPessoa('Este .docx usa uma compactação que a ferramenta não conhece. Salve de novo no Word e tente outra vez.');
+  }
+  return null;
+}
+
+const ligado = (atributos) => {
+  const m = /w:val\s*=\s*["']([^"']*)["']/.exec(atributos);
+  return !m || !['0', 'false', 'off', 'none'].includes(m[1].toLowerCase());
+};
+
+// document.xml do Word → { texto, html, numeracaoAutomatica }
+function lerDocumentoDoWord(xml) {
+  const linhas = [];
+  const html = [];
+  let paragrafo = null; // { texto, html }
+  let run = null; // { marcas, texto }
+  let ignorando = 0;
+  let numeracaoAutomatica = false;
+  const fecharRun = () => {
+    if (!run || !run.texto) { run = null; return; }
+    const { negrito, italico, sublinhado, tachado, cor } = run.marcas;
+    let trecho = escaparHtml(run.texto).replace(/\n/g, '<br>');
+    if (cor) trecho = `<span style="color:#${cor}">${trecho}</span>`;
+    if (tachado) trecho = `<s>${trecho}</s>`;
+    if (sublinhado) trecho = `<u>${trecho}</u>`;
+    if (italico) trecho = `<i>${trecho}</i>`;
+    if (negrito) trecho = `<b>${trecho}</b>`;
+    paragrafo.texto += run.texto;
+    paragrafo.html += trecho;
+    run = null;
+  };
+  let noRPr = false;
+  for (const m of xml.matchAll(XML)) {
+    const [, barra, nome, atributos = '', autoFechado, texto] = m;
+    if (nome && MUDANCAS_PENDENTES.has(nome)) {
+      throw erroParaPessoa('Este documento tem alterações controladas pendentes. No Word, aceite ou rejeite todas as alterações (Revisão › Aceitar), salve e abra de novo.');
+    }
+    if (nome && IGNORAR_CONTEUDO.has(nome)) {
+      if (!autoFechado) ignorando += barra ? -1 : 1;
+      continue;
+    }
+    if (ignorando > 0) continue;
+    if (texto !== undefined) {
+      if (run && !noRPr && run.dentroDeT) run.texto += decodificarXml(texto);
+      continue;
+    }
+    if (!nome) continue;
+    if (barra) {
+      if (nome === 'w:t') { if (run) run.dentroDeT = false; }
+      else if (nome === 'w:rPr') noRPr = false;
+      else if (nome === 'w:r') fecharRun();
+      else if (nome === 'w:p' && paragrafo) {
+        fecharRun();
+        linhas.push(paragrafo.texto);
+        html.push(`<p>${paragrafo.html}</p>`);
+        paragrafo = null;
+      } else if (nome === 'w:tc') html.push('</td>');
+      else if (nome === 'w:tr') html.push('</tr>');
+      else if (nome === 'w:tbl') html.push('</table>');
+      continue;
+    }
+    switch (nome) {
+      case 'w:p': paragrafo = { texto: '', html: '' }; if (autoFechado) { linhas.push(''); html.push('<p></p>'); paragrafo = null; } break;
+      case 'w:r': if (paragrafo) run = { marcas: {}, texto: '', dentroDeT: false }; break;
+      case 'w:rPr': if (run && !autoFechado) noRPr = true; break;
+      case 'w:b': if (run && noRPr) run.marcas.negrito = ligado(atributos); break;
+      case 'w:i': if (run && noRPr) run.marcas.italico = ligado(atributos); break;
+      case 'w:u': if (run && noRPr) run.marcas.sublinhado = ligado(atributos); break;
+      case 'w:strike': case 'w:dstrike': if (run && noRPr) run.marcas.tachado = ligado(atributos); break;
+      case 'w:color': {
+        const cor = /w:val\s*=\s*["']([0-9A-Fa-f]{6})["']/.exec(atributos);
+        if (run && noRPr) run.marcas.cor = cor && cor[1].toUpperCase() !== '000000' ? cor[1].toUpperCase() : null;
+        break;
+      }
+      case 'w:t': if (run && !autoFechado) run.dentroDeT = true; break;
+      case 'w:tab': if (run && !noRPr) run.texto += '\t'; break;
+      case 'w:br': case 'w:cr': if (run && !noRPr) run.texto += '\n'; break;
+      case 'w:noBreakHyphen': if (run) run.texto += String.fromCodePoint(0x2011); break;
+      case 'w:numPr': numeracaoAutomatica = true; break;
+      case 'w:tbl': html.push('<table>'); break;
+      case 'w:tr': html.push('<tr>'); break;
+      case 'w:tc': html.push('<td>'); break;
+      default: break;
+    }
+  }
+  return { texto: linhas.join('\n'), html: html.join(''), numeracaoAutomatica };
+}
+
+async function lerDocx(bytes) {
+  const documento = await lerDoZip(bytes, 'word/document.xml');
+  if (!documento) throw erroParaPessoa('Este arquivo não é um documento do Word (.docx) válido.');
+  const { texto, html, numeracaoAutomatica } = lerDocumentoDoWord(new TextDecoder().decode(documento));
+  return {
+    texto,
+    html,
+    aviso: numeracaoAutomatica
+      ? 'Este documento usa numeração automática do Word: os números dos itens não fazem parte do texto e não entram na conferência.'
+      : null,
+  };
+}
+
+// .txt e .md: texto puro. A marca de início de arquivo (BOM) é do formato do arquivo, não do texto.
+function lerArquivoDeTexto(bytes) {
+  let texto;
+  try {
+    texto = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    texto = new TextDecoder('windows-1252').decode(bytes);
+  }
+  if (texto.codePointAt(0) === 0xFEFF) texto = texto.slice(1);
+  return { texto, html: '', aviso: null };
+}
+
+// O arquivo escolhido pela pessoa → { texto, html, aviso }. Erros com "paraPessoa" têm mensagem
+// pronta para a tela; os outros viram uma mensagem genérica.
+async function lerArquivoEscolhido(arquivo) {
+  const nome = arquivo.name.toLowerCase();
+  const bytes = new Uint8Array(await arquivo.arrayBuffer());
+  if (nome.endsWith('.docx')) return lerDocx(bytes);
+  if (nome.endsWith('.txt') || nome.endsWith('.md')) return lerArquivoDeTexto(bytes);
+  if (nome.endsWith('.doc')) throw erroParaPessoa('Arquivo .doc antigo: abra no Word e salve como .docx.');
+  throw erroParaPessoa('A ferramenta abre só arquivos .docx, .txt e .md.');
+}
+
+return { lerDocx, lerArquivoDeTexto, lerArquivoEscolhido };
+})();
 // ---- src/interface/colagem.js ----
-const { MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem } = (() => {
+const { MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, criarEscolhaDeArquivo } = (() => {
 // Captura da colagem, comum às telas de colar o "antes" (T4.3) e o "depois" (T4.4).
 // Guarda o texto simples e a formatação (HTML) exatamente como vieram; o HTML nunca entra na página.
 
@@ -1567,7 +2113,34 @@ function ouvirColagem(contexto, receber) {
   contexto.aoSair(() => document.removeEventListener('paste', aoColar));
 }
 
-return { MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem };
+// Alternativa à colagem (pós-MVP): abrir um arquivo .docx, .txt ou .md. O que o arquivo traz chega
+// a "receber({ texto, html })" como se tivesse sido colado. Avisos e erros aparecem logo abaixo.
+function criarEscolhaDeArquivo(receber) {
+  const mensagem = criarElemento('p', { classe: 'mensagem-arquivo', role: 'status', 'aria-live': 'polite' });
+  const entrada = criarElemento('input', {
+    type: 'file', accept: '.docx,.txt,.md', hidden: true, dados: { entradaArquivo: '' },
+    aoMudar: async () => {
+      const arquivo = entrada.files && entrada.files[0];
+      entrada.value = '';
+      if (!arquivo) return;
+      mensagem.textContent = 'Abrindo o arquivo…';
+      try {
+        const { texto, html, aviso } = await lerArquivoEscolhido(arquivo);
+        mensagem.textContent = aviso || '';
+        receber({ texto, html, aviso });
+      } catch (erro) {
+        mensagem.textContent = erro && erro.paraPessoa ? erro.message : 'Não foi possível ler este arquivo.';
+      }
+    },
+  });
+  return criarElemento('div', { classe: 'escolha-arquivo' },
+    criarElemento('span', { texto: 'Ou ' }),
+    criarElemento('button', { type: 'button', classe: 'acao-discreta', texto: 'abra um arquivo (.docx, .txt ou .md)', aoClicar: () => entrada.click() }),
+    entrada,
+    mensagem);
+}
+
+return { MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, criarEscolhaDeArquivo };
 })();
 // ---- src/interface/rotulos.js ----
 const { rotuloDoItem } = (() => {
@@ -1709,21 +2282,24 @@ async function telaAdicionarTopico(contexto, idDaVerificacao) {
     substituirConteudo(corpo,
       criarElemento('p', { id: 'instrucao-colar', classe: 'instrucao', texto: INSTRUCAO_COPIAR }),
       zona,
+      criarEscolhaDeArquivo(receber),
       mensagem ? criarElemento('p', { classe: 'mensagem-erro', role: 'alert', texto: mensagem }) : null);
     zona.focus();
   }
 
-  ouvirColagem(contexto, ({ texto, html }) => {
+  // A colagem e o arquivo aberto chegam aqui do mesmo jeito.
+  const receber = ({ texto, html, aviso = null }) => {
     if (colagem) return false; // na marcação, só "Colar de novo" troca o texto
     const divisao = dividirParagrafos(texto);
     if (divisao.paragrafos.length === 0) {
       mostrarZona(MENSAGEM_COLAGEM_SEM_TEXTO);
       return true;
     }
-    colagem = { texto, html, divisao };
+    colagem = { texto, html, divisao, aviso };
     mostrarMarcacao();
     return true;
-  });
+  };
+  ouvirColagem(contexto, receber);
 
   // ---------- passo 2: marcar ----------
   function mostrarMarcacao() {
@@ -1750,6 +2326,7 @@ async function telaAdicionarTopico(contexto, idDaVerificacao) {
       grande ? criarElemento('div', { classe: 'aviso-pagina', role: 'alert' },
         criarElemento('strong', { texto: `Este texto é muito grande para um tópico (${total} parágrafos).` }),
         criarElemento('small', { texto: 'Confira se copiou só o texto do tópico: clique dentro do texto no sistema antes do Ctrl+A. Se estiver certo, pode seguir.' })) : null,
+      colagem.aviso ? criarElemento('p', { classe: 'aviso-fixo', texto: colagem.aviso }) : null,
       criarElemento('div', { classe: 'formulario' },
         criarElemento('label', { for: 'nome-topico', texto: 'Nome do tópico' }), campoNome, mensagem),
       criarElemento('div', { classe: 'barra-fixa' },
@@ -1883,6 +2460,7 @@ async function telaConferirTopico(contexto, idDaVerificacao, idDoTopico) {
           criarElemento('a', { href: `#${rotaDoResultado}/liberar`, texto: 'Ajustar liberações' })),
       criarElemento('p', { id: 'instrucao-colar', classe: 'instrucao', texto: 'Depois que a IA terminou: no sistema, abra este mesmo tópico, clique dentro do texto, aperte Ctrl+A e depois Ctrl+C. Volte aqui e aperte Ctrl+V.' }),
       criarZonaDeColar('O resultado aparece logo em seguida.', 'instrucao-colar'),
+      criarEscolhaDeArquivo(receber),
       mensagem ? criarElemento('p', { classe: 'mensagem-erro', role: 'alert', texto: mensagem }) : null);
   }
 
@@ -1901,7 +2479,8 @@ async function telaConferirTopico(contexto, idDaVerificacao, idDoTopico) {
           aoClicar: () => gravar(suspeita.texto, suspeita.html, true) })));
   }
 
-  ouvirColagem(contexto, ({ texto, html }) => {
+  // A colagem e o arquivo aberto chegam aqui do mesmo jeito.
+  const receber = ({ texto, html }) => {
     if (suspeita) return false; // decidindo sobre a colagem anterior
     const depois = dividirParagrafos(texto);
     if (depois.paragrafos.length === 0) { mostrarZona(MENSAGEM_COLAGEM_SEM_TEXTO); return true; }
@@ -1913,7 +2492,8 @@ async function telaConferirTopico(contexto, idDaVerificacao, idDoTopico) {
       gravar(texto, html, false);
     }
     return true;
-  });
+  };
+  ouvirColagem(contexto, receber);
 
   mostrarZona();
   return criarElemento('section', { classe: 'tela', dados: { tela: 'conferir-topico' } },
@@ -1928,6 +2508,31 @@ return { telaConferirTopico };
 // ---- src/interface/telas/inicio.js ----
 const { telaInicio } = (() => {
 // Tela Início (T4.1): as Verificações guardadas, criar uma nova, excluir, e onde os dados ficam.
+
+// Pós-MVP (decisão do arquiteto, 20/10/2026): Verificação sem uso há mais disto ganha um aviso
+// sugerindo excluir. Nunca é apagada sozinha.
+const DIAS_PARA_AVISAR = 30;
+const UM_DIA = 24 * 60 * 60 * 1000;
+const PROIBIDOS_NO_NOME_DE_ARQUIVO = new Set([...'<>:"/|?*', String.fromCodePoint(0x5C)]);
+
+const diasSemUso = (atualizadaEm) => Math.floor((Date.now() - Date.parse(atualizadaEm)) / UM_DIA);
+
+// Nome de arquivo a partir do nome da Verificação, sem os caracteres que o Windows recusa.
+function nomeDeArquivo(nome) {
+  const limpo = [...String(nome)].map(ch => (PROIBIDOS_NO_NOME_DE_ARQUIVO.has(ch) || ch.codePointAt(0) < 32 ? ' ' : ch))
+    .join('').replace(/ +/g, ' ').trim().slice(0, 80);
+  return `${limpo || 'verificacao'}.conferidor`;
+}
+
+// Entrega o conteúdo como arquivo baixado pelo navegador (nada sai do computador).
+function baixar(nome, conteudo) {
+  const endereco = URL.createObjectURL(new Blob([conteudo], { type: 'application/octet-stream' }));
+  const link = criarElemento('a', { href: endereco, download: nome, hidden: true });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(endereco), 60000);
+}
 
 // A situação de cada Verificação, por extenso (cor + forma + palavra).
 function seloDaVerificacao(geral) {
@@ -1944,15 +2549,28 @@ function seloDaVerificacao(geral) {
   }
 }
 
-function linhaDaVerificacao(resumo, contexto, aoExcluir) {
+function linhaDaVerificacao(resumo, contexto, aoExcluir, mostrarMensagem) {
   const situacao = criarElemento('span', { classe: 'situacao' }, criarSelo('pendente', '…', 'Calculando a situação…'));
   const topicos = resumo.quantidadeDeTopicos === 1 ? '1 tópico' : `${resumo.quantidadeDeTopicos} tópicos`;
   const linha = criarElemento('li', { dados: { verificacao: resumo.id } },
     criarElemento('span', { classe: 'nome', texto: resumo.nome }),
     criarElemento('span', { classe: 'meta', texto: `${topicos} · atualizada em ${formatarDataHora(resumo.atualizadaEm)}` }),
     situacao,
+    diasSemUso(resumo.atualizadaEm) > DIAS_PARA_AVISAR
+      ? criarElemento('span', { classe: 'antiga', dados: { antiga: '' },
+        texto: `Sem uso há ${diasSemUso(resumo.atualizadaEm)} dias. Se não precisar mais dela, exclua: os textos ficam guardados neste computador.` })
+      : null,
     criarElemento('span', { classe: 'acoes' },
       criarElemento('a', { classe: 'botao', href: `#/verificacao/${encodeURIComponent(resumo.id)}`, texto: 'Abrir' }),
+      criarElemento('button', {
+        texto: 'Exportar',
+        aoClicar: async () => {
+          const { verificacao, problema } = await carregarComValidacao(contexto, resumo.id);
+          if (problema || !verificacao) { mostrarMensagem('Esta verificação está danificada e não pode ser exportada.'); return; }
+          baixar(nomeDeArquivo(verificacao.nome), montarExportacao([verificacao], agoraISO()));
+          mostrarMensagem(`Arquivo "${nomeDeArquivo(verificacao.nome)}" baixado. Ele leva os textos inteiros: guarde-o com o mesmo cuidado do documento.`);
+        },
+      }),
       criarElemento('button', {
         classe: 'botao-perigo',
         texto: 'Excluir',
@@ -2008,8 +2626,78 @@ function formularioNovaVerificacao(contexto) {
   return [abrir, formulario];
 }
 
+// Importar, exportar todas e apagar todas (pós-MVP).
+function acoesEmLote(contexto, resumos, mostrarMensagem) {
+  const entrada = criarElemento('input', {
+    type: 'file', accept: '.conferidor,.json', hidden: true, dados: { entradaImportar: '' },
+    aoMudar: async () => {
+      const arquivo = entrada.files && entrada.files[0];
+      entrada.value = '';
+      if (!arquivo) return;
+      let verificacoes;
+      try {
+        ({ verificacoes } = lerExportacao(await arquivo.text()));
+      } catch (erro) {
+        mostrarMensagem(erro && erro.paraPessoa ? erro.message : 'Não foi possível ler este arquivo.');
+        return;
+      }
+      let importadas = 0;
+      let mantidas = 0;
+      for (const v of verificacoes) {
+        if (await contexto.armazenamento.carregar(v.id) !== null) {
+          const substituir = window.confirm(`A verificação "${v.nome}" já existe neste navegador. Substituir pela do arquivo? (Cancelar mantém a que já está aqui.)`);
+          if (!substituir) { mantidas++; continue; }
+        }
+        await contexto.armazenamento.salvar(v);
+        importadas++;
+      }
+      const partes = [`${importadas} ${importadas === 1 ? 'verificação importada' : 'verificações importadas'}`];
+      if (mantidas) partes.push(`${mantidas} ${mantidas === 1 ? 'mantida' : 'mantidas'} como estava`);
+      contexto.avisar(`${partes.join(', ')}.`);
+      contexto.redesenhar();
+    },
+  });
+  const botoes = [
+    criarElemento('button', { type: 'button', texto: 'Importar de arquivo', aoClicar: () => entrada.click() }),
+    entrada,
+  ];
+  if (resumos.length) {
+    botoes.push(
+      criarElemento('button', {
+        type: 'button', texto: 'Exportar todas',
+        aoClicar: async () => {
+          const todas = [];
+          for (const r of resumos) {
+            const { verificacao, problema } = await carregarComValidacao(contexto, r.id);
+            if (verificacao && !problema) todas.push(verificacao);
+          }
+          if (!todas.length) { mostrarMensagem('Nenhuma verificação pôde ser exportada.'); return; }
+          const nome = `verificacoes-${agoraISO().slice(0, 10)}.conferidor`;
+          baixar(nome, montarExportacao(todas, agoraISO()));
+          const puladas = resumos.length - todas.length;
+          const fora = puladas ? ` (${puladas} danificada${puladas === 1 ? '' : 's'} ficou de fora)` : '';
+          mostrarMensagem(`Arquivo "${nome}" baixado com ${todas.length} ${todas.length === 1 ? 'verificação' : 'verificações'}${fora}. Ele leva os textos inteiros: guarde-o com o mesmo cuidado do documento.`);
+        },
+      }),
+      criarElemento('button', {
+        type: 'button', classe: 'botao-perigo', texto: 'Apagar todas',
+        aoClicar: async () => {
+          const ok = window.confirm(`Apagar as ${resumos.length} verificações e todos os textos delas deste navegador? Isso não pode ser desfeito.`);
+          if (!ok) return;
+          for (const r of resumos) await contexto.armazenamento.excluir(r.id);
+          contexto.avisar('Todas as verificações foram apagadas deste navegador.');
+          contexto.redesenhar();
+        },
+      }));
+  }
+  return criarElemento('div', { classe: 'acoes acoes-em-lote' }, botoes);
+}
+
 async function telaInicio(contexto) {
   const resumos = await contexto.armazenamento.listar();
+  const aviso = contexto.tomarAviso();
+  const mensagem = criarElemento('p', { classe: 'mensagem-inicio', role: 'status', 'aria-live': 'polite', texto: aviso || '' });
+  const mostrarMensagem = (texto) => { mensagem.textContent = texto; };
   const vazio = () => criarElemento('p', { classe: 'vazio', texto: 'Nenhuma verificação ainda. Crie a primeira para começar.' });
   const lista = criarElemento('ul', { classe: 'lista-verificacoes' });
   const area = criarElemento('div', {}, resumos.length ? lista : vazio());
@@ -2017,7 +2705,7 @@ async function telaInicio(contexto) {
     linha.remove();
     if (!lista.children.length) substituirConteudo(area, vazio());
   };
-  for (const resumo of resumos) lista.append(linhaDaVerificacao(resumo, contexto, aoExcluir));
+  for (const resumo of resumos) lista.append(linhaDaVerificacao(resumo, contexto, aoExcluir, mostrarMensagem));
 
   return criarElemento('section', { classe: 'tela', dados: { tela: 'inicio' } },
     criarElemento('header', {},
@@ -2028,8 +2716,16 @@ async function telaInicio(contexto) {
       : criarElemento('div', { classe: 'aviso-pagina', role: 'alert' },
         criarElemento('strong', { texto: 'Este navegador não está deixando guardar: suas verificações vão sumir ao fechar a página.' }),
         criarElemento('small', { texto: `Motivo informado pelo navegador: ${contexto.motivo}` })),
+    // Aberta pelo site (não como arquivo do computador), a extensão de IA alcança a ferramenta.
+    location.protocol === 'file:'
+      ? null
+      : criarElemento('div', { classe: 'aviso-pagina', dados: { avisoExtensao: '' } },
+        criarElemento('strong', { texto: 'A ferramenta está aberta como site: a extensão de IA do navegador pode alcançá-la.' }),
+        criarElemento('small', { texto: 'No Chrome, abra chrome://extensions, clique em Detalhes da extensão de IA e, em "Acesso ao site", escolha "Em sites específicos", deixando só o endereço do sistema do governo. Ou baixe a ferramenta e abra o arquivo no computador, que a extensão não alcança.' })),
     formularioNovaVerificacao(contexto),
     criarElemento('h2', { texto: 'Suas verificações', style: 'font-size:1.1rem;margin:20px 0 10px' }),
+    acoesEmLote(contexto, resumos, mostrarMensagem),
+    mensagem,
     area,
     contexto.guardaAoFechar
       ? criarElemento('p', { classe: 'aviso-fixo', texto: 'Suas verificações ficam guardadas neste navegador, neste computador. Para apagar, use Excluir.' })
@@ -2074,6 +2770,8 @@ function montarBlocos(achados) {
       const gravidade = GRAVIDADE[a.gravidade].posto >= GRAVIDADE[b.gravidade].posto ? a.gravidade : b.gravidade;
       blocos.push({ ...a, tipo: 'trocado', gravidade, depois: b.depois });
       i++;
+    } else if (a.tipo === 'renumerado' && !a.renumeracao.inicio) {
+      blocos.push({ ...a, doGrupo: true });
     } else {
       blocos.push({ ...a, semMudanca: a.gravidade === 'ok' || (a.gravidade === 'info' && a.tipo === 'identico') });
     }
@@ -2104,6 +2802,26 @@ function fraseDoComentario(trechos) {
   const tem = (tipo) => trechos.some(t => t.tipo === tipo && MARCADOR_DE_COMENTARIO.test(t.texto));
   if (tem('inserido') && tem('removido')) return 'Marcador de comentário trocado';
   return tem('inserido') ? 'Marcador de comentário acrescentado' : 'Marcador de comentário removido';
+}
+
+const listar = (nomes) => (nomes.length <= 1 ? nomes.join('') : `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`);
+
+// "“12 meses” ganhou negrito; “prazo” perdeu itálico e mudou de cor."
+function fraseDaFormatacao(mudancas) {
+  return `${mudancas.map((m) => {
+    const partes = [];
+    if (m.saiu.length) partes.push(`perdeu ${listar(m.saiu)}`);
+    if (m.entrou.length) partes.push(`ganhou ${listar(m.entrou)}`);
+    if (m.corMudou) partes.push('mudou de cor');
+    return `“${m.texto}” ${listar(partes)}`;
+  }).join('; ')}.`;
+}
+
+// "tabela 1, linha 3, coluna QUANTIDADE"; a linha do cabeçalho não tem nome de coluna.
+function fraseDaCelula(celula) {
+  if (!celula) return '';
+  const coluna = celula.nomeDaColuna ? `coluna ${celula.nomeDaColuna}` : `coluna ${celula.coluna}`;
+  return `tabela ${celula.tabela}, linha ${celula.linha}, ${coluna}`;
 }
 
 // Só o que mudou, para trechos curtos (ex.: célula "4→" que virou "5→"): começo e fim iguais
@@ -2195,22 +2913,36 @@ async function telaResultado(contexto, idDaVerificacao, idDoTopico) {
     blocos.push({ tipo: 'separador-final', gravidade: classificacao.separadorFinal.gravidade, antes: null, depois: null });
   }
 
+  // O item e, quando houver, a célula da tabela: "Item 1.1 (tabela 1, linha 3, coluna QUANTIDADE)".
+  const lugar = (b) => (b.celula ? `${rotulo(b.item)} (${fraseDaCelula(b.celula)})` : rotulo(b.item));
+  const tambemFormatacao = (b) => (b.formatacao && b.tipo !== 'formatacao' ? ` Também mudou a formatação: ${fraseDaFormatacao(b.formatacao)}` : '');
+
   function descricao(b) {
+    return descricaoSemFormatacao(b) + tambemFormatacao(b);
+  }
+
+  function descricaoSemFormatacao(b) {
     switch (b.tipo) {
       case 'novo': {
         const marcador = detectarMarcador(textosDepois[b.depois]);
         const onde = b.item === null || b.item === undefined ? 'no início do tópico' : `depois do ${noMeioDaFrase(rotulo(b.item))}`;
-        return marcador ? `${rotuloDoItem({ tipo: 'marcado', marcador })} novo, ${onde}`.replace(/^Item (\S+) novo/, 'Item novo $1') : `Texto novo, ${onde}`;
+        const celula = b.celula ? ` (${fraseDaCelula(b.celula)})` : '';
+        return (marcador ? `${rotuloDoItem({ tipo: 'marcado', marcador })} novo, ${onde}`.replace(/^Item (\S+) novo/, 'Item novo $1') : `Texto novo, ${onde}`) + celula;
       }
       case 'separador-final': return 'As linhas em branco no fim do tópico mudaram';
-      case 'alterado': return `${rotulo(b.item)} — Texto alterado`;
-      case 'sumiu': return `${rotulo(b.item)} — Parágrafo apagado`;
-      case 'trocado': return `${rotulo(b.item)} — Trocado por outro texto`;
-      case 'movido': return `${rotulo(b.item)} — Fora da ordem original: o texto é o mesmo, mudou de lugar.`;
-      case 'invisivel': return `${rotulo(b.item)} — ${fraseDoInvisivel(b.trechos)}`;
-      case 'comentario': return `${rotulo(b.item)} — ${fraseDoComentario(b.trechos)}`;
-      case 'separador': return `${rotulo(b.item)} — As linhas em branco antes deste parágrafo mudaram`;
-      default: return rotulo(b.item);
+      case 'alterado': return `${lugar(b)} — Texto alterado`;
+      case 'sumiu': return `${lugar(b)} — Parágrafo apagado`;
+      case 'trocado': return `${lugar(b)} — Trocado por outro texto`;
+      case 'movido': return `${lugar(b)} — Fora da ordem original: o texto é o mesmo, mudou de lugar.`;
+      case 'invisivel': return `${lugar(b)} — ${fraseDoInvisivel(b.trechos)}`;
+      case 'comentario': return `${lugar(b)} — ${fraseDoComentario(b.trechos)}`;
+      case 'separador': return `${lugar(b)} — As linhas em branco antes deste parágrafo mudaram`;
+      case 'formatacao': return `${lugar(b)} — Só a formatação mudou: ${fraseDaFormatacao(b.formatacao)}`;
+      case 'renumerado': {
+        const { primeiro, ultimo, delta } = b.renumeracao;
+        return `Itens ${primeiro} a ${ultimo} renumerados (${delta > 0 ? '+' : ''}${delta}): só o número mudou, o texto é o mesmo`;
+      }
+      default: return lugar(b);
     }
   }
 
@@ -2229,6 +2961,17 @@ async function telaResultado(contexto, idDaVerificacao, idDoTopico) {
         return [criarElemento('del', { texto: antes }), ' ', criarElemento('ins', { texto: depois })];
       }
       case 'separador-final': return [];
+      case 'formatacao': {
+        const texto = textosDepois[b.depois];
+        const partes = [];
+        let pos = 0;
+        for (const m of b.formatacao) {
+          partes.push(texto.slice(pos, m.inicio), criarElemento('mark', { classe: 'mudou-formatacao', texto: texto.slice(m.inicio, m.fim) }));
+          pos = m.fim;
+        }
+        partes.push(texto.slice(pos));
+        return partes.filter(x => x !== '');
+      }
       default: return b.trechos ? desenharTrechos(b.trechos) : [textosAntes[b.antes]];
     }
   }
@@ -2263,9 +3006,15 @@ async function telaResultado(contexto, idDaVerificacao, idDoTopico) {
       return;
     }
     fecharDobra();
+    if (b.doGrupo) {
+      folha.append(criarElemento('div', { classe: 'par grupo-renumerado', dados: { grupoRenumerado: '' } },
+        criarElemento('div', { classe: 'cabeca' }, `Mesma renumeração (itens ${b.renumeracao.primeiro} a ${b.renumeracao.ultimo})`),
+        criarElemento('div', { classe: 'texto-bloco' }, corpoDoBloco(b))));
+      return;
+    }
     contagem[b.gravidade]++;
     const g = GRAVIDADE[b.gravidade];
-    const podeCopiar = (b.gravidade === 'erro' || b.gravidade === 'aviso') && b.antes !== null && b.tipo !== 'movido';
+    const podeCopiar = (b.gravidade === 'erro' || b.gravidade === 'aviso') && b.antes !== null && b.tipo !== 'movido' && b.tipo !== 'formatacao';
     folha.append(criarElemento('div', { classe: `par ${b.gravidade}`, dados: { achado: b.gravidade }, tabindex: -1 },
       criarElemento('span', { classe: `forma-margem f-${b.gravidade}`, 'aria-hidden': 'true', texto: g.forma }),
       criarElemento('div', { classe: 'cabeca' }, g.palavra, criarElemento('span', { classe: 'onde', texto: ` · ${descricao(b)}` })),
@@ -2318,7 +3067,9 @@ async function telaResultado(contexto, idDaVerificacao, idDoTopico) {
         criarElemento('button', { type: 'button', texto: 'Imprimir', aoClicar: () => window.print() }),
         criarElemento('a', { classe: 'acao-discreta', href: rotaDoDepois, texto: 'Colar o texto depois de novo' }))),
     folha,
-    criarElemento('p', { classe: 'aviso-fixo', texto: 'Mudanças só de formatação (negrito, itálico) ainda não são detectadas.' }));
+    criarElemento('p', { classe: 'aviso-fixo', dados: { avisoFormatacao: '' }, texto: classificacao.formatacao.comparada
+      ? 'A formatação (negrito, itálico, sublinhado, tachado e cor) também foi comparada.'
+      : `A formatação não foi comparada neste tópico: ${classificacao.formatacao.motivo}. Só o texto foi conferido.` }));
 }
 
 return { telaResultado };
@@ -2626,7 +3377,7 @@ if (typeof document !== 'undefined') iniciar();
 
 return { iniciar };
 })();
-globalThis.Conferidor = Object.freeze({ encontrarAncoras, normalizar, semInvisiveis, detectarMarcador, agruparItens, descendentesDoItem, semMarcadoresDeComentario, compararPalavras, destacarInvisiveis, parearParagrafos, classificarTopico, dividirParagrafos, juntarParagrafos, statusDoTopico, statusDaVerificacao, sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao, exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao, criarArmazenamentoEmMemoria, criarArmazenamentoNoNavegador, abrirArmazenamento, criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId, carregarComValidacao, telaDanificada, MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, rotuloDoItem, criarMarcacao, telaAdicionarTopico, telaAjustarLiberacoes, telaConferirTopico, telaInicio, telaResultado, telaVerificacao, iniciar });
+globalThis.Conferidor = Object.freeze({ encontrarAncoras, normalizar, semInvisiveis, detectarMarcador, agruparItens, descendentesDoItem, semMarcadoresDeComentario, compararPalavras, destacarInvisiveis, parearParagrafos, classificarTopico, dividirParagrafos, juntarParagrafos, assinaturaDasMarcas, lerHtmlColado, diferencasDeFormatacao, completarComHtml, statusDoTopico, statusDaVerificacao, sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao, montarExportacao, lerExportacao, exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao, criarArmazenamentoEmMemoria, criarArmazenamentoNoNavegador, abrirArmazenamento, criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId, carregarComValidacao, telaDanificada, lerDocx, lerArquivoDeTexto, lerArquivoEscolhido, MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, criarEscolhaDeArquivo, rotuloDoItem, criarMarcacao, telaAdicionarTopico, telaAjustarLiberacoes, telaConferirTopico, telaInicio, telaResultado, telaVerificacao, iniciar });
 })();
 </script>
 </body>

@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; form-action 'none'; base-uri 'none'; script-src 'sha256-C3l3Y3J0eacp12OWkAFZ7Bvh5HAonH7zGliSdxHDMtQ='; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; form-action 'none'; base-uri 'none'; script-src 'sha256-N9TVX23Sa6KM/bQJWNHIHKTCGv9KNz7wZ5KyqD6p3GI='; style-src 'unsafe-inline'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Conferidor de Alterações</title>
 <style>/* Sistema visual aprovado na rodada de design (T4.0; AGENTS.md, Design; ferramentas/design/rodada-2.html).
@@ -184,11 +184,33 @@ mark.mudou-formatacao { background: var(--alerta-fundo); color: var(--texto); ou
 .mensagem-inicio { margin: 0 0 10px; }
 .mensagem-inicio:empty { display: none; }
 .lista-verificacoes .antiga { grid-column: 1; color: var(--alerta); font-size: 0.9rem; }
+
+/* Manual de uso: o ícone "?" no topo de todas as telas, e a tela do manual. */
+.topo { max-width: 1000px; margin: 0 auto; padding: 10px 16px 0; display: flex; justify-content: flex-end; }
+.topo + main .tela { padding-top: 4px; }
+.botao-ajuda { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--acao-primaria); background: var(--superficie); color: var(--acao-primaria); font-weight: 700; font-size: 1.15rem; text-decoration: none; }
+.botao-ajuda:hover { background: var(--acao-primaria); color: var(--acao-texto); }
+@media print { .topo, .botao-ajuda { display: none !important; } }
+.tela-ajuda .voltar { margin-bottom: 12px; }
+.indice-ajuda { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 16px; margin: 18px 0 8px; }
+.indice-ajuda ol { margin: 0; padding-left: 22px; columns: 2 260px; }
+.indice-ajuda li { break-inside: avoid; }
+.indice-ajuda .acao-discreta { text-align: left; }
+.parte-ajuda { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 16px 20px; margin: 16px 0; overflow-wrap: anywhere; }
+.parte-ajuda h2 { font-size: 1.3rem; margin-bottom: 8px; scroll-margin-top: 12px; }
+.parte-ajuda h3 { font-size: 1.05rem; margin: 16px 0 6px; }
+.parte-ajuda p, .parte-ajuda ul, .parte-ajuda ol { margin: 0 0 10px; }
+.parte-ajuda li { margin-bottom: 6px; }
+.sinal-ajuda { display: grid; grid-template-columns: minmax(0, 240px) 1fr; gap: 6px 14px; align-items: start; margin: 8px 0; }
+.sinal-ajuda p { margin: 0; }
+@media (max-width: 560px) { .sinal-ajuda { grid-template-columns: 1fr; } }
+.sinal-ajuda > .selo { justify-self: start; }
 </style>
 </head>
 <body>
+<div class="topo"><a class="botao-ajuda" href="#/ajuda" data-botao-ajuda aria-label="Manual de uso" title="Manual de uso">?</a></div>
 <main id="app"><p class="tela">Abrindo…</p></main>
-<footer class="rodape">Versão 1.1.0</footer>
+<footer class="rodape">Versão 1.2.0</footer>
 <script>'use strict';
 (() => {
 // ---- src/dominio/ancoras.js ----
@@ -2350,6 +2372,234 @@ async function telaAdicionarTopico(contexto, idDaVerificacao) {
 
 return { telaAdicionarTopico };
 })();
+// ---- src/interface/telas/ajuda.js ----
+const { telaAjuda } = (() => {
+// Manual de uso (pedido do arquiteto em 20/10/2026): aberto pelo ícone "?" de todas as telas.
+// Explica cada função: o que faz, como fazer e o que não faz. Texto para leigo, sem jargão;
+// os nomes de botões e mensagens são os mesmos que aparecem nas telas.
+
+const p = (...partes) => criarElemento('p', {}, ...partes);
+const b = (texto) => criarElemento('strong', { texto });
+const lista = (...itens) => criarElemento('ul', {}, itens.map(i => criarElemento('li', {}, ...[].concat(i))));
+const passos = (...itens) => criarElemento('ol', {}, itens.map(i => criarElemento('li', {}, ...[].concat(i))));
+const nota = (...partes) => criarElemento('p', { classe: 'aviso-fixo' }, ...partes);
+const subtitulo = (texto) => criarElemento('h3', { texto });
+
+// Um sinal do resultado: o selo como aparece na tela e o que ele quer dizer.
+const sinal = (classe, forma, palavra, ...explicacao) => criarElemento('div', { classe: 'sinal-ajuda' },
+  criarSelo(classe, forma, palavra), criarElemento('div', {}, ...explicacao));
+
+const PARTES = [
+  ['para-que-serve', 'Para que serve', () => [
+    p('O Conferidor mostra, tópico por tópico, se a IA mexeu ', b('só no que você liberou'), '. Você guarda o texto de cada tópico como estava antes da IA, diz o que ela pode alterar, deixa a IA trabalhar no sistema do governo e depois cola o texto como ficou. A ferramenta compara os dois e aponta tudo o que mudou fora do liberado.'),
+    p('Ela pega mudanças que passam despercebidas na leitura: uma vírgula, um número trocado, um parágrafo apagado, um espaço a mais, um item que mudou de lugar, um negrito que sumiu.'),
+    nota('É uma conferência, não é prova: o resultado ajuda você a revisar, mas não serve como documento oficial, não tem assinatura nem carimbo de tempo. E a ferramenta não devolve nada ao sistema: quem corrige é você, lá no sistema.'),
+  ]],
+  ['como-funciona', 'Como funciona, em poucas palavras', () => [
+    passos(
+      ['Crie uma ', b('verificação'), ' (uma rodada de trabalho com a IA, por exemplo "TR Limpeza – ajustes de outubro").'],
+      ['Adicione os ', b('tópicos'), ' que a IA vai mexer: para cada um, copie o texto do sistema e cole aqui ', b('antes'), ' de pedir à IA.'],
+      ['Marque o que a IA ', b('pode alterar'), ' em cada tópico. O resto fica protegido.'],
+      'Peça à IA para fazer o trabalho no sistema.',
+      ['Volte aqui e cole o texto de cada tópico ', b('depois'), ' que a IA terminou.'],
+      ['Veja o ', b('resultado'), ': o tópico inteiro, com cada mudança marcada no lugar e a situação por extenso.'],
+    ),
+    p('A comparação é feita pelo conteúdo, não pela posição: se a IA inserir um parágrafo no começo, os seguintes não são acusados por terem "andado".'),
+  ]],
+  ['passo-a-passo', 'Passo a passo', () => [
+    subtitulo('1. Criar uma verificação'),
+    p('Na tela inicial, clique em ', b('Nova verificação'), ', dê um nome e clique em ', b('Criar verificação'), '. Use um nome que você reconheça depois: o documento e a rodada.'),
+    subtitulo('2. Adicionar um tópico (o texto antes)'),
+    passos(
+      ['Na verificação, clique em ', b('Adicionar tópico'), '.'],
+      ['No sistema do governo, abra o tópico, ', b('clique dentro do texto'), ' e aperte ', b('Ctrl+A'), ' (seleciona o texto do tópico) e depois ', b('Ctrl+C'), ' (copia).'],
+      ['Volte à ferramenta e aperte ', b('Ctrl+V'), '. Pode colar em qualquer lugar da tela.'],
+      ['Confira o nome do tópico (a ferramenta sugere um, a partir do texto), marque o que a IA pode alterar e clique em ', b('Salvar tópico'), '.'],
+    ),
+    p('Faça isso para cada tópico ', b('antes'), ' de pedir à IA. Se colar o texto errado, use ', b('Colar de novo'), '. Em vez de colar, também dá para abrir um arquivo (veja "Abrir arquivo em vez de colar").'),
+    nota('Clicar dentro do texto antes do Ctrl+A é importante: sem isso, o Ctrl+A seleciona a página inteira do sistema. Se o texto colado tiver mais de 3.000 parágrafos, a ferramenta avisa que provavelmente veio a página toda.'),
+    subtitulo('3. Colar o texto depois'),
+    p('Depois que a IA terminou, na verificação, clique em ', b('Colar texto depois'), ' no tópico. No sistema, abra o mesmo tópico, clique dentro do texto, ', b('Ctrl+A'), ', ', b('Ctrl+C'), ', volte e ', b('Ctrl+V'), '. O resultado aparece logo em seguida.'),
+    p('Colar de novo depois ', b('substitui'), ' o texto depois anterior (por exemplo, depois que você corrigiu algo no sistema). A ferramenta avisa quando o tópico já tem um texto depois.'),
+    p('Se o texto colado não parecer ser do tópico (menos de 30% dos parágrafos do texto antes foram encontrados nele), a ferramenta pergunta antes de gravar: ', b('Colar de novo'), ' ou ', b('É este mesmo, mostrar resultado'), '. Isso evita gravar por engano o texto de outra tela.'),
+    subtitulo('4. Ver o resultado'),
+    p('Abre sozinho depois de colar o texto depois, ou pela verificação, em ', b('Ver resultado'), '. Veja "Como ler o resultado".'),
+  ]],
+  ['liberacoes', 'Marcar o que a IA pode alterar', () => [
+    p('A liberação é feita ', b('por parágrafo'), '. Tudo o que você não marcar fica protegido, e qualquer mudança ali é acusada.'),
+    lista(
+      ['A ', b('caixa no título de um item'), ' (por exemplo "Item 1.2") libera o item inteiro de uma vez.'],
+      ['A ', b('caixa ao lado de um parágrafo'), ' libera só aquele parágrafo, inclusive uma única linha ou célula de tabela.'],
+      ['Item com parte liberada mostra ', b('"parcialmente liberado: 3 de 57 linhas"'), '.'],
+      ['Quando um item inteiro está liberado e tem subitens, aparece ', b('Liberar também os subitens'), '.'],
+      ['Itens muito grandes (como tabelas) vêm dobrados: ', b('Mostrar as outras N linhas'), ' abre o resto.'],
+      ['O contador no alto diz quantos parágrafos estão liberados: "3 de 600 parágrafos liberados para a IA alterar".'],
+    ),
+    subtitulo('Ajustar as liberações depois'),
+    p('Enquanto o texto depois ', b('ainda não foi colado'), ', dá para mudar o que está liberado: na tela de colar o texto depois, clique em ', b('Ajustar liberações'), ', marque ou desmarque e clique em ', b('Salvar liberações'), '.'),
+    nota('Depois que o texto depois foi colado, as liberações ficam fixas. É de propósito: com o resultado à vista, liberar justamente o que a IA mexeu faria o tópico aparecer como íntegro. Se precisar mesmo mudar, remova o tópico (Organizar tópicos › Remover) e adicione de novo.'),
+    p('Liberar diz só ', b('onde'), ' a IA pode mexer. A ferramenta mostra o que mudou na parte liberada, mas não julga se a mudança está correta: essa leitura continua sendo sua.'),
+  ]],
+  ['resultado', 'Como ler o resultado', () => [
+    p('No alto, uma frase resume o tópico (por exemplo "1 alteração não autorizada e 2 avisos neste tópico") e uma barra mostra a contagem com os mesmos sinais usados no texto.'),
+    p('Abaixo vem o ', b('tópico inteiro, na ordem do texto'), ', como o controle de alterações do Word:'),
+    lista(
+      ['O que ', b('saiu'), ' aparece riscado, em vermelho.'],
+      ['O que ', b('entrou'), ' aparece sublinhado, em azul.'],
+      ['Cada parágrafo com mudança ganha uma faixa colorida, um sinal na margem (✕, ! ou i) e uma descrição por extenso: o item, a célula da tabela quando houver, e o que aconteceu.'],
+      ['Em volta de cada mudança ficam 3 parágrafos sem mudança, para dar contexto. O que está mais longe vem dobrado: "··· 12 parágrafos sem mudança (mostrar) ···".'],
+      ['Espaços especiais só aparecem quando mudaram: ⍽ é espaço que não quebra linha, → é tabulação, · é espaço comum.'],
+    ),
+    subtitulo('Botões do resultado'),
+    lista(
+      [b('Próximo problema'), ': leva a cada alteração não autorizada ou aviso, um por clique; depois do último, volta ao primeiro.'],
+      [b('Copiar texto original'), ': aparece nas alterações e avisos. Copia o texto como era antes, para você colar no sistema e desfazer a mudança. Copia só o texto, sem formatação. Se o navegador não deixar copiar, a ferramenta mostra o texto para você selecionar e apertar Ctrl+C.'],
+      [b('Imprimir'), ': imprime o tópico anotado, com a data e a hora da impressão. Também dá para salvar como PDF pela janela de impressão.'],
+      [b('Colar o texto depois de novo'), ': para conferir outra vez depois de corrigir no sistema.'],
+    ),
+    p('No fim do resultado, uma linha diz se a formatação também foi comparada ou, se não foi, por quê.'),
+  ]],
+  ['tipos', 'Cada tipo de mudança', () => [
+    p('Cada mudança tem um de três sinais, sempre com cor, forma e palavra:'),
+    sinal('erro', '✕', 'Alteração não autorizada', p('O texto de um parágrafo protegido mudou ou sumiu. É o que você precisa corrigir.')),
+    sinal('aviso', '!', 'Aviso', p('Algo mudou num parágrafo protegido sem mudar as palavras (espaço, ordem, formatação, número) ou entrou texto novo fora do liberado. Olhe com atenção; pode ou não ser um problema.')),
+    sinal('info', 'i', 'Parte liberada', p('Mudança num parágrafo que você liberou. Não é problema; está ali para você conferir.')),
+    subtitulo('Os tipos, um por um'),
+    lista(
+      [b('Texto alterado'), ' (✕): palavras, números ou pontuação mudaram. O trecho que saiu e o que entrou aparecem no lugar.'],
+      [b('Parágrafo apagado'), ' (✕): o parágrafo sumiu do texto depois.'],
+      [b('Trocado por outro texto'), ' (✕): um parágrafo sumiu e outro entrou no mesmo lugar (por exemplo, uma célula de tabela "4" que virou "5").'],
+      [b('Item novo / Texto novo'), ' (!): entrou texto que não existia, fora do liberado. A descrição diz onde: "Item novo 1.10, depois do item 1.9". Texto novo logo depois de um parágrafo liberado é ', b('Parte liberada'), ' (i), a não ser que abra um item com outro número.'],
+      [b('Fora da ordem original'), ' (!): o texto é o mesmo, mas mudou de lugar.'],
+      [b('Espaços ou caracteres invisíveis'), ' (!): o texto visível é o mesmo, mas mudou um espaço, uma tabulação ou um caractere que não aparece na tela. A descrição diz o que saiu e o que entrou.'],
+      [b('Linhas em branco'), ' (!): mudaram as linhas em branco antes de um parágrafo (ou no fim do tópico). A linha em branco conta como parte do parágrafo que vem depois dela.'],
+      [b('Marcador de comentário'), ' (!): um marcador como [A1], que o sistema põe onde há comentário, foi acrescentado, removido ou trocado. A ferramenta não vê o conteúdo do comentário.'],
+      [b('Só a formatação mudou'), ' (!): o texto é o mesmo, mas mudou negrito, itálico, sublinhado, tachado ou cor. A descrição diz o quê: "“12 meses” ganhou negrito", com o trecho marcado.'],
+      [b('Itens renumerados'), ' (!): dois ou mais itens seguidos em que só o número mudou, todos do mesmo jeito (por exemplo, depois de inserir um item: 1.3 virou 1.4, 1.4 virou 1.5...). Vira um aviso só: "Itens 1.3 a 1.5 renumerados (+1)"; os outros itens do grupo aparecem no lugar, sem contar de novo. Um número mudado sozinho continua ', b('Alteração não autorizada'), '.'],
+    ),
+    p('Quando o parágrafo está numa tabela e o texto foi colado com formatação, a descrição diz a célula: "tabela 1, linha 3, coluna QUANTIDADE" (o nome da coluna vem da primeira linha da tabela).'),
+  ]],
+  ['situacoes', 'Situação dos tópicos e da verificação', () => [
+    subtitulo('Cada tópico'),
+    sinal('pendente', '…', 'Aguardando o texto depois', p('Falta colar o texto depois. Botão: ', b('Colar texto depois'), '.')),
+    sinal('pendente', '?', 'Confirmar se é este tópico', p('O texto depois parece de outro tópico. Abra e escolha colar de novo ou confirmar.')),
+    sinal('erro', '✕', 'Alteração não autorizada', p('Pelo menos uma mudança fora do liberado.')),
+    sinal('aviso', '!', 'Com avisos', p('Nenhuma alteração não autorizada, mas há avisos para olhar.')),
+    sinal('ok', '✓', 'Íntegro', p('Nada mudou fora do que você liberou, no texto colado.')),
+    subtitulo('A verificação'),
+    p('A tela da verificação mostra uma frase de resumo ("Em andamento: 3 de 5 tópicos conferidos"), o quadro de progresso com a quantidade de tópicos em cada situação e, em cada tópico, a situação por extenso e a próxima ação.'),
+    p(b('Todos os tópicos íntegros'), ' só aparece quando todos os tópicos foram conferidos e nenhum tem alteração ou aviso.'),
+    nota('A conferência cobre só os tópicos que você adicionou. Mudanças da IA em outros tópicos do documento não aparecem aqui.'),
+  ]],
+  ['arquivos', 'Abrir arquivo em vez de colar', () => [
+    p('Nas telas de adicionar tópico e de colar o texto depois, embaixo da área de colar, há ', b('abra um arquivo (.docx, .txt ou .md)'), '. O conteúdo do arquivo entra como se tivesse sido colado. Dá para misturar: colar o antes e abrir o depois de um arquivo, ou o contrário.'),
+    lista(
+      [b('.docx (Word)'), ': entram o texto, as tabelas e a formatação (negrito, itálico, sublinhado, tachado e cor). Se o documento tiver ', b('alterações controladas pendentes'), ', ele é recusado: no Word, vá em Revisão, aceite ou rejeite todas, salve e abra de novo. Assim a conferência é sempre do texto final.'],
+      [b('Numeração automática do Word'), ': os números que o Word coloca sozinho não fazem parte do texto. A ferramenta avisa, e esses números não entram na conferência.'],
+      [b('.txt e .md'), ': só o texto, sem formatação. Nesse caso a formatação não é comparada.'],
+      [b('.doc'), ' (Word antigo) e outros formatos (como PDF) não são aceitos: no Word, salve como .docx.'],
+    ),
+    nota('Comparar um texto colado do sistema com um arquivo do Word pode mostrar diferenças de espaço e de linhas em branco que vêm de cada programa, e não da IA. Para a conferência mais limpa, use a mesma origem no antes e no depois.'),
+  ]],
+  ['guardar', 'Onde ficam os dados, exportar e importar', () => [
+    p('As verificações ficam guardadas ', b('no navegador, neste computador'), '. Fechar o navegador, desligar o computador ou mover o arquivo da ferramenta de pasta não apaga nada.'),
+    lista(
+      [b('Outro navegador ou outro computador'), ' não vê as suas verificações. A ferramenta aberta pelo painel (site) e a aberta pelo arquivo baixado também guardam em lugares separados.'],
+      [b('Limpar os dados de navegação'), ' do navegador apaga as verificações. Se forem importantes, exporte antes.'],
+      ['Se o navegador não deixar guardar, a tela inicial avisa em vermelho: "Este navegador não está deixando guardar".'],
+    ),
+    subtitulo('Exportar e importar'),
+    lista(
+      [b('Exportar'), ' (em cada verificação, na tela inicial) baixa um arquivo .conferidor com a verificação inteira: textos, liberações e tópicos. ', b('Exportar todas'), ' baixa todas num arquivo só.'],
+      [b('Importar de arquivo'), ' traz de volta um arquivo .conferidor, neste ou em outro computador. Se a verificação já existir aqui, a ferramenta pergunta antes: OK substitui pela do arquivo, Cancelar mantém a que já está aqui.'],
+      ['Arquivo danificado ou alterado à mão é recusado inteiro: nada é importado pela metade.'],
+    ),
+    nota('O arquivo exportado leva os textos inteiros do documento. Guarde-o com o mesmo cuidado do documento.'),
+    subtitulo('Apagar'),
+    lista(
+      [b('Excluir'), ' (em cada verificação) apaga aquela verificação e seus textos. Pergunta antes.'],
+      [b('Apagar todas'), ' apaga todas as verificações deste navegador. Pergunta antes, e não dá para desfazer.'],
+      ['Verificação sem uso há mais de 30 dias ganha o aviso "Sem uso há N dias", sugerindo excluir. A ferramenta ', b('nunca apaga sozinha'), '.'],
+    ),
+    p('O resultado não é guardado: ele é recalculado toda vez que você abre. Por isso uma melhoria da ferramenta vale também para verificações antigas.'),
+  ]],
+  ['organizar', 'Organizar, renomear, imprimir e excluir', () => [
+    lista(
+      [b('Renomear a verificação'), ': na tela da verificação, ', b('Renomear'), ' ao lado do nome.'],
+      [b('Organizar tópicos'), ': mostra, em cada tópico, ', b('Renomear'), ', ', b('Subir'), ', ', b('Descer'), ' e ', b('Remover'), ' (pergunta antes). Clique em ', b('Concluir organização'), ' ao terminar.'],
+      [b('Imprimir'), ': a tela da verificação imprime o resumo de todos os tópicos; o resultado imprime o tópico anotado.'],
+      [b('Excluir'), ' e ', b('Apagar todas'), ': na tela inicial (veja a parte anterior).'],
+    ),
+  ]],
+  ['nao-faz', 'O que a ferramenta não faz', () => [
+    p('Para não haver surpresa, estes são os limites:'),
+    lista(
+      [b('Não corrige nada no sistema'), ' e não devolve texto para lá. Ela só lê o que você cola e compara.'],
+      [b('Não é prova'), ': não tem assinatura digital nem carimbo de tempo, e quem tem acesso a este computador pode mexer nos dados guardados.'],
+      [b('Não lê o sistema sozinha'), ': só confere o que você colou ou abriu. Se o texto antes foi colado depois que a IA já tinha mexido, a mudança não aparece.'],
+      [b('Não confere tópicos que você não adicionou.')],
+      [b('Não diz se a mudança na parte liberada está certa'), ': só mostra o que mudou.'],
+      [b('Não vê'), ' imagens, anexos, cabeçalho e rodapé, nem o conteúdo de comentários (só o marcador, como [A1]).'],
+      [b('Formatação'), ': compara só negrito, itálico, sublinhado, tachado e cor. Não compara fonte, tamanho da letra, alinhamento, recuo, espaçamento nem estilos de parágrafo do Word. E só compara quando o antes e o depois vieram com formatação (colados do sistema ou abertos de .docx) e a formatação corresponde ao texto; senão, o resultado diz "A formatação não foi comparada neste tópico" e confere só o texto.'],
+      [b('Numeração automática do Word'), ' não entra na conferência (no sistema do governo, a numeração é digitada e é conferida normalmente).'],
+      [b('Não junta dados entre computadores ou navegadores'), ' sozinha: use Exportar e Importar de arquivo.'],
+      [b('Foi feita e testada no Chrome.'), ' Em outros navegadores pode funcionar, mas não é garantido.'],
+    ),
+  ]],
+  ['seguranca', 'Segurança e privacidade', () => [
+    lista(
+      [b('Sem internet'), ': a ferramenta não envia nada para lugar nenhum. Ela tem uma trava que impede o navegador de fazer qualquer conexão a partir dela.'],
+      [b('O texto colado nunca vira código'), ': mesmo que o documento tenha algo malicioso, ele aparece só como texto.'],
+      [b('Dados no computador'), ': ficam no navegador, sem senha. Qualquer outra página aberta como arquivo do computador neste mesmo navegador pode lê-los; não abra arquivos de página de origem desconhecida e exclua o que não precisar mais.'],
+    ),
+    subtitulo('A extensão de IA'),
+    p('A extensão de IA que edita o sistema não deve alcançar a ferramenta, senão poderia mexer na própria conferência.'),
+    lista(
+      [b('Aberta pelo arquivo baixado'), ': a extensão não alcança, desde que em chrome://extensions, nos Detalhes dela, "Permitir acesso a URLs de arquivo" esteja desligado.'],
+      [b('Aberta pelo painel (site)'), ': a tela inicial avisa. Em chrome://extensions, nos Detalhes da extensão, em "Acesso ao site", escolha "Em sites específicos" e deixe só o endereço do sistema do governo.'],
+    ),
+  ]],
+  ['problemas', 'Mensagens e problemas comuns', () => [
+    lista(
+      [b('"A colagem veio sem texto"'), ': o Ctrl+C não pegou o texto. Clique dentro do texto no sistema, Ctrl+A, Ctrl+C e cole de novo.'],
+      [b('"Este texto é muito grande para um tópico"'), ': provavelmente veio a página inteira. Clique dentro do texto do tópico antes do Ctrl+A. Se estiver certo, pode seguir.'],
+      [b('"Este texto não parece ser do tópico"'), ': confira se abriu o tópico certo no sistema. Se for ele mesmo (por exemplo, a IA reescreveu quase tudo), confirme.'],
+      [b('"Esta verificação foi alterada em outra aba"'), ': a mesma verificação estava aberta em duas abas; a gravação desta aba valeu. Prefira usar uma aba só.'],
+      [b('"O espaço deste navegador para a ferramenta acabou"'), ': exclua verificações antigas (exporte antes, se precisar) e tente de novo.'],
+      [b('"Verificação danificada"'), ': os dados guardados dela estão estragados e ela não abre. Exclua pela tela inicial; se tiver exportado, importe de novo.'],
+      [b('"Verificação não encontrada"'), ': ela foi excluída ou está guardada em outro navegador (ou na versão site/arquivo).'],
+      [b('"A formatação não foi comparada neste tópico"'), ': o antes ou o depois veio sem formatação (por exemplo, de um .txt) ou a formatação não correspondeu ao texto. O texto foi conferido normalmente.'],
+      [b('O .docx foi recusado'), ': tem alterações controladas pendentes, é um .doc antigo ou não é um documento do Word válido. A mensagem diz qual.'],
+      [b('O resultado acusa muita coisa sem motivo aparente'), ': veja se o antes e o depois vieram da mesma origem (os dois colados do sistema, ou os dois de .docx) e se o antes foi colado antes de a IA trabalhar.'],
+    ),
+  ]],
+];
+
+async function telaAjuda(contexto) {
+  const secoes = PARTES.map(([id, titulo, conteudo]) => {
+    const cabecalho = criarElemento('h2', { id: `ajuda-${id}`, tabindex: -1, texto: titulo });
+    return { titulo, cabecalho, secao: criarElemento('section', { classe: 'parte-ajuda' }, cabecalho, conteudo()) };
+  });
+  const indice = criarElemento('nav', { classe: 'indice-ajuda', 'aria-label': 'Partes do manual', dados: { indiceAjuda: '' } },
+    criarElemento('ol', {}, secoes.map(({ titulo, cabecalho }) => criarElemento('li', {},
+      criarElemento('button', { type: 'button', classe: 'acao-discreta', texto: titulo,
+        aoClicar: () => { cabecalho.scrollIntoView({ block: 'start' }); cabecalho.focus({ preventScroll: true }); } })))));
+  // Volta para a tela de onde a pessoa abriu o manual; aberto direto, vai ao início.
+  const voltar = () => {
+    const anterior = contexto.rotaAnterior;
+    if (anterior && anterior !== '#/ajuda') location.hash = anterior;
+    else contexto.navegar('/');
+  };
+  return criarElemento('section', { classe: 'tela tela-ajuda', dados: { tela: 'ajuda' } },
+    criarElemento('button', { type: 'button', classe: 'voltar acao-discreta', texto: '← Voltar', aoClicar: voltar }),
+    criarElemento('h1', { texto: 'Manual de uso' }),
+    criarElemento('p', { classe: 'descricao', texto: 'Tudo o que a ferramenta faz, como usar cada parte e o que ela não faz.' }),
+    indice,
+    secoes.map(s => s.secao));
+}
+
+return { telaAjuda };
+})();
 // ---- src/interface/telas/ajustar-liberacoes.js ----
 const { telaAjustarLiberacoes } = (() => {
 // Tela Ajustar liberações (T5.3): mudar o que a IA pode alterar num tópico já criado, só enquanto
@@ -3278,6 +3528,7 @@ function escolherTela(contexto, partes) {
   // Endereço malformado (ex.: %E0 solto) vira um id que não existe: a tela diz "não encontrada".
   const decodificar = (p) => { try { return decodeURIComponent(p); } catch { return "#endereço-inválido"; } };
   const [raiz, id, parte, topico, final] = partes.map(decodificar);
+  if (raiz === 'ajuda') return telaAjuda(contexto);
   if (raiz !== 'verificacao' || !id) return telaInicio(contexto);
   if (!parte) return telaVerificacao(contexto, id);
   if (parte === 'novo-topico') return telaAdicionarTopico(contexto, id);
@@ -3328,6 +3579,8 @@ async function iniciar() {
   async function desenhar() {
     const este = ++desenhoAtual;
     const rota = location.hash || '#/';
+    // A tela de onde a pessoa veio (o manual usa no "Voltar").
+    if (rota !== rotaDesenhada) contexto.rotaAnterior = rotaDesenhada;
     const partes = (rota.replace(/^#/, '') || '/').split('/').filter(Boolean);
     const foco = lembrarFoco();
     const limpezasAnteriores = aoSairDaTela;
@@ -3377,7 +3630,7 @@ if (typeof document !== 'undefined') iniciar();
 
 return { iniciar };
 })();
-globalThis.Conferidor = Object.freeze({ encontrarAncoras, normalizar, semInvisiveis, detectarMarcador, agruparItens, descendentesDoItem, semMarcadoresDeComentario, compararPalavras, destacarInvisiveis, parearParagrafos, classificarTopico, dividirParagrafos, juntarParagrafos, assinaturaDasMarcas, lerHtmlColado, diferencasDeFormatacao, completarComHtml, statusDoTopico, statusDaVerificacao, sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao, montarExportacao, lerExportacao, exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao, criarArmazenamentoEmMemoria, criarArmazenamentoNoNavegador, abrirArmazenamento, criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId, carregarComValidacao, telaDanificada, lerDocx, lerArquivoDeTexto, lerArquivoEscolhido, MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, criarEscolhaDeArquivo, rotuloDoItem, criarMarcacao, telaAdicionarTopico, telaAjustarLiberacoes, telaConferirTopico, telaInicio, telaResultado, telaVerificacao, iniciar });
+globalThis.Conferidor = Object.freeze({ encontrarAncoras, normalizar, semInvisiveis, detectarMarcador, agruparItens, descendentesDoItem, semMarcadoresDeComentario, compararPalavras, destacarInvisiveis, parearParagrafos, classificarTopico, dividirParagrafos, juntarParagrafos, assinaturaDasMarcas, lerHtmlColado, diferencasDeFormatacao, completarComHtml, statusDoTopico, statusDaVerificacao, sugerirNomeDeTopico, criarVerificacao, renomearVerificacao, adicionarTopico, renomearTopico, colarAntes, definirLiberados, colarDepois, confirmarTopicoDiferente, removerTopico, moverTopico, validarVerificacao, conferirTopico, resumirVerificacao, montarExportacao, lerExportacao, exigirFormaDeVerificacao, resumirParaLista, ordenarResumos, sobrescreveOutraVersao, criarArmazenamentoEmMemoria, criarArmazenamentoNoNavegador, abrirArmazenamento, criarElemento, substituirConteudo, criarSelo, formatarDataHora, agoraISO, linhaDeImpressao, novoId, carregarComValidacao, telaDanificada, lerDocx, lerArquivoDeTexto, lerArquivoEscolhido, MENSAGEM_COLAGEM_SEM_TEXTO, criarZonaDeColar, ouvirColagem, criarEscolhaDeArquivo, rotuloDoItem, criarMarcacao, telaAdicionarTopico, telaAjuda, telaAjustarLiberacoes, telaConferirTopico, telaInicio, telaResultado, telaVerificacao, iniciar });
 })();
 </script>
 </body>

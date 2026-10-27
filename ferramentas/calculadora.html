@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Juros Compostos</title>
+    <title>Calculadora Financeira</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
@@ -16,6 +16,7 @@
             --light-text-color: #777;
             --border-color: #e1e1e1;
             --success-color: #27ae60;
+            --danger-color: #c0392b;
         }
 
         * {
@@ -30,7 +31,7 @@
             color: var(--text-color);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
             padding: 20px;
         }
@@ -52,10 +53,34 @@
             font-weight: 500;
         }
 
+        .tabs {
+            display: flex;
+            background-color: var(--secondary-color);
+            padding: 0 20px;
+            gap: 4px;
+        }
+
+        .tabs button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px 6px 0 0;
+            background-color: rgba(255, 255, 255, 0.12);
+            color: white;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .tabs button.active {
+            background-color: var(--card-background);
+            color: var(--secondary-color);
+        }
+
         .simulator-body {
             padding: 25px;
         }
-        
+
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -76,6 +101,12 @@
             gap: 8px;
         }
 
+        .form-group small {
+            margin-top: 5px;
+            color: var(--light-text-color);
+            font-size: 0.8rem;
+        }
+
         .input-group {
             display: flex;
         }
@@ -84,33 +115,39 @@
             padding: 10px 12px;
             background-color: #eee;
             border: 1px solid var(--border-color);
-            border-right: none;
-            border-radius: 4px 0 0 4px;
+            white-space: nowrap;
         }
 
-        .form-control, .form-select {
+        .input-group span:first-child { border-right: none; border-radius: 4px 0 0 4px; }
+        .input-group span:last-child { border-left: none; border-radius: 0 4px 4px 0; }
+
+        .form-control {
             width: 100%;
+            min-width: 0;
             padding: 10px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
             font-size: 1rem;
+            font-family: inherit;
             transition: border-color 0.2s;
         }
-        
-        .input-group .form-control { border-radius: 0; }
-        .input-group .form-control:first-child { border-radius: 4px 0 0 4px; }
-        .input-group span:last-child { border-radius: 0 4px 4px 0; border-right: 1px solid var(--border-color); border-left: none; }
-        .input-group .form-select { border-left: none; border-radius: 0 4px 4px 0; background-color: #f8f9fa; }
 
-        .form-control:focus, .form-select:focus {
+        .input-group span:first-child + .form-control { border-radius: 0 4px 4px 0; }
+        .input-group .form-control:first-child:not(:last-child) { border-radius: 4px 0 0 4px; }
+
+        .form-control:focus {
             outline: none;
             border-color: var(--primary-color);
         }
+
+        .form-control.invalid { border-color: var(--danger-color); }
+        .form-group .erro { color: var(--danger-color); }
 
         .actions {
             display: flex;
             justify-content: flex-end;
             align-items: center;
+            flex-wrap: wrap;
             margin-top: 25px;
             gap: 15px;
         }
@@ -121,30 +158,33 @@
             border-radius: 4px;
             font-size: 1rem;
             font-weight: 500;
+            font-family: inherit;
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
         }
-        
+
         .btn:active { transform: scale(0.98); }
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-primary:hover { background-color: #2980b9; }
         .btn-light { background-color: #f0f0f0; color: var(--text-color); border: 1px solid var(--border-color); }
         .btn-light:hover { background-color: #e0e0e0; }
 
-        .results-section, .table-section {
+        .results-section, .table-section, .step {
             margin-top: 30px;
             border-top: 1px solid var(--border-color);
             padding-top: 25px;
         }
-        
-        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .section-title { font-size: 1.1rem; font-weight: 500; color: var(--secondary-color); border-left: 4px solid var(--primary-color); padding-left: 10px; margin: 0; }
-        
-        .view-toggle button { padding: 6px 12px; border: 1px solid var(--border-color); background-color: #f0f0f0; cursor: pointer; font-size: 0.85rem; color: var(--secondary-color); }
+
+        .step:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+
+        .table-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .section-title { font-size: 1.1rem; font-weight: 500; color: var(--secondary-color); border-left: 4px solid var(--primary-color); padding-left: 10px; margin: 0 0 15px; }
+        .table-header .section-title { margin: 0; }
+
+        .view-toggle button { padding: 6px 12px; border: 1px solid var(--border-color); background-color: #f0f0f0; cursor: pointer; font-size: 0.85rem; font-family: inherit; color: var(--secondary-color); }
         .view-toggle button:first-child { border-radius: 4px 0 0 4px; border-right: none; }
         .view-toggle button:last-child { border-radius: 0 4px 4px 0; }
         .view-toggle button.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-        .view-toggle button:disabled { background-color: #e9ecef; cursor: not-allowed; color: #adb5bd; }
 
         .help-tooltip {
             position: relative;
@@ -166,6 +206,7 @@
             background-color: #555;
             color: #fff;
             text-align: left;
+            font-weight: 400;
             border-radius: 6px;
             padding: 10px;
             position: absolute;
@@ -178,17 +219,8 @@
             font-size: 12px;
             line-height: 1.5;
         }
-        .help-tooltip .tooltip-text::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #555 transparent transparent transparent;
-        }
-        .help-tooltip:hover .tooltip-text {
+        .help-tooltip:hover .tooltip-text,
+        .help-tooltip:focus .tooltip-text {
             visibility: visible;
             opacity: 1;
         }
@@ -197,357 +229,659 @@
         .result-card { background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: 5px; padding: 15px; text-align: center; }
         .result-card.net-value { background-color: #eafaf1; border-color: var(--success-color); }
         .result-card h3 { font-size: 0.9rem; font-weight: 500; color: var(--light-text-color); margin-bottom: 8px; }
-        .result-card p { font-size: 1.5rem; font-weight: 700; color: var(--secondary-color); }
+        .result-card p { font-size: 1.4rem; font-weight: 700; color: var(--secondary-color); }
         .result-card.net-value p { color: var(--success-color); }
-        
+        .result-card small { display: block; margin-top: 4px; color: var(--light-text-color); font-size: 0.8rem; }
+
         .calculation-summary { font-size: 0.85rem; color: var(--light-text-color); margin-top: 25px; padding: 12px; background-color: #f8f9fa; border-radius: 4px; text-align: center; border: 1px solid var(--border-color); word-wrap: break-word; }
         .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 0; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: right; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        th:first-child, td:first-child { text-align: left; }
         thead { background-color: #f8f9fa; }
         th { font-weight: 500; color: var(--secondary-color); }
         tbody tr:last-child td { border-bottom: none; }
         tbody tr:hover { background-color: #f1f8ff; }
+        tr.atual td { color: var(--light-text-color); }
+        tr.melhor td { font-weight: 700; }
+
+        .info { line-height: 1.7; }
+        .info strong { color: var(--secondary-color); }
+        .instrucao { margin: 20px 0; padding: 12px 15px; background-color: #f1f8ff; border-left: 4px solid var(--primary-color); border-radius: 4px; line-height: 1.6; }
+
+        .oferta { margin-top: 15px; padding: 15px; border: 1px solid var(--border-color); border-radius: 5px; background-color: #f8f9fa; }
+        .oferta-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .oferta-topo strong { color: var(--secondary-color); }
+        .oferta-topo button { border: none; background: none; color: var(--light-text-color); font-size: 0.85rem; font-family: inherit; cursor: pointer; text-decoration: underline; }
+        .oferta dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 15px; font-size: 0.95rem; }
+        .oferta dt { color: var(--light-text-color); }
+        .economia { color: var(--success-color); }
+        .custo { color: var(--danger-color); }
+
+        .veredito { margin-top: 20px; padding: 15px; border-radius: 5px; font-weight: 500; border: 1px solid; }
+        .veredito.sim { background-color: #eafaf1; border-color: var(--success-color); color: #1e8449; }
+        .veredito.nao { background-color: #fdedec; border-color: var(--danger-color); color: var(--danger-color); }
+        .nota { margin-top: 10px; font-size: 0.85rem; color: var(--light-text-color); }
+
         .hidden { display: none; }
+
+        @media (max-width: 480px) {
+            body { padding: 0; }
+            .container { border-radius: 0; }
+            .tabs { padding: 0 10px; }
+            .tabs button { flex: 1; padding: 12px 8px; }
+            .simulator-body { padding: 20px 16px; }
+            .actions .btn { flex: 1; }
+            th, td { padding: 10px 8px; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">SIMULADOR DE JUROS COMPOSTOS</div>
-        <div class="simulator-body">
-            <form id="calculatorForm">
+        <div class="header">CALCULADORA FINANCEIRA</div>
+        <div class="tabs">
+            <button type="button" data-aba="investimento" class="active">Investimento</button>
+            <button type="button" data-aba="refinanciamento">Refinanciamento</button>
+        </div>
+
+        <!-- ======================================================= INVESTIMENTO -->
+        <div class="simulator-body" id="aba-investimento">
+            <form id="formInvestimento" novalidate>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="initialValue">Valor Inicial</label>
+                        <label for="selic">Selic meta ao ano</label>
                         <div class="input-group">
-                            <span>R$</span>
-                            <input type="text" id="initialValue" class="form-control" value="1.000,00" style="border-radius: 0 4px 4px 0;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="interestRate">Taxa de Juros</label>
-                        <div class="input-group">
-                            <input type="text" id="interestRate" class="form-control" value="14,90">
+                            <input type="text" inputmode="decimal" id="selic" class="form-control" placeholder="ex.: 15">
                             <span>%</span>
-                            <select id="rateType" class="form-select">
-                                <option value="annual" selected>Anual</option>
-                                <option value="monthly">Mensal</option>
-                            </select>
-                        </div>
-                    </div>
-                     <div class="form-group">
-                        <label for="period">Período</label>
-                        <div class="input-group">
-                            <input type="number" id="period" class="form-control" value="30" style="border-radius: 4px 0 0 4px;">
-                            <select id="periodType" class="form-select">
-                                <option value="days" selected>Dias</option>
-                                <option value="months">Meses</option>
-                                <option value="years">Anos</option>
-                            </select>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="monthlyInvestment">Investimento Mensal</label>
-                        <div class="input-group">
-                            <span>R$</span>
-                            <input type="text" id="monthlyInvestment" class="form-control" value="0,00" style="border-radius: 0 4px 4px 0;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                         <label for="incomeTax">
-                            Imposto de Renda (sobre o lucro)
-                            <span class="help-tooltip">?
-                                <span class="tooltip-text">
-                                    <strong>Tabela Regressiva IR:</strong><br>
-                                    - 22,5% (até 180 dias)<br>
-                                    - 20,0% (de 181 a 360 dias)<br>
-                                    - 17,5% (de 361 a 720 dias)<br>
-                                    - 15,0% (acima de 720 dias)
-                                </span>
+                        <label for="cdi">
+                            CDI ao ano
+                            <span class="help-tooltip" tabindex="0">?
+                                <span class="tooltip-text">O CDI costuma ficar cerca de 0,10 ponto abaixo da Selic meta. Deixe em branco para usar o valor sugerido.</span>
                             </span>
                         </label>
                         <div class="input-group">
-                            <input type="text" id="incomeTax" class="form-control" value="22,50">
-                            <span style="border-radius: 0 4px 4px 0;">%</span>
+                            <input type="text" inputmode="decimal" id="cdi" class="form-control">
+                            <span>%</span>
+                        </div>
+                        <small id="cdiDica">Em branco usa Selic − 0,10</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="percentual">Quanto o investimento paga</label>
+                        <div class="input-group">
+                            <input type="text" inputmode="decimal" id="percentual" class="form-control" value="100">
+                            <span>% do CDI</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inicial">Aporte inicial</label>
+                        <div class="input-group">
+                            <span>R$</span>
+                            <input type="text" inputmode="numeric" id="inicial" class="form-control moeda" value="0,00">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="mensal">Aporte mensal</label>
+                        <div class="input-group">
+                            <span>R$</span>
+                            <input type="text" inputmode="numeric" id="mensal" class="form-control moeda" value="0,00">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="anos">Prazo</label>
+                        <div class="input-group">
+                            <input type="text" inputmode="decimal" id="anos" class="form-control" placeholder="ex.: 2,5">
+                            <span>anos</span>
                         </div>
                     </div>
                 </div>
                 <div class="actions">
-                    <button type="button" class="btn btn-light" id="clearBtn">LIMPAR</button>
-                    <button type="submit" class="btn btn-primary" id="calculateBtn">CALCULAR</button>
+                    <button type="button" class="btn btn-light" id="limparInvestimento">LIMPAR</button>
+                    <button type="submit" class="btn btn-primary">CALCULAR</button>
                 </div>
             </form>
 
-            <div id="results" class="hidden">
+            <div id="resultadoInvestimento" class="hidden">
                 <div class="results-section">
-                    <h2 class="section-title">RESULTADO FINAL</h2>
+                    <h2 class="section-title">RESULTADO NO FIM DO PRAZO</h2>
                     <div class="results-grid">
+                        <div class="result-card"><h3>Total aplicado</h3><p id="rAplicado"></p></div>
+                        <div class="result-card"><h3>Total bruto</h3><p id="rBruto"></p></div>
+                        <div class="result-card"><h3>Rendimento bruto</h3><p id="rRendBruto"></p></div>
                         <div class="result-card">
-                            <h3>Total em Juros</h3>
-                            <p id="totalInterestResult">R$ 0,00</p>
+                            <h3>IR
+                                <span class="help-tooltip" tabindex="0">?
+                                    <span class="tooltip-text">
+                                        <strong>Tabela regressiva, por aporte:</strong><br>
+                                        - 22,5% (até 180 dias)<br>
+                                        - 20,0% (de 181 a 360 dias)<br>
+                                        - 17,5% (de 361 a 720 dias)<br>
+                                        - 15,0% (acima de 720 dias)<br>
+                                        Cada aporte paga a alíquota do tempo em que ficou aplicado.
+                                    </span>
+                                </span>
+                            </h3>
+                            <p id="rIr"></p>
                         </div>
-                        <div class="result-card">
-                            <h3>Valor Total Investido</h3>
-                            <p id="totalInvestedResult">R$ 0,00</p>
-                        </div>
-                         <div class="result-card">
-                            <h3>Valor Total Bruto</h3>
-                            <p id="finalValueResult">R$ 0,00</p>
-                        </div>
-                        <div class="result-card net-value">
-                            <h3>Valor Total Líquido</h3>
-                            <p id="netValueResult">R$ 0,00</p>
-                        </div>
+                        <div class="result-card net-value"><h3>Total líquido</h3><p id="rLiquido"></p></div>
+                        <div class="result-card net-value"><h3>Rendimento líquido</h3><p id="rRendLiquido"></p><small id="rRendPct"></small></div>
                     </div>
-                    <div class="calculation-summary" id="calcSummary"></div>
+                    <div class="calculation-summary" id="resumoInvestimento"></div>
                 </div>
 
                 <div class="table-section">
                     <div class="table-header">
-                        <h2 class="section-title">TABELA DE EVOLUÇÃO</h2>
+                        <h2 class="section-title">EVOLUÇÃO (SE RESGATAR NO FIM DE CADA PERÍODO)</h2>
                         <div class="view-toggle">
-                            <button id="viewByPeriodBtn" class="active">Ver por Mês/Ano</button>
-                            <button id="viewByDayBtn">Ver por Dia</button>
+                            <button type="button" data-visao="mes" class="active">Por mês</button>
+                            <button type="button" data-visao="ano">Por ano</button>
                         </div>
                     </div>
                     <div class="table-responsive">
-                        <table id="evolutionTable">
+                        <table>
                             <thead>
                                 <tr>
-                                    <th id="periodHeader">Ano</th>
-                                    <th>Total Investido</th>
-                                    <th>Total Juros</th>
-                                    <th>Total Acumulado (Bruto)</th>
-                                    <th>Total Líquido</th>
+                                    <th id="cabecalhoPeriodo">Mês</th>
+                                    <th>Aplicado</th>
+                                    <th>Bruto</th>
+                                    <th>IR</th>
+                                    <th>Líquido</th>
                                 </tr>
                             </thead>
-                            <tbody id="evolutionTableBody"></tbody>
+                            <tbody id="tabelaEvolucao"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- ==================================================== REFINANCIAMENTO -->
+        <div class="simulator-body hidden" id="aba-refinanciamento">
+            <form id="formAtual" class="step" novalidate>
+                <h2 class="section-title">PASSO 1 — EMPRÉSTIMO ATUAL</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="quitacao">Valor para quitar hoje</label>
+                        <div class="input-group">
+                            <span>R$</span>
+                            <input type="text" inputmode="numeric" id="quitacao" class="form-control moeda" value="0,00">
+                        </div>
+                        <small>Antecipando todas as parcelas</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="parcelaAtual">Valor da parcela atual</label>
+                        <div class="input-group">
+                            <span>R$</span>
+                            <input type="text" inputmode="numeric" id="parcelaAtual" class="form-control moeda" value="0,00">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="restantes">Parcelas restantes</label>
+                        <input type="text" inputmode="numeric" id="restantes" class="form-control">
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn btn-light" id="recomecar">RECOMEÇAR</button>
+                    <button type="submit" class="btn btn-primary">CONTINUAR</button>
+                </div>
+                <div id="infoAtual" class="results-section info hidden"></div>
+            </form>
+
+            <div id="passo2" class="step hidden">
+                <h2 class="section-title">PASSO 2 — OFERTAS DO BANCO</h2>
+                <div class="instrucao" id="instrucao"></div>
+                <div id="listaOfertas"></div>
+                <form id="formOferta" novalidate>
+                    <div class="form-grid" style="margin-top: 20px;">
+                        <div class="form-group">
+                            <label for="ofertaN" id="rotuloOferta">Oferta 1 — nº de parcelas</label>
+                            <input type="text" inputmode="numeric" id="ofertaN" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="ofertaP">Valor da parcela</label>
+                            <div class="input-group">
+                                <span>R$</span>
+                                <input type="text" inputmode="numeric" id="ofertaP" class="form-control moeda" value="0,00">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button type="button" class="btn btn-light" id="encerrar">ENCERRAR E VER RESUMO</button>
+                        <button type="submit" class="btn btn-primary">ADICIONAR OFERTA</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="resumoRefin" class="step hidden">
+                <h2 class="section-title">RESUMO</h2>
+                <div id="conteudoResumo"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('calculatorForm');
-            const clearBtn = document.getElementById('clearBtn');
-            const resultsDiv = document.getElementById('results');
-            const viewByPeriodBtn = document.getElementById('viewByPeriodBtn');
-            const viewByDayBtn = document.getElementById('viewByDayBtn');
-            let currentTableView = 'period';
+        const DIAS_UTEIS_ANO = 252;
+        const DIAS_UTEIS_MES = 21;
+        const DIAS_CORRIDOS_MES = 30;
+        const DIFERENCA_SELIC_CDI = 0.10; // CDI costuma ficar ~0,10 p.p. abaixo da Selic meta
+        const CHAVE_STORAGE = 'calculadoraFinanceira';
 
-            const parseCurrency = (value) => {
-                if(typeof value !== 'string') value = String(value);
-                return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+        // ------------------------------------------------------------ utilidades
+
+        const $ = (id) => document.getElementById(id);
+
+        /** Lê número aceitando formato BR (31.092,26) ou ponto decimal (31092.26). */
+        function lerNumero(id, { padrao = null, inteiro = false, minimo = null } = {}) {
+            const campo = $(id);
+            const grupo = campo.closest('.form-group');
+            let txt = campo.value.trim();
+            let valor;
+            if (!txt && padrao !== null) {
+                valor = padrao;
+            } else {
+                if (txt.includes(',')) txt = txt.replace(/\./g, '').replace(',', '.');
+                valor = txt === '' ? NaN : Number(txt);
+                if (inteiro && !Number.isInteger(valor)) valor = NaN;
+                if (minimo !== null && valor < minimo) valor = NaN;
             }
-            const formatCurrency = (value) => {
-                return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-            };
+            const invalido = Number.isNaN(valor);
+            campo.classList.toggle('invalid', invalido);
+            let aviso = grupo.querySelector('.erro');
+            if (invalido && !aviso) {
+                aviso = document.createElement('small');
+                aviso.className = 'erro';
+                aviso.textContent = 'Valor inválido.';
+                grupo.appendChild(aviso);
+            } else if (!invalido && aviso) {
+                aviso.remove();
+            }
+            return valor;
+        }
 
-            const generateTable = (finalValues) => {
-                const initialValue = parseCurrency(document.getElementById('initialValue').value);
-                const monthlyInvestment = parseCurrency(document.getElementById('monthlyInvestment').value);
-                let interestRate = parseCurrency(document.getElementById('interestRate').value) / 100;
-                let period = parseInt(document.getElementById('period').value) || 0;
-                const rateType = document.getElementById('rateType').value;
-                const periodType = document.getElementById('periodType').value;
-                const incomeTaxRate = parseCurrency(document.getElementById('incomeTax').value) / 100;
+        const lerTodos = (leituras) => {
+            const valores = leituras.map(([id, opcoes]) => lerNumero(id, opcoes));
+            return valores.some(Number.isNaN) ? null : valores;
+        };
 
-                const annualRate = rateType === 'annual' ? interestRate : Math.pow(1 + interestRate, 12) - 1;
-                
-                let totalMonths;
-                if (periodType === 'years') totalMonths = period * 12;
-                else if (periodType === 'months') totalMonths = period;
-                else totalMonths = period / 30.417; // Conversão aproximada de dias para meses
+        const formatoBrl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+        const brl = (v) => formatoBrl.format(v);
+        const pct = (v, casas = 2) => (v * 100).toFixed(casas).replace('.', ',') + '%';
+        const numBr = (v) => String(v).replace('.', ',');
 
-                const displayInYears = periodType === 'years' && totalMonths >= 12;
+        // Máscara de moeda: os dígitos entram pelos centavos (igual à calculadora antiga)
+        function mascaraMoeda(e) {
+            let digitos = e.target.value.replace(/\D/g, '');
+            if (digitos === '') digitos = '0';
+            const valor = parseInt(digitos, 10) / 100;
+            e.target.value = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor);
+        }
+        document.querySelectorAll('.moeda').forEach(campo => campo.addEventListener('input', mascaraMoeda));
 
-                const tableBody = document.getElementById('evolutionTableBody');
-                const periodHeader = document.getElementById('periodHeader');
-                tableBody.innerHTML = '';
+        // ------------------------------------------------- memória no navegador
 
-                if (currentTableView === 'period') {
-                    periodHeader.textContent = displayInYears ? 'Ano' : 'Mês';
-                    const monthlyRate = Math.pow(1 + annualRate, 1/12) - 1;
+        const CAMPOS_SALVOS = ['selic', 'cdi', 'percentual', 'inicial', 'mensal', 'anos', 'quitacao', 'parcelaAtual', 'restantes'];
 
-                    let currentBalance = initialValue;
-                    let totalInvested = initialValue;
-                    
-                    for (let i = 1; i <= Math.ceil(totalMonths); i++) {
-                        let isLastPeriod = (i === Math.ceil(totalMonths));
+        let estado = {
+            aba: 'investimento',
+            visao: 'mes',
+            campos: {},
+            investimentoCalculado: false,
+            atualConfirmado: false,
+            ofertas: [],
+            resumoAberto: false,
+        };
 
-                        currentBalance += currentBalance * monthlyRate;
-                        currentBalance += monthlyInvestment;
-                        totalInvested += monthlyInvestment;
-                        
-                        if ((displayInYears && i % 12 === 0) || !displayInYears || isLastPeriod) {
-                            const periodLabel = displayInYears ? i / 12 : i;
-                            const profit = isLastPeriod ? finalValues.profit : currentBalance - totalInvested;
-                            const accumulated = isLastPeriod ? finalValues.accumulated : currentBalance;
-                            const taxAmount = profit > 0 ? profit * incomeTaxRate : 0;
-                            const netValue = accumulated - taxAmount;
+        function salvar() {
+            CAMPOS_SALVOS.forEach(id => { estado.campos[id] = $(id).value; });
+            try { localStorage.setItem(CHAVE_STORAGE, JSON.stringify(estado)); } catch (e) { /* sem storage: segue sem lembrar */ }
+        }
 
-                            tableBody.innerHTML += `
-                                <tr>
-                                    <td>${periodLabel}</td>
-                                    <td>${formatCurrency(isLastPeriod ? finalValues.invested : totalInvested)}</td>
-                                    <td>${formatCurrency(profit)}</td>
-                                    <td>${formatCurrency(accumulated)}</td>
-                                    <td>${formatCurrency(netValue)}</td>
-                                </tr>`;
-                        }
-                    }
-                } else {
-                    periodHeader.textContent = 'Dia';
-                    const dailyRate = Math.pow(1 + annualRate, 1 / 365) - 1;
-                    
-                    let totalDays;
-                    if (periodType === 'years') totalDays = period * 365;
-                    else if (periodType === 'months') totalDays = Math.round(period * 30.417);
-                    else totalDays = period;
-
-                    let currentBalance = initialValue;
-                    let totalInvested = initialValue;
-                    
-                    for (let d = 1; d <= totalDays; d++) {
-                        let isLastDay = (d === totalDays);
-
-                        currentBalance += currentBalance * dailyRate;
-
-                        if (d % 30 === 0 && d < totalDays && monthlyInvestment > 0) {
-                            currentBalance += monthlyInvestment;
-                            totalInvested += monthlyInvestment;
-                        }
-                        
-                        const profit = isLastDay ? finalValues.profit : currentBalance - totalInvested;
-                        const accumulated = isLastDay ? finalValues.accumulated : currentBalance;
-                        const taxAmount = profit > 0 ? profit * incomeTaxRate : 0;
-                        const netValue = accumulated - taxAmount;
-                        
-                        tableBody.innerHTML += `
-                            <tr>
-                                <td>${d}</td>
-                                <td>${formatCurrency(isLastDay ? finalValues.invested : totalInvested)}</td>
-                                <td>${formatCurrency(profit)}</td>
-                                <td>${formatCurrency(accumulated)}</td>
-                                <td>${formatCurrency(netValue)}</td>
-                            </tr>`;
-                    }
-                }
-            };
-
-            const calculate = () => {
-                const initialValue = parseCurrency(document.getElementById('initialValue').value);
-                const monthlyInvestment = parseCurrency(document.getElementById('monthlyInvestment').value);
-                let interestRate = parseCurrency(document.getElementById('interestRate').value) / 100;
-                let period = parseInt(document.getElementById('period').value) || 0;
-                const rateType = document.getElementById('rateType').value;
-                const periodType = document.getElementById('periodType').value;
-                const incomeTaxRate = parseCurrency(document.getElementById('incomeTax').value) / 100;
-                
-                const annualRate = rateType === 'annual' ? interestRate : Math.pow(1 + interestRate, 12) - 1;
-                
-                let totalMonths;
-                if (periodType === 'years') totalMonths = period * 12;
-                else if (periodType === 'months') totalMonths = period;
-                else totalMonths = period / 30.417; // Período em meses para o cálculo final
-
-                if (totalMonths > 60) {
-                    viewByDayBtn.disabled = true;
-                    if(currentTableView === 'day') {
-                        currentTableView = 'period';
-                        viewByPeriodBtn.classList.add('active');
-                        viewByDayBtn.classList.remove('active');
-                    }
-                } else {
-                    viewByDayBtn.disabled = false;
-                }
-                
-                const monthlyRate = Math.pow(1 + annualRate, 1/12) - 1;
-                let finalAccumulatedValue;
-                const fvInitial = initialValue * Math.pow(1 + monthlyRate, totalMonths);
-                const fvMonthly = monthlyInvestment > 0 ? monthlyInvestment * ( (Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate ) : 0;
-                finalAccumulatedValue = fvInitial + fvMonthly;
-                
-                const finalTotalInvested = initialValue + (monthlyInvestment * Math.ceil(totalMonths));
-                const finalProfit = finalAccumulatedValue - finalTotalInvested;
-                
-                const finalTaxAmount = finalProfit > 0 ? finalProfit * incomeTaxRate : 0;
-                const finalNetValue = finalAccumulatedValue - finalTaxAmount;
-
-                document.getElementById('totalInterestResult').textContent = formatCurrency(finalProfit);
-                document.getElementById('totalInvestedResult').textContent = formatCurrency(finalTotalInvested);
-                document.getElementById('finalValueResult').textContent = formatCurrency(finalAccumulatedValue);
-                document.getElementById('netValueResult').textContent = formatCurrency(finalNetValue);
-
-                const summary = document.getElementById('calcSummary');
-                summary.innerHTML = `
-                    <strong>Cálculo executado com:</strong>
-                    Valor Inicial: ${formatCurrency(initialValue)} | 
-                    Invest. Mensal: ${formatCurrency(monthlyInvestment)} | 
-                    Taxa: ${(interestRate * 100).toFixed(2).replace('.',',')}% (${rateType === 'annual' ? 'Anual' : 'Mensal'}) | 
-                    Período: ${period} ${periodType === 'years' ? 'Anos' : (periodType === 'months' ? 'Meses' : 'Dias')}
-                `;
-                
-                resultsDiv.classList.remove('hidden');
-                generateTable({
-                    accumulated: finalAccumulatedValue,
-                    invested: finalTotalInvested,
-                    profit: finalProfit
-                });
-            };
-            
-            form.addEventListener('submit', (e) => { e.preventDefault(); calculate(); });
-            clearBtn.addEventListener('click', () => { form.reset(); resultsDiv.classList.add('hidden'); });
-            
-            viewByPeriodBtn.addEventListener('click', () => {
-                currentTableView = 'period';
-                viewByPeriodBtn.classList.add('active');
-                viewByDayBtn.classList.remove('active');
-                calculate();
+        function carregar() {
+            try {
+                const salvo = JSON.parse(localStorage.getItem(CHAVE_STORAGE));
+                if (salvo) estado = { ...estado, ...salvo };
+            } catch (e) { /* storage vazio ou bloqueado */ }
+            CAMPOS_SALVOS.forEach(id => {
+                if (estado.campos[id] !== undefined) $(id).value = estado.campos[id];
             });
+        }
 
-            viewByDayBtn.addEventListener('click', () => {
-                currentTableView = 'day';
-                viewByDayBtn.classList.add('active');
-                viewByPeriodBtn.classList.remove('active');
-                calculate();
-            });
-            
-            // CORRIGIDO: Nova função de máscara para porcentagens
-            const applyPercentageMask = (e) => {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value === '') {
-                    e.target.value = '0,00';
-                    return;
+        document.querySelectorAll('input').forEach(campo => campo.addEventListener('input', salvar));
+
+        // ------------------------------------------------------------------ abas
+
+        function mostrarAba(aba) {
+            estado.aba = aba;
+            document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.aba === aba));
+            $('aba-investimento').classList.toggle('hidden', aba !== 'investimento');
+            $('aba-refinanciamento').classList.toggle('hidden', aba !== 'refinanciamento');
+        }
+
+        document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+            mostrarAba(b.dataset.aba);
+            salvar();
+        }));
+
+        // ------------------------------------------------------------ investimento
+
+        function aliquotaIr(dias) {
+            if (dias <= 180) return 0.225;
+            if (dias <= 360) return 0.20;
+            if (dias <= 720) return 0.175;
+            return 0.15;
+        }
+
+        /**
+         * Aporte inicial no dia 0; aportes mensais no início de cada mês seguinte
+         * (meses - 1 aportes); resgate total no fim do prazo.
+         * Cada aporte tem a própria alíquota de IR, conforme o tempo aplicado.
+         * IOF ignorado (todo aporte fica ao menos 30 dias aplicado).
+         * Devolve uma linha por mês, como se o resgate fosse no fim daquele mês;
+         * a última linha é o resultado no fim do prazo.
+         */
+        function simularInvestimento(aporteInicial, aporteMensal, taxaAnual, percentual, meses) {
+            const taxaDia = (Math.pow(1 + taxaAnual, 1 / DIAS_UTEIS_ANO) - 1) * percentual;
+            const fatorMes = Math.pow(1 + taxaDia, DIAS_UTEIS_MES);
+
+            // Cada lote: [valor, mês em que entrou]
+            const lotes = [];
+            if (aporteInicial > 0) lotes.push([aporteInicial, 0]);
+            if (aporteMensal > 0) {
+                for (let k = 1; k < meses; k++) lotes.push([aporteMensal, k]);
+            }
+
+            const evolucao = [];
+            for (let mes = 1; mes <= meses; mes++) {
+                let aplicado = 0, bruto = 0, ir = 0;
+                for (const [valor, entrada] of lotes) {
+                    if (entrada >= mes) continue;
+                    const m = mes - entrada;
+                    const valorBruto = valor * Math.pow(fatorMes, m);
+                    aplicado += valor;
+                    bruto += valorBruto;
+                    ir += (valorBruto - valor) * aliquotaIr(m * DIAS_CORRIDOS_MES);
                 }
-                value = parseInt(value, 10).toString(); // Remove zeros à esquerda
-                
-                if (value.length < 3) {
-                    value = value.padStart(3, '0');
-                }
-                
-                value = value.slice(0, value.length - 2) + ',' + value.slice(value.length - 2);
-                e.target.value = value;
+                evolucao.push({ mes, aplicado, bruto, ir, liquido: bruto - ir });
+            }
+
+            const fim = evolucao[evolucao.length - 1];
+            return {
+                ...fim,
+                rendBruto: fim.bruto - fim.aplicado,
+                rendLiquido: fim.liquido - fim.aplicado,
+                nAportesMensais: aporteMensal > 0 ? meses - 1 : 0,
+                evolucao,
             };
+        }
 
-            const applyCurrencyMask = (e) => {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value === '') value = '0';
-                const numberValue = parseInt(value, 10) / 100;
-                e.target.value = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numberValue);
-            };
+        function atualizarDicaCdi() {
+            const selic = lerSilencioso('selic');
+            $('cdi').placeholder = selic === null ? '' : 'sugerido: ' + numBr(cdiSugerido(selic));
+        }
 
-            document.getElementById('interestRate').addEventListener('input', applyPercentageMask);
-            document.getElementById('incomeTax').addEventListener('input', applyPercentageMask);
-            document.querySelectorAll('#initialValue, #monthlyInvestment').forEach(input => {
-                input.addEventListener('input', applyCurrencyMask);
-            });
+        const cdiSugerido = (selic) => Math.round(Math.max(0, selic - DIFERENCA_SELIC_CDI) * 100) / 100;
 
-            calculate();
+        function lerSilencioso(id) {
+            let txt = $(id).value.trim();
+            if (txt.includes(',')) txt = txt.replace(/\./g, '').replace(',', '.');
+            const valor = txt === '' ? NaN : Number(txt);
+            return Number.isNaN(valor) || valor < 0 ? null : valor;
+        }
+
+        $('selic').addEventListener('input', atualizarDicaCdi);
+
+        let ultimoResultado = null;
+
+        function calcularInvestimento() {
+            const selic = lerNumero('selic', { minimo: 0 });
+            const lidos = lerTodos([
+                ['cdi', { padrao: Number.isNaN(selic) ? 0 : cdiSugerido(selic), minimo: 0 }],
+                ['percentual', { padrao: 100, minimo: 0 }],
+                ['inicial', { padrao: 0, minimo: 0 }],
+                ['mensal', { padrao: 0, minimo: 0 }],
+                ['anos', { minimo: 0.09 }],
+            ]);
+            if (Number.isNaN(selic) || !lidos) return false;
+
+            const [cdi, percentual, inicial, mensal, anos] = lidos;
+            const meses = Math.max(1, Math.round(anos * 12));
+            const r = simularInvestimento(inicial, mensal, cdi / 100, percentual / 100, meses);
+            const rendPct = r.aplicado ? r.rendLiquido / r.aplicado : 0;
+
+            $('rAplicado').textContent = brl(r.aplicado);
+            $('rBruto').textContent = brl(r.bruto);
+            $('rRendBruto').textContent = brl(r.rendBruto);
+            $('rIr').textContent = brl(r.ir);
+            $('rLiquido').textContent = brl(r.liquido);
+            $('rRendLiquido').textContent = brl(r.rendLiquido);
+            $('rRendPct').textContent = pct(rendPct) + ' sobre o aplicado';
+
+            $('resumoInvestimento').innerHTML =
+                `<strong>Calculado com:</strong> CDI ${numBr(cdi)}% a.a. | ${numBr(percentual)}% do CDI | ` +
+                `Prazo: ${meses} meses | Aportes mensais: ${r.nAportesMensais}`;
+
+            ultimoResultado = r;
+            desenharEvolucao();
+            $('resultadoInvestimento').classList.remove('hidden');
+            return true;
+        }
+
+        function desenharEvolucao() {
+            if (!ultimoResultado) return;
+            const porAno = estado.visao === 'ano';
+            const linhas = ultimoResultado.evolucao;
+            $('cabecalhoPeriodo').textContent = porAno ? 'Ano' : 'Mês';
+            document.querySelectorAll('.view-toggle button').forEach(b => b.classList.toggle('active', b.dataset.visao === estado.visao));
+
+            $('tabelaEvolucao').innerHTML = linhas
+                .filter(l => !porAno || l.mes % 12 === 0 || l.mes === linhas.length)
+                .map(l => {
+                    const rotulo = porAno ? numBr(Math.round(l.mes / 12 * 100) / 100) : l.mes;
+                    return `<tr><td>${rotulo}</td><td>${brl(l.aplicado)}</td><td>${brl(l.bruto)}</td>` +
+                           `<td>${brl(l.ir)}</td><td>${brl(l.liquido)}</td></tr>`;
+                })
+                .join('');
+        }
+
+        document.querySelectorAll('.view-toggle button').forEach(b => b.addEventListener('click', () => {
+            estado.visao = b.dataset.visao;
+            desenharEvolucao();
+            salvar();
+        }));
+
+        $('formInvestimento').addEventListener('submit', (e) => {
+            e.preventDefault();
+            estado.investimentoCalculado = calcularInvestimento();
+            salvar();
         });
+
+        $('limparInvestimento').addEventListener('click', () => {
+            $('formInvestimento').reset();
+            $('formInvestimento').querySelectorAll('.invalid').forEach(c => c.classList.remove('invalid'));
+            $('formInvestimento').querySelectorAll('.erro').forEach(a => a.remove());
+            $('resultadoInvestimento').classList.add('hidden');
+            ultimoResultado = null;
+            estado.investimentoCalculado = false;
+            atualizarDicaCdi();
+            salvar();
+        });
+
+        // ---------------------------------------------------------- refinanciamento
+
+        /** Juros ao mês embutidos numa série de n parcelas iguais (bisseção). */
+        function taxaImplicita(valorPresente, parcela, n) {
+            if (parcela * n <= valorPresente) return 0;
+            let lo = 1e-12, hi = 1.0;
+            for (let i = 0; i < 200; i++) {
+                const mid = (lo + hi) / 2;
+                const vp = parcela * (1 - Math.pow(1 + mid, -n)) / mid;
+                if (vp > valorPresente) lo = mid;
+                else hi = mid;
+            }
+            return (lo + hi) / 2;
+        }
+
+        const anual = (taxaMes) => Math.pow(1 + taxaMes, 12) - 1;
+
+        function lerAtual() {
+            const lidos = lerTodos([
+                ['quitacao', { minimo: 0.01 }],
+                ['parcelaAtual', { minimo: 0.01 }],
+                ['restantes', { inteiro: true, minimo: 1 }],
+            ]);
+            if (!lidos) return null;
+            const [quitacao, parcela, restantes] = lidos;
+            const total = parcela * restantes;
+            return { quitacao, parcela, restantes, total, taxa: taxaImplicita(quitacao, parcela, restantes) };
+        }
+
+        function analisarOferta(atual, { n, p }) {
+            const total = n * p;
+            return { n, p, total, dif: total - atual.total, taxa: taxaImplicita(atual.quitacao, p, n) };
+        }
+
+        function desenharRefinanciamento() {
+            const atual = estado.atualConfirmado ? lerAtual() : null;
+            $('infoAtual').classList.toggle('hidden', !atual);
+            $('passo2').classList.toggle('hidden', !atual);
+            $('resumoRefin').classList.toggle('hidden', !atual || !estado.resumoAberto);
+            if (!atual) return;
+
+            $('infoAtual').innerHTML =
+                `<strong>Total a pagar se não antecipar:</strong> ${brl(atual.total)}<br>` +
+                `<strong>Juros embutidos no atual:</strong> ${pct(atual.taxa)} a.m. (${pct(anual(atual.taxa))} a.a.)`;
+
+            $('instrucao').innerHTML =
+                `No app do banco, simule um novo empréstimo de <strong>${brl(atual.quitacao)}</strong> ` +
+                `procurando uma parcela próxima de <strong>${brl(atual.parcela)}</strong>. ` +
+                `Informe cada oferta encontrada.`;
+
+            const ofertas = estado.ofertas.map(o => analisarOferta(atual, o));
+
+            $('listaOfertas').innerHTML = ofertas.map((o, i) => {
+                const comparacao = o.dif < 0
+                    ? `<dt>Economia no total</dt><dd class="economia">${brl(-o.dif)} (${pct(-o.dif / atual.total)} a menos)</dd>`
+                    : `<dt>Custo a mais no total</dt><dd class="custo">${brl(o.dif)} (${pct(o.dif / atual.total)} a mais)</dd>`;
+                const difPrazo = o.n - atual.restantes;
+                return `
+                    <div class="oferta">
+                        <div class="oferta-topo">
+                            <strong>Oferta ${i + 1}</strong>
+                            <button type="button" data-remover="${i}">remover</button>
+                        </div>
+                        <dl>
+                            <dt>Total do novo</dt><dd>${brl(o.total)}</dd>
+                            ${comparacao}
+                            <dt>Parcela</dt><dd>${brl(o.p)} (${brl(o.p - atual.parcela)} vs atual)</dd>
+                            <dt>Prazo</dt><dd>${o.n} meses (${difPrazo >= 0 ? '+' : ''}${difPrazo} vs atual)</dd>
+                            <dt>Juros embutidos</dt><dd>${pct(o.taxa)} a.m. (${pct(anual(o.taxa))} a.a.)</dd>
+                        </dl>
+                    </div>`;
+            }).join('');
+
+            $('rotuloOferta').textContent = `Oferta ${ofertas.length + 1} — nº de parcelas`;
+
+            if (estado.resumoAberto) desenharResumo(atual, ofertas);
+        }
+
+        function desenharResumo(atual, ofertas) {
+            if (!ofertas.length) {
+                $('conteudoResumo').innerHTML = '<p>Nenhuma oferta informada ainda.</p>';
+                return;
+            }
+
+            const melhor = ofertas.reduce((a, b) => (b.total < a.total ? b : a));
+            const iMelhor = ofertas.indexOf(melhor) + 1;
+
+            const linhas = ofertas.map((o, i) => `
+                <tr class="${o === melhor ? 'melhor' : ''}">
+                    <td>${i + 1}</td><td>${o.n}</td><td>${brl(o.p)}</td><td>${brl(o.total)}</td>
+                    <td>${brl(o.dif)}</td><td>${pct(o.taxa)}</td>
+                </tr>`).join('');
+
+            const veredito = melhor.dif < 0
+                ? `<div class="veredito sim">Vale a pena: a oferta ${iMelhor} economiza ${brl(-melhor.dif)} (${pct(-melhor.dif / atual.total)}) no total pago.</div>`
+                : `<div class="veredito nao">Não vale a pena: nenhuma oferta sai mais barata que manter o empréstimo atual.</div>`;
+
+            $('conteudoResumo').innerHTML = `
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>#</th><th>Parc.</th><th>Valor parcela</th><th>Total</th><th>Dif. total</th><th>Juros a.m.</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr class="atual">
+                                <td>A</td><td>${atual.restantes}</td><td>${brl(atual.parcela)}</td><td>${brl(atual.total)}</td>
+                                <td>—</td><td>${pct(atual.taxa)}</td>
+                            </tr>
+                            ${linhas}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="nota">A = empréstimo atual; Dif. total negativa = economia.</p>
+                ${veredito}`;
+        }
+
+        $('formAtual').addEventListener('submit', (e) => {
+            e.preventDefault();
+            estado.atualConfirmado = lerAtual() !== null;
+            desenharRefinanciamento();
+            salvar();
+            if (estado.atualConfirmado && !estado.ofertas.length) $('ofertaN').focus();
+        });
+
+        $('formOferta').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const lidos = lerTodos([
+                ['ofertaN', { inteiro: true, minimo: 1 }],
+                ['ofertaP', { minimo: 0.01 }],
+            ]);
+            if (!lidos) return;
+            const [n, p] = lidos;
+            estado.ofertas.push({ n, p });
+            $('ofertaN').value = '';
+            $('ofertaP').value = '0,00';
+            desenharRefinanciamento();
+            salvar();
+            $('ofertaN').focus();
+        });
+
+        $('listaOfertas').addEventListener('click', (e) => {
+            const i = e.target.dataset.remover;
+            if (i === undefined) return;
+            estado.ofertas.splice(Number(i), 1);
+            desenharRefinanciamento();
+            salvar();
+        });
+
+        $('encerrar').addEventListener('click', () => {
+            estado.resumoAberto = true;
+            desenharRefinanciamento();
+            salvar();
+            $('resumoRefin').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        $('recomecar').addEventListener('click', () => {
+            $('formAtual').reset();
+            $('formOferta').reset();
+            document.querySelectorAll('#aba-refinanciamento .invalid').forEach(c => c.classList.remove('invalid'));
+            document.querySelectorAll('#aba-refinanciamento .erro').forEach(a => a.remove());
+            estado.atualConfirmado = false;
+            estado.ofertas = [];
+            estado.resumoAberto = false;
+            desenharRefinanciamento();
+            salvar();
+        });
+
+        // ------------------------------------------------------------------ início
+
+        carregar();
+        mostrarAba(estado.aba);
+        atualizarDicaCdi();
+        if (estado.investimentoCalculado) calcularInvestimento();
+        desenharRefinanciamento();
     </script>
 </body>
 </html>

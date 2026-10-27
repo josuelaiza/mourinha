@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <script src="senha.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Ferramentas</title>
@@ -140,50 +141,6 @@
             color: var(--cor-destaque);
         }
 
-        /* Tela de senha */
-        .senha-form {
-            width: 100%;
-            max-width: 400px;
-            display: flex;
-            gap: 10px;
-            animation: fadeInUp 0.8s ease-in-out;
-        }
-
-        .senha-form input {
-            flex: 1;
-            min-width: 0;
-            padding: 15px 20px;
-            font-size: 1rem;
-            color: var(--cor-texto-principal);
-            background-color: var(--cor-select-fundo);
-            border: 1px solid var(--cor-select-borda);
-            border-radius: 8px;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .senha-form input:focus {
-            outline: none;
-            border-color: var(--cor-destaque);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-        }
-
-        .senha-form button {
-            padding: 15px 20px;
-            font-size: 1rem;
-            color: #fff;
-            background-color: var(--cor-destaque);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .senha-erro {
-            min-height: 1.5em;
-            margin-top: 12px;
-            color: #ff6b6b;
-            font-size: 0.95rem;
-        }
-
         /* Animações */
         @keyframes fadeInDown {
             from {
@@ -227,18 +184,7 @@
 </head>
 <body>
 
-    <main class="main-container" id="telaSenha">
-        <h1>Painel de Ferramentas</h1>
-        <p>Digite a senha para acessar.</p>
-
-        <form class="senha-form" id="senhaForm">
-            <input type="password" id="senha" inputmode="numeric" autocomplete="current-password" placeholder="Senha" autofocus>
-            <button type="submit">Entrar</button>
-        </form>
-        <div class="senha-erro" id="senhaErro" role="alert"></div>
-    </main>
-
-    <main class="main-container" id="painel" hidden>
+    <main class="main-container">
         <h1>Painel de Ferramentas</h1>
         <p>Selecione uma ferramenta abaixo para começar. A ferramenta será aberta em uma nova aba.</p>
         
@@ -252,47 +198,6 @@
     </main>
 
     <script>
-        // ================================================================== //
-        // == SENHA DO PAINEL                                              == //
-        // ================================================================== //
-        // Uma barreira simples, não é segurança de verdade: o repositório é
-        // público e as ferramentas continuam acessíveis pelo endereço direto.
-        // Guardamos só o SHA-256 da senha, para ela não aparecer no código.
-        // Para trocar a senha, gere o novo hash com:
-        //   printf '%s' 'NOVA_SENHA' | sha256sum
-        const HASH_SENHA = '595a8d552d9f40ba6a945309f64ed6c51ad833c5f68d8ae17678f71497a47e4e';
-        const CHAVE_LIBERADO = 'painelLiberado';
-
-        async function sha256(texto) {
-            const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
-            return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        function liberarPainel() {
-            document.getElementById('telaSenha').hidden = true;
-            document.getElementById('painel').hidden = false;
-        }
-
-        // Lembra a senha neste aparelho; se a senha mudar, pede de novo
-        let jaLiberado = false;
-        try { jaLiberado = localStorage.getItem(CHAVE_LIBERADO) === HASH_SENHA; } catch (e) { /* sem storage: pede sempre */ }
-        if (jaLiberado) liberarPainel();
-
-        document.getElementById('senhaForm').addEventListener('submit', async function(evento) {
-            evento.preventDefault();
-            const campo = document.getElementById('senha');
-            const erro = document.getElementById('senhaErro');
-
-            if (await sha256(campo.value.trim()) === HASH_SENHA) {
-                try { localStorage.setItem(CHAVE_LIBERADO, HASH_SENHA); } catch (e) { /* sem storage: só nesta visita */ }
-                erro.textContent = '';
-                liberarPainel();
-            } else {
-                erro.textContent = 'Senha incorreta.';
-                campo.select();
-            }
-        });
-
         document.addEventListener('DOMContentLoaded', function() {
             // ================================================================== //
             // == ADICIONE SUAS FERRAMENTAS AQUI DENTRO DESTA LISTA            == //

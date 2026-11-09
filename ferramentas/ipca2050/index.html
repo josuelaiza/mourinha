@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="../../senha.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Tesouro IPCA+ 2050</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --fundo: #121212;
+            --cartao: #1a1a19;
+            --cartao-2: #232322;
+            --borda: #2e2e2c;
+            --texto: #f0efec;
+            --texto-2: #c3c2b7;
+            --texto-3: #8f8e86;
+            --destaque: #3987e5;
+            --serie-com: #3987e5;      /* com aportes mensais */
+            --serie-existe: #d95926;   /* só o que já existe */
+            --erro: #e66767;
+            --aviso: #fab219;
+            --ok: #0ca30c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        [hidden] { display: none !important; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--fundo);
+            color: var(--texto);
+            font-size: 14px;
+            line-height: 1.4;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .pagina { max-width: 980px; margin: 0 auto; padding: 12px; }
+
+        /* Topo */
+        .topo {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+            padding: 4px 2px 12px;
+        }
+        .topo h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.2px; }
+        .topo .sub { color: var(--texto-3); font-size: 0.8rem; }
+        .topo .acoes { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--texto-3); }
+
+        .botao {
+            font: inherit; font-size: 0.85rem; font-weight: 500;
+            padding: 8px 14px; border-radius: 6px; border: 1px solid transparent;
+            background: var(--destaque); color: #fff; cursor: pointer;
+        }
+        .botao:disabled { opacity: 0.5; cursor: default; }
+        .botao.secundario { background: transparent; border-color: var(--borda); color: var(--texto-2); padding: 5px 10px; font-size: 0.75rem; }
+        .botao.secundario:hover { border-color: var(--texto-3); color: var(--texto); }
+
+        /* Cartões */
+        .cartao { background: var(--cartao); border: 1px solid var(--borda); border-radius: 8px; padding: 12px; }
+        .cartao + .cartao { margin-top: 10px; }
+        .cartao h2 { font-size: 0.8rem; font-weight: 600; color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+
+        /* Formulários de senha */
+        .portao { max-width: 420px; margin: 8vh auto 0; }
+        .portao p { color: var(--texto-2); font-size: 0.85rem; margin-bottom: 10px; }
+        .campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+        .campo label { font-size: 0.75rem; color: var(--texto-2); }
+        .campo input {
+            font: inherit; font-size: 16px; /* 16px evita zoom no iPhone */
+            padding: 9px 10px; color: var(--texto); background: var(--cartao-2);
+            border: 1px solid var(--borda); border-radius: 6px; width: 100%;
+        }
+        .campo input:focus { outline: none; border-color: var(--destaque); box-shadow: 0 0 0 3px rgba(57, 135, 229, 0.25); }
+        .forca { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin: 2px 0 4px; }
+        .forca span { height: 4px; border-radius: 2px; background: var(--borda); }
+        .forca-texto { font-size: 0.75rem; color: var(--texto-3); min-height: 1.2em; }
+        .mensagem { font-size: 0.8rem; min-height: 1.3em; margin-top: 8px; color: var(--texto-2); }
+        .mensagem.erro { color: var(--erro); }
+        .mensagem.ok { color: var(--ok); }
+        .alerta {
+            font-size: 0.78rem; color: var(--texto-2); border-left: 3px solid var(--aviso);
+            background: var(--cartao-2); padding: 8px 10px; border-radius: 4px; margin-bottom: 10px;
+        }
+
+        /* Indicadores */
+        .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px; margin-bottom: 10px; }
+        .kpi { background: var(--cartao); border: 1px solid var(--borda); border-radius: 8px; padding: 9px 10px; min-width: 0; }
+        .kpi .rotulo { font-size: 0.7rem; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.3px; }
+        .kpi .valor { font-size: 1.05rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .kpi .detalhe { font-size: 0.7rem; color: var(--texto-3); margin-top: 1px; }
+        .kpi input {
+            font: inherit; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums;
+            width: 100%; margin-top: 2px; padding: 2px 6px; color: var(--texto);
+            background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 4px;
+        }
+        .kpi input:focus { outline: none; border-color: var(--destaque); }
+        .kpi input.invalido { border-color: var(--erro); }
+
+        /* Tabela de resultados */
+        .tabela { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+        .tabela th, .tabela td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--borda); white-space: nowrap; }
+        .tabela th { font-size: 0.7rem; font-weight: 500; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.3px; }
+        .tabela th:first-child, .tabela td:first-child { text-align: left; white-space: normal; }
+        .tabela tr:last-child td { border-bottom: none; }
+        .tabela td { font-size: 0.9rem; }
+        .tabela td.destaque { font-weight: 600; }
+        .tabela .curto, .curto-bloco { display: none; }
+        .rolagem { overflow-x: auto; }
+        .chave-serie { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+        /* Gráfico */
+        .legenda { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.75rem; color: var(--texto-2); margin-bottom: 6px; list-style: none; }
+        .legenda li { display: flex; align-items: center; gap: 6px; }
+        .grafico { position: relative; touch-action: pan-y; }
+        .grafico svg { display: block; width: 100%; }
+        .grafico svg:focus { outline: none; }
+        .grafico svg:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; border-radius: 4px; }
+        .grafico .eixo { font-size: 10px; fill: var(--texto-3); font-variant-numeric: tabular-nums; }
+        .grafico .grade { stroke: var(--borda); stroke-width: 1; }
+        .grafico .rotulo-fim { font-size: 10px; fill: var(--texto-2); font-variant-numeric: tabular-nums; }
+        .dica {
+            position: absolute; pointer-events: none; z-index: 2;
+            background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 6px;
+            padding: 6px 8px; font-size: 0.75rem; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); min-width: 170px;
+        }
+        .dica .data { color: var(--texto-3); margin-bottom: 3px; }
+        .dica .linha { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .dica strong { font-variant-numeric: tabular-nums; color: var(--texto); min-width: 7.5em; text-align: right; }
+        .dica .nome { color: var(--texto-3); }
+
+        .notas { font-size: 0.72rem; color: var(--texto-3); margin-top: 10px; padding: 0 2px; }
+        .notas li { margin-left: 16px; }
+
+        @media (max-width: 560px) {
+            .pagina { padding: 8px; }
+            .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+            .tabela th, .tabela td { padding: 6px 3px; }
+            .tabela td { font-size: 0.8rem; }
+            .tabela th { font-size: 0.62rem; }
+            .tabela .longo { display: none; }
+            .tabela .curto, .curto-bloco { display: inline; }
+            .tabela td:first-child { white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+<div class="pagina">
+
+    <header class="topo">
+        <div>
+            <h1>Tesouro IPCA+ 2050</h1>
+            <div class="sub">Vencimento 15/08/2050 · projeção</div>
+        </div>
+        <div class="acoes" id="acoesSessao" hidden>
+            <span id="estadoLembrar"></span>
+            <button type="button" class="botao secundario" id="botaoEsquecer">Esquecer neste dispositivo</button>
+        </div>
+    </header>
+
+    <!-- Carregando / erro -->
+    <section id="telaStatus" class="cartao portao">
+        <p id="textoStatus">Carregando…</p>
+    </section>
+
+    <!-- Primeiro uso: criar chaves -->
+    <section id="telaCriar" class="cartao portao" hidden>
+        <h2>Criar chaves</h2>
+        <p>Ainda não há <code>keys.json</code>. Escolha uma frase-senha: ela protege a chave que abre os aportes.</p>
+        <div class="alerta">
+            O repositório é público: quem baixar o <code>keys.json</code> pode tentar adivinhar a senha sem limite.
+            Use uma frase longa (mínimo 20 caracteres). Se esquecer a senha, os aportes não podem ser recuperados.
+        </div>
+        <form id="formCriar" autocomplete="off">
+            <div class="campo">
+                <label for="senhaNova">Frase-senha</label>
+                <input type="password" id="senhaNova" autocomplete="new-password" required>
+                <div class="forca" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                <div class="forca-texto" id="forcaTexto">0/20 caracteres</div>
+            </div>
+            <div class="campo">
+                <label for="senhaConfirma">Confirme a frase-senha</label>
+                <input type="password" id="senhaConfirma" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="botao" id="botaoCriar" disabled>Gerar chaves e baixar keys.json</button>
+        </form>
+        <div class="mensagem" id="mensagemCriar" role="status"></div>
+    </section>
+
+    <!-- Desbloqueio -->
+    <section id="telaSenha" class="cartao portao" hidden>
+        <h2>Desbloquear</h2>
+        <p>Digite a frase-senha. Depois disso este dispositivo lembra a chave (até você pedir para esquecer).</p>
+        <form id="formSenha">
+            <input type="text" autocomplete="username" value="ipca2050" hidden aria-hidden="true">
+            <div class="campo">
+                <label for="senhaAbrir">Frase-senha</label>
+                <input type="password" id="senhaAbrir" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="botao" id="botaoAbrir">Desbloquear</button>
+        </form>
+        <div class="mensagem" id="mensagemSenha" role="status"></div>
+    </section>
+
+    <!-- Simulador -->
+    <main id="telaSimulador" hidden>
+        <div class="alerta" id="avisoSimulador" hidden></div>
+
+        <div class="kpis">
+            <div class="kpi"><div class="rotulo">Total aportado</div><div class="valor" id="kpiTotal">—</div><div class="detalhe" id="kpiNumero"></div></div>
+            <div class="kpi"><div class="rotulo">Taxa média</div><div class="valor" id="kpiTaxa">—</div><div class="detalhe">ponderada pelo valor</div></div>
+            <div class="kpi"><div class="rotulo">Inflação projetada</div><div class="valor" id="kpiInflacao">—</div><div class="detalhe" id="kpiInflacaoDetalhe"></div></div>
+            <div class="kpi">
+                <label class="rotulo" for="aporteMensal">Aporte mensal (R$)</label>
+                <input type="number" id="aporteMensal" min="0" step="50" inputmode="decimal">
+                <div class="detalhe" id="kpiFuturos"></div>
+            </div>
+            <div class="kpi"><div class="rotulo">Prazo</div><div class="valor" id="kpiPrazo">—</div><div class="detalhe">até o vencimento</div></div>
+        </div>
+
+        <section class="cartao">
+            <h2>No vencimento <span class="curto-bloco" style="text-transform: none; font-weight: 400; color: var(--texto-3)">· em R$</span></h2>
+            <div class="rolagem">
+            <table class="tabela">
+                <thead>
+                    <tr><th scope="col">Cenário</th><th scope="col">Bruto</th><th scope="col">Líquido</th><th scope="col"><span class="longo">Real (R$ de hoje)</span><span class="curto">Real (hoje)</span></th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="chave-serie" style="background: var(--serie-existe)"></span><span class="longo">Só com o que já existe</span><span class="curto">Só o atual</span></td>
+                        <td id="exBruto">—</td><td id="exLiquido">—</td><td id="exReal" class="destaque">—</td>
+                    </tr>
+                    <tr>
+                        <td><span class="chave-serie" style="background: var(--serie-com)"></span><span class="longo" id="rotuloComAportes">Com aportes mensais</span><span class="curto" id="rotuloComAportesCurto">Com aportes</span></td>
+                        <td id="caBruto">—</td><td id="caLiquido">—</td><td id="caReal" class="destaque">—</td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </section>
+
+        <section class="cartao">
+            <h2>Evolução até 2050 <span style="text-transform: none; font-weight: 400; color: var(--texto-3)">· valor se resgatado em cada data, R$ nominais</span></h2>
+            <ul class="legenda" id="legenda"></ul>
+            <div class="grafico" id="grafico">
+                <svg id="svgGrafico" tabindex="0" role="img" aria-label="Evolução do valor bruto e líquido até 2050 nos dois cenários. Use as setas para percorrer as datas."></svg>
+                <div class="dica" id="dica" hidden></div>
+            </div>
+        </section>
+
+        <ul class="notas" id="notas"></ul>
+    </main>
+
+</div>
+
+<script type="module">
+import { simular, hojeLocal } from './calculo.js';
+import * as cripto from './cripto.js';
+
+const $ = id => document.getElementById(id);
+const CHAVE_APORTE = 'ipca2050.aporteMensal';
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const brlCompacto = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
+const numero = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const telaEstreita = matchMedia('(max-width: 560px)');
+telaEstreita.addEventListener('change', () => { if (ultimoResultado) recalcular(); });
+const pct = v => (v * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+const dataBr = iso => iso.split('-').reverse().join('/');
+
+let config = null, keys = null, dados = null;
+let chavePrivada = null, aportes = [], ultimoResultado = null;
+
+// ------------------------------------------------------------------ //
+// Telas
+// ------------------------------------------------------------------ //
+function mostrar(tela) {
+    for (const id of ['telaStatus', 'telaCriar', 'telaSenha', 'telaSimulador']) $(id).hidden = id !== tela;
+    $('acoesSessao').hidden = tela !== 'telaSimulador';
+}
+
+function erroFatal(texto) {
+    $('textoStatus').textContent = texto;
+    $('textoStatus').style.color = 'var(--erro)';
+    mostrar('telaStatus');
+}
+
+async function buscarJson(nome) {
+    const resposta = await fetch(nome, { cache: 'no-cache' });
+    if (resposta.status === 404) return null;
+    if (!resposta.ok) throw new Error(`${nome}: HTTP ${resposta.status}`);
+    return resposta.json();
+}
+
+// ------------------------------------------------------------------ //
+// Início
+// ------------------------------------------------------------------ //
+async function iniciar() {
+    try {
+        [config, keys, dados] = await Promise.all([buscarJson('config.json'), buscarJson('keys.json'), buscarJson('data.json')]);
+    } catch (e) {
+        return erroFatal('Não foi possível carregar os arquivos: ' + e.message);
+    }
+    if (!config) return erroFatal('config.json não encontrado.');
+    if (!keys) return mostrar('telaCriar');
+    if (!dados || !Array.isArray(dados.entries)) return erroFatal('data.json ausente ou em formato inesperado.');
+
+    let lembrada = null;
+    try { lembrada = await cripto.chaveLembrada(keys.publicKeySpki); } catch { /* sem IndexedDB: pede senha */ }
+    if (lembrada) {
+        const ok = await abrirComChave(lembrada, true);
+        if (ok) return;
+        try { await cripto.esquecerChave(); } catch { /* ignora */ }
+        $('mensagemSenha').textContent = 'A chave lembrada não abriu os aportes. Digite a senha.';
+    }
+    mostrar('telaSenha');
+    $('senhaAbrir').focus();
+}
+
+// Decifra tudo. Devolve false se havia entradas e nenhuma abriu (chave errada).
+async function abrirComChave(chave, lembrada) {
+    const lidos = [];
+    let falhas = 0;
+    for (const entrada of dados.entries) {
+        try {
+            const a = await cripto.decifrarEntrada(chave, entrada);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(a.data) || !(a.valor > 0) || typeof a.taxa !== 'number') throw new Error('payload');
+            lidos.push(a);
+        } catch {
+            falhas++;
+        }
+    }
+    if (dados.entries.length && !lidos.length) return false;
+
+    chavePrivada = chave;
+    aportes = lidos.sort((x, y) => x.data.localeCompare(y.data));
+    $('estadoLembrar').textContent = lembrada ? 'Lembrado neste dispositivo' : '';
+    $('avisoSimulador').hidden = falhas === 0;
+    $('avisoSimulador').textContent = falhas ? `${falhas} entrada(s) do data.json não puderam ser decifradas e ficaram fora da conta.` : '';
+    abrirSimulador();
+    return true;
+}
+
+// ------------------------------------------------------------------ //
+// Criar chaves
+// ------------------------------------------------------------------ //
+const MINIMO = 20;
+
+function avaliarSenha(s) {
+    let pool = 0;
+    if (/[a-z]/.test(s)) pool += 26;
+    if (/[A-Z]/.test(s)) pool += 26;
+    if (/\d/.test(s)) pool += 10;
+    if (/[^a-zA-Z\d]/.test(s)) pool += 33;
+    const bits = s.length * Math.log2(Math.max(pool, 1));
+    const unicos = new Set(s).size;
+    let nivel = bits < 60 ? 1 : bits < 80 ? 2 : bits < 100 ? 3 : 4;
+    if (unicos < 8) nivel = 1; // muita repetição
+    if (!s.length) nivel = 0;
+    return { nivel, ok: s.length >= MINIMO };
+}
+
+function atualizarCriar() {
+    const s = $('senhaNova').value, c = $('senhaConfirma').value;
+    const { nivel, ok } = avaliarSenha(s);
+    const cores = ['var(--borda)', 'var(--erro)', 'var(--aviso)', 'var(--destaque)', 'var(--ok)'];
+    const nomes = ['', 'fraca', 'razoável', 'boa', 'forte'];
+    document.querySelectorAll('.forca span').forEach((barra, i) => { barra.style.background = i < nivel ? cores[nivel] : 'var(--borda)'; });
+    let texto = `${s.length}/${MINIMO} caracteres` + (nivel ? ` · ${nomes[nivel]}` : '');
+    if (c && c !== s) texto += ' · confirmação diferente';
+    $('forcaTexto').textContent = texto;
+    $('botaoCriar').disabled = !(ok && s === c);
+}
+
+$('senhaNova').addEventListener('input', atualizarCriar);
+$('senhaConfirma').addEventListener('input', atualizarCriar);
+
+$('formCriar').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const senha = $('senhaNova').value;
+    if (senha.length < MINIMO || senha !== $('senhaConfirma').value) return;
+    const msg = $('mensagemCriar');
+    $('botaoCriar').disabled = true;
+    msg.className = 'mensagem';
+    msg.textContent = 'Gerando par RSA 3072 e cifrando a chave privada… pode levar alguns segundos.';
+    try {
+        const novo = await cripto.gerarChaves(senha);
+        const blob = new Blob([JSON.stringify(novo, null, 2) + '\n'], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'keys.json';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        $('senhaNova').value = $('senhaConfirma').value = '';
+        msg.className = 'mensagem ok';
+        msg.textContent = 'keys.json baixado. Suba o arquivo em ferramentas/ipca2050/keys.json no repositório e recarregue esta página.';
+    } catch (e) {
+        msg.className = 'mensagem erro';
+        msg.textContent = 'Falha ao gerar as chaves: ' + e.message;
+        $('botaoCriar').disabled = false;
+    }
+});
+
+// ------------------------------------------------------------------ //
+// Desbloquear / esquecer
+// ------------------------------------------------------------------ //
+$('formSenha').addEventListener('submit', async evento => {
+    evento.preventDefault();
+    const msg = $('mensagemSenha');
+    $('botaoAbrir').disabled = true;
+    msg.className = 'mensagem';
+    msg.textContent = 'Abrindo a chave (600 mil iterações)…';
+    try {
+        const chave = await cripto.abrirChavePrivada(keys, $('senhaAbrir').value);
+        let lembrou = false;
+        try { await cripto.lembrarChave(chave, keys.publicKeySpki); lembrou = true; } catch { /* sem IndexedDB: só nesta visita */ }
+        $('senhaAbrir').value = '';
+        msg.textContent = '';
+        if (!(await abrirComChave(chave, lembrou))) {
+            msg.className = 'mensagem erro';
+            msg.textContent = 'A chave abriu, mas nenhum aporte foi decifrado. O data.json é deste par de chaves?';
+        }
+        if (!lembrou) $('estadoLembrar').textContent = 'Não foi possível lembrar neste dispositivo';
+    } catch (e) {
+        msg.className = 'mensagem erro';
+        msg.textContent = e instanceof cripto.SenhaIncorreta ? 'Senha incorreta.' : 'Erro: ' + e.message;
+        $('senhaAbrir').select();
+    } finally {
+        $('botaoAbrir').disabled = false;
+    }
+});
+
+$('botaoEsquecer').addEventListener('click', async () => {
+    try { await cripto.esquecerChave(); } catch { /* nada a apagar */ }
+    chavePrivada = null;
+    aportes = [];
+    ultimoResultado = null;
+    $('svgGrafico').replaceChildren();
+    $('mensagemSenha').className = 'mensagem';
+    $('mensagemSenha').textContent = 'Chave apagada deste dispositivo.';
+    mostrar('telaSenha');
+});
+
+// ------------------------------------------------------------------ //
+// Simulador
+// ------------------------------------------------------------------ //
+function lerAporteSalvo() {
+    try {
+        const salvo = Number(localStorage.getItem(CHAVE_APORTE));
+        if (localStorage.getItem(CHAVE_APORTE) !== null && salvo >= 0) return salvo;
+    } catch { /* sem storage */ }
+    return config.aportePadrao;
+}
+
+function abrirSimulador() {
+    if (!Array.isArray(config.ipcaAnual) || !config.ipcaAnual.length) {
+        return erroFatal('config.json ainda não tem a série do IPCA (ipcaAnual). Preencha os 10 anos para a simulação funcionar.');
+    }
+    $('aporteMensal').value = lerAporteSalvo();
+    mostrar('telaSimulador');
+    recalcular();
+}
+
+$('aporteMensal').addEventListener('input', () => {
+    const campo = $('aporteMensal');
+    const v = Number(campo.value);
+    const valido = campo.value !== '' && v >= 0;
+    campo.classList.toggle('invalido', !valido);
+    if (!valido) return;
+    try { localStorage.setItem(CHAVE_APORTE, String(v)); } catch { /* sem storage */ }
+    recalcular();
+});
+
+function recalcular() {
+    const aporteMensal = Number($('aporteMensal').value) || 0;
+    const r = simular({ aportes, hoje: hojeLocal(), config, aporteMensal });
+    ultimoResultado = r;
+
+    const anos = config.ipcaAnual.map(x => x.ano);
+    $('kpiTotal').textContent = brl.format(r.totalAportado);
+    $('kpiNumero').textContent = `${r.numeroAportes} aporte${r.numeroAportes === 1 ? '' : 's'}`;
+    $('kpiTaxa').textContent = r.taxaMedia === null ? '—' : 'IPCA + ' + pct(r.taxaMedia);
+    $('kpiInflacao').textContent = pct(r.inflacao) + ' a.a.';
+    $('kpiInflacaoDetalhe').textContent = `média geométrica ${Math.min(...anos)}–${Math.max(...anos)}`;
+    $('kpiFuturos').textContent = r.comAportes ? `${r.numeroAportesFuturos} aportes até jul/2050` : 'sem taxa média ainda';
+    $('kpiPrazo').textContent = r.anosAteVenc.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' anos';
+
+    // na tela estreita a tabela vai sem "R$ " (o título avisa que é em R$)
+    const fmt = telaEstreita.matches ? (v => numero.format(v)) : (v => brl.format(v));
+    $('exBruto').textContent = fmt(r.existentes.bruto);
+    $('exLiquido').textContent = fmt(r.existentes.liquido);
+    $('exReal').textContent = fmt(r.existentes.real);
+    $('rotuloComAportes').textContent = `Com aportes mensais de ${brl.format(aporteMensal)}`;
+    $('rotuloComAportesCurto').textContent = `+ ${brl.format(aporteMensal).replace(/,00$/, '')}/mês`;
+    for (const [id, campo] of [['caBruto', 'bruto'], ['caLiquido', 'liquido'], ['caReal', 'real']]) {
+        $(id).textContent = r.comAportes ? fmt(r.comAportes[campo]) : '—';
+    }
+    if (!r.comAportes) {
+        $('avisoSimulador').hidden = false;
+        $('avisoSimulador').textContent = 'Sem aportes registrados: não há taxa média para simular os aportes mensais.';
+    }
+
+    const notas = [
+        `Rentabilidade de cada lote: (1 + inflação) × (1 + taxa contratada), capitalizada pelos anos até o vencimento (anos = dias corridos ÷ 365,25).`,
+        `Inflação futura = média geométrica do IPCA de ${Math.min(...anos)} a ${Math.max(...anos)} (config.json). Real = líquido trazido a R$ de hoje por essa inflação.`,
+        `Custódia B3 de ${pct(config.custodiaAnual)} a.a. sobre o saldo; IR regressivo pelo prazo de cada lote (22,5% a 15%) sobre o ganho após a custódia.`,
+        `Aportes futuros: um por mês no dia ${config.diaAporteFuturo}, do mês que vem até jul/2050, à taxa média ponderada dos aportes atuais.`,
+    ];
+    $('notas').replaceChildren(...notas.map(t => { const li = document.createElement('li'); li.textContent = t; return li; }));
+
+    desenharGrafico();
+}
+
+// ------------------------------------------------------------------ //
+// Gráfico (SVG puro)
+// ------------------------------------------------------------------ //
+const NS = 'http://www.w3.org/2000/svg';
+let estadoGrafico = null;
+
+function el(nome, atributos = {}, pai) {
+    const n = document.createElementNS(NS, nome);
+    for (const [k, v] of Object.entries(atributos)) n.setAttribute(k, v);
+    if (pai) pai.appendChild(n);
+    return n;
+}
+
+function utc(iso) {
+    const [a, m, d] = iso.split('-').map(Number);
+    return Date.UTC(a, m - 1, d);
+}
+
+function teto(valor) {
+    if (valor <= 0) return 1;
+    const potencia = Math.pow(10, Math.floor(Math.log10(valor)));
+    // tetos que dão 4 divisões redondas
+    for (const passo of [1, 1.2, 1.6, 2, 2.4, 3, 4, 5, 6, 8, 10]) if (passo * potencia >= valor) return passo * potencia;
+    return 10 * potencia;
+}
+
+function desenharGrafico() {
+    const r = ultimoResultado;
+    if (!r) return;
+    const svg = $('svgGrafico');
+    const largura = Math.max(280, $('grafico').clientWidth);
+    const estreito = largura < 520;
+    const altura = estreito ? 220 : 260;
+    const m = { esq: estreito ? 60 : 64, dir: estreito ? 58 : 72, topo: 10, base: 22 };
+    svg.setAttribute('viewBox', `0 0 ${largura} ${altura}`);
+    svg.setAttribute('height', altura);
+    svg.replaceChildren();
+
+    const series = [
+        { chave: 'comAportesLiquido', nome: 'Com aportes · líquido', cor: 'var(--serie-com)', traco: '' },
+        { chave: 'comAportesBruto', nome: 'Com aportes · bruto', cor: 'var(--serie-com)', traco: '5 4' },
+        { chave: 'existentesLiquido', nome: 'Só o que existe · líquido', cor: 'var(--serie-existe)', traco: '' },
+        { chave: 'existentesBruto', nome: 'Só o que existe · bruto', cor: 'var(--serie-existe)', traco: '5 4' },
+    ].filter(s => r.serie[0][s.chave] !== null);
+
+    // legenda (chaves em linha, como as marcas)
+    $('legenda').replaceChildren(...series.map(s => {
+        const li = document.createElement('li');
+        const chave = el('svg', { width: 18, height: 8, 'aria-hidden': 'true' });
+        el('line', { x1: 0, x2: 18, y1: 4, y2: 4, stroke: s.cor, 'stroke-width': 2, 'stroke-dasharray': s.traco }, chave);
+        li.append(chave, document.createTextNode(s.nome));
+        return li;
+    }));
+
+    const pontos = r.serie;
+    const x0 = utc(pontos[0].data), x1 = utc(pontos.at(-1).data);
+    const maximo = teto(Math.max(...pontos.flatMap(p => series.map(s => p[s.chave]))));
+    const px = t => m.esq + (t - x0) / (x1 - x0 || 1) * (largura - m.esq - m.dir);
+    const py = v => altura - m.base - v / maximo * (altura - m.topo - m.base);
+
+    // grade e eixo Y
+    const passos = 4;
+    for (let i = 0; i <= passos; i++) {
+        const v = maximo * i / passos, y = py(v);
+        el('line', { class: 'grade', x1: m.esq, x2: largura - m.dir, y1: y, y2: y }, svg);
+        el('text', { class: 'eixo', x: m.esq - 6, y: y + 3, 'text-anchor': 'end' }, svg).textContent = brlCompacto.format(v);
+    }
+    // eixo X: anos
+    const anoIni = new Date(x0).getUTCFullYear() + 1, anoFim = new Date(x1).getUTCFullYear();
+    const passoAno = estreito ? 8 : 4;
+    for (let ano = Math.ceil(anoIni / passoAno) * passoAno; ano <= anoFim; ano += passoAno) {
+        el('text', { class: 'eixo', x: px(Date.UTC(ano, 0, 1)), y: altura - 6, 'text-anchor': 'middle' }, svg).textContent = ano;
+    }
+
+    // linhas
+    for (const s of series) {
+        const d = pontos.map((p, i) => `${i ? 'L' : 'M'}${px(utc(p.data)).toFixed(1)},${py(p[s.chave]).toFixed(1)}`).join('');
+        el('path', { d, fill: 'none', stroke: s.cor, 'stroke-width': 2, 'stroke-dasharray': s.traco, 'stroke-linejoin': 'round' }, svg);
+    }
+
+    // rótulos no fim das linhas, afastados para não se sobreporem
+    const fim = pontos.at(-1);
+    const rotulos = series.map(s => ({ y: py(fim[s.chave]), texto: brlCompacto.format(fim[s.chave]) })).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < rotulos.length; i++) rotulos[i].y = Math.max(rotulos[i].y, rotulos[i - 1].y + 11);
+    const excesso = rotulos.length ? rotulos.at(-1).y - (altura - m.base) : 0;
+    if (excesso > 0) rotulos.forEach(rt => { rt.y -= excesso; });
+    for (const rt of rotulos) {
+        el('text', { class: 'rotulo-fim', x: largura - m.dir + 6, y: rt.y + 3 }, svg).textContent = rt.texto;
+    }
+
+    // camada de interação
+    const cursor = el('line', { x1: 0, x2: 0, y1: m.topo, y2: altura - m.base, stroke: 'var(--texto-3)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+    const marcadores = series.map(s => el('circle', { r: 4, fill: s.cor, stroke: 'var(--cartao)', 'stroke-width': 2, visibility: 'hidden' }, svg));
+    el('rect', { x: m.esq, y: 0, width: largura - m.esq - m.dir, height: altura, fill: 'transparent', class: 'alvo' }, svg);
+
+    estadoGrafico = { series, pontos, px, py, cursor, marcadores, largura, indice: null };
+}
+
+function mostrarPonto(indice) {
+    const g = estadoGrafico;
+    if (!g) return;
+    indice = Math.max(0, Math.min(g.pontos.length - 1, indice));
+    g.indice = indice;
+    const p = g.pontos[indice];
+    const x = g.px(utc(p.data));
+    g.cursor.setAttribute('x1', x);
+    g.cursor.setAttribute('x2', x);
+    g.cursor.setAttribute('visibility', 'visible');
+    g.series.forEach((s, i) => {
+        g.marcadores[i].setAttribute('cx', x);
+        g.marcadores[i].setAttribute('cy', g.py(p[s.chave]));
+        g.marcadores[i].setAttribute('visibility', 'visible');
+    });
+
+    const dica = $('dica');
+    const titulo = document.createElement('div');
+    titulo.className = 'data';
+    titulo.textContent = dataBr(p.data);
+    const linhas = g.series.map(s => {
+        const linha = document.createElement('div');
+        linha.className = 'linha';
+        const chave = el('svg', { width: 12, height: 6, 'aria-hidden': 'true' });
+        el('line', { x1: 0, x2: 12, y1: 3, y2: 3, stroke: s.cor, 'stroke-width': 2, 'stroke-dasharray': s.traco ? '3 2' : '' }, chave);
+        const valor = document.createElement('strong');
+        valor.textContent = brl.format(p[s.chave]);
+        const nome = document.createElement('span');
+        nome.className = 'nome';
+        nome.textContent = s.nome;
+        linha.append(chave, valor, nome);
+        return linha;
+    });
+    dica.replaceChildren(titulo, ...linhas);
+    dica.hidden = false;
+    const escala = $('svgGrafico').getBoundingClientRect().width / g.largura;
+    const xTela = x * escala;
+    const larguraDica = dica.offsetWidth;
+    const esquerda = xTela + 12 + larguraDica > $('grafico').clientWidth ? xTela - 12 - larguraDica : xTela + 12;
+    dica.style.left = Math.max(0, esquerda) + 'px';
+    dica.style.top = '4px';
+}
+
+function esconderPonto() {
+    const g = estadoGrafico;
+    if (!g) return;
+    g.cursor.setAttribute('visibility', 'hidden');
+    g.marcadores.forEach(c => c.setAttribute('visibility', 'hidden'));
+    $('dica').hidden = true;
+    g.indice = null;
+}
+
+function indiceNoPonteiro(evento) {
+    const g = estadoGrafico;
+    const caixa = $('svgGrafico').getBoundingClientRect();
+    const x = (evento.clientX - caixa.left) * g.largura / caixa.width;
+    let melhor = 0, menor = Infinity;
+    g.pontos.forEach((p, i) => {
+        const dist = Math.abs(g.px(utc(p.data)) - x);
+        if (dist < menor) { menor = dist; melhor = i; }
+    });
+    return melhor;
+}
+
+const svgGrafico = $('svgGrafico');
+svgGrafico.addEventListener('pointermove', e => { if (estadoGrafico) mostrarPonto(indiceNoPonteiro(e)); });
+svgGrafico.addEventListener('pointerdown', e => { if (estadoGrafico) mostrarPonto(indiceNoPonteiro(e)); });
+svgGrafico.addEventListener('pointerleave', esconderPonto);
+svgGrafico.addEventListener('blur', esconderPonto);
+svgGrafico.addEventListener('keydown', e => {
+    const g = estadoGrafico;
+    if (!g) return;
+    const passo = { ArrowRight: 1, ArrowLeft: -1, PageUp: 12, PageDown: -12 }[e.key];
+    if (e.key === 'Home') mostrarPonto(0);
+    else if (e.key === 'End') mostrarPonto(g.pontos.length - 1);
+    else if (passo) mostrarPonto((g.indice ?? (passo > 0 ? -1 : g.pontos.length)) + passo);
+    else if (e.key === 'Escape') esconderPonto();
+    else return;
+    e.preventDefault();
+});
+
+let larguraAnterior = 0;
+new ResizeObserver(() => {
+    const largura = $('grafico').clientWidth;
+    if (largura && largura !== larguraAnterior) {
+        larguraAnterior = largura;
+        esconderPonto();
+        desenharGrafico();
+    }
+}).observe($('grafico'));
+
+iniciar();
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "titulo": "Tesouro IPCA+ 2050",
+  "vencimento": "2050-08-15",
+  "fonteIpca": "IBGE/SIDRA tabela 1737, variação acumulada no ano (dezembro)",
+  "ipcaAnual": [
+    { "ano": 2016, "taxa": 0.0629 },
+    { "ano": 2017, "taxa": 0.0295 },
+    { "ano": 2018, "taxa": 0.0375 },
+    { "ano": 2019, "taxa": 0.0431 },
+    { "ano": 2020, "taxa": 0.0452 },
+    { "ano": 2021, "taxa": 0.1006 },
+    { "ano": 2022, "taxa": 0.0579 },
+    { "ano": 2023, "taxa": 0.0462 },
+    { "ano": 2024, "taxa": 0.0483 },
+    { "ano": 2025, "taxa": 0.0426 }
+  ],
+  "custodiaAnual": 0.002,
+  "aliquotasIR": [
+    { "ateDias": 180, "aliquota": 0.225 },
+    { "ateDias": 360, "aliquota": 0.2 },
+    { "ateDias": 720, "aliquota": 0.175 },
+    { "ateDias": null, "aliquota": 0.15 }
+  ],
+  "aportePadrao": 700,
+  "diaAporteFuturo": 15,
+  "ultimoMesAporteFuturo": "2050-07"
+}

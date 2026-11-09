@@ -104,13 +104,36 @@ def gravar_atomico(caminho: Path, conteudo: dict) -> None:
         raise
 
 
+def avisar_ipca_atrasado(caminho_config: Path, hoje: date) -> None:
+    """Avisa (sem bloquear) se o config.json não tem o IPCA do ano passado.
+
+    O IBGE divulga o IPCA de dezembro por volta do dia 10 de janeiro; a partir
+    daí a média dos últimos 10 anos completos já pode ser atualizada.
+    """
+    try:
+        cfg = json.loads(caminho_config.read_text(encoding="utf-8"))
+        ultimo = max((x["ano"] for x in cfg.get("ipcaAnual", [])), default=None)
+    except (OSError, ValueError, KeyError, TypeError):
+        print(f"AVISO: não consegui ler o IPCA de {caminho_config}.")
+        return
+    if ultimo is None or ultimo < hoje.year - 1:
+        print(
+            f"AVISO: o config.json tem IPCA até {ultimo}; o de {hoje.year - 1} já deve estar "
+            "publicado (IBGE, por volta de 10 de janeiro). Atualize a inflação do simulador."
+        )
+
+
 def main() -> None:
+    # no Windows, saída redirecionada sai em cp1252 e estraga os acentos
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Acrescenta um aporte cifrado ao data.json.")
     p.add_argument("--data", required=True, type=ler_data, help="data do aporte, AAAA-MM-DD")
     p.add_argument("--valor", required=True, type=ler_valor, help="valor em reais, ex.: 100.50")
     p.add_argument("--taxa", required=True, type=ler_taxa, help="taxa real em decimal, ex.: 0.0650")
     p.add_argument("--keys", type=Path, default=PASTA / "keys.json", help="caminho do keys.json")
     p.add_argument("--arquivo", type=Path, default=PASTA / "data.json", help="caminho do data.json")
+    p.add_argument("--config", type=Path, default=PASTA / "config.json", help="caminho do config.json (só para o aviso do IPCA)")
     args = p.parse_args()
 
     if not args.keys.exists():
@@ -125,6 +148,7 @@ def main() -> None:
     dados["entries"].append(entrada)
     gravar_atomico(args.arquivo, dados)
     print(f"Aporte cifrado acrescentado (id {entrada['id']}). Total de entradas: {len(dados['entries'])}.")
+    avisar_ipca_atrasado(args.config, date.today())
 
 
 if __name__ == "__main__":

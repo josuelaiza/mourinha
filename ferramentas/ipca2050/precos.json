@@ -1,0 +1,11 @@
+{
+  "data": "2026-11-09",
+  "itens": [
+    { "nome": "Coca-Cola 2 L", "preco": 10.00 },
+    { "nome": "Pão francês (unidade)", "preco": 0.80 },
+    { "nome": "Ovos (30 unidades)", "preco": 18.00 },
+    { "nome": "Filé de peito de frango, bandeja (kg)", "preco": 20.00 },
+    { "nome": "Gasolina em Manaus (litro)", "preco": 6.99 },
+    { "nome": "Salário mínimo", "preco": 1621.00 }
+  ]
+}

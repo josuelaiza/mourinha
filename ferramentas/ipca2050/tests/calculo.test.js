@@ -122,6 +122,24 @@ test('simulação completa com dados fictícios', () => {
     perto(r.serie.at(-1).existentesBruto, r.existentes.bruto, 1e-9);
 });
 
+test('valor real fica em R$ da data do primeiro aporte, mesmo anos depois', () => {
+    const r = simular({
+        hoje: '2030-02-01', // depois do primeiro aporte
+        config: CONFIG_FICTICIO,
+        aporteMensal: 700,
+        aportes: [
+            { data: '2030-01-20', valor: 3000, taxa: 0.07 }, // fora de ordem de propósito
+            { data: '2029-11-09', valor: 1000, taxa: 0.06 },
+        ],
+    });
+    assert.equal(r.dataBaseReal, '2029-11-09');
+    assert.equal(r.numeroAportesFuturos, 5);
+    perto(r.existentes.liquido, 4225.273080755658);
+    perto(r.existentes.real, 4074.2311686904527);
+    perto(r.comAportes.liquido, 7802.232576850858);
+    perto(r.comAportes.real, 7523.324183414136);
+});
+
 test('sem aportes: cenário com aportes mensais fica vazio', () => {
     const r = simular({ hoje: '2029-11-09', config: CONFIG_FICTICIO, aporteMensal: 700, aportes: [] });
     assert.equal(r.taxaMedia, null);

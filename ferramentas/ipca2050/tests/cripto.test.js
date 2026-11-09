@@ -64,6 +64,27 @@ test('keys.json tem o formato combinado', async () => {
     assert.ok(keys.publicKeySpki.length > 500);
 });
 
+test('script avisa quando o IPCA do config.json está atrasado', async () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
+    try {
+        const caminhoKeys = join(pasta, 'keys.json');
+        const caminhoData = join(pasta, 'data.json');
+        const caminhoConfig = join(pasta, 'config.json');
+        writeFileSync(caminhoKeys, JSON.stringify(await gerarChaves(SENHA_FICTICIA)));
+        writeFileSync(caminhoData, JSON.stringify({ version: 1, entries: [] }));
+        const base = ['--data', '2031-02-15', '--valor', '10', '--taxa', '0.06', '--keys', caminhoKeys, '--arquivo', caminhoData, '--config', caminhoConfig];
+
+        writeFileSync(caminhoConfig, JSON.stringify({ ipcaAnual: [{ ano: 2016, taxa: 0.05 }] }));
+        assert.match(rodarScript(base), /AVISO: o config\.json tem IPCA até 2016/);
+
+        const anoPassado = new Date().getFullYear() - 1;
+        writeFileSync(caminhoConfig, JSON.stringify({ ipcaAnual: [{ ano: anoPassado, taxa: 0.05 }] }));
+        assert.doesNotMatch(rodarScript(base), /AVISO/);
+    } finally {
+        rmSync(pasta, { recursive: true, force: true });
+    }
+});
+
 test('script recusa taxa em porcentagem e data fora do formato', () => {
     assert.throws(() => rodarScript(['--data', '2031-02-15', '--valor', '10', '--taxa', '6.12']));
     assert.throws(() => rodarScript(['--data', '15/02/2031', '--valor', '10', '--taxa', '0.06']));

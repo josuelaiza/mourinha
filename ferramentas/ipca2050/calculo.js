@@ -128,7 +128,13 @@ export function simular({ aportes, hoje, config, aporteMensal }) {
     });
 
     const anosAteVenc = Math.max(0, diasEntre(hoje, venc)) / DIAS_POR_ANO;
-    const deflator = Math.pow(1 + inflacao, anosAteVenc);
+
+    // Valor real em R$ da data do PRIMEIRO aporte: base fixa, que não anda
+    // com o calendário (daqui a anos continua comparável com o que foi aportado).
+    // Sem aportes ainda, a base é hoje.
+    const dataBaseReal = aportes.length ? aportes.reduce((m, a) => (a.data < m ? a.data : m), aportes[0].data) : hoje;
+    const anosBaseAteVenc = Math.max(0, diasEntre(dataBaseReal, venc)) / DIAS_POR_ANO;
+    const deflator = Math.pow(1 + inflacao, anosBaseAteVenc);
     const cenario = lotes => {
         const s = somar(lotes, venc, p);
         return { ...s, real: s.liquido / deflator };
@@ -149,7 +155,7 @@ export function simular({ aportes, hoje, config, aporteMensal }) {
     });
 
     return {
-        inflacao, taxaMedia, anosAteVenc,
+        inflacao, taxaMedia, anosAteVenc, dataBaseReal,
         totalAportado: aportes.reduce((s, a) => s + a.valor, 0),
         numeroAportes: aportes.length,
         numeroAportesFuturos: futuros ? futuros.length : 0,

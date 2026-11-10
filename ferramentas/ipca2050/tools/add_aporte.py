@@ -11,7 +11,8 @@ memória deste processo: não é gravado em arquivo nem impresso na tela.
 Formato (o mesmo que a página decifra com a Web Crypto API):
   - chave AES-256-GCM aleatória cifra o JSON do aporte:
       IPCA+: {"data", "valor", "taxa"}   (sem "tipo", como os primeiros aportes)
-      FII:   {"tipo": "fii", "data", "cotas", "preco"}
+      FII:   {"tipo": "fii", "data", "cotas", "preco"} (+ "origem": "rendimento"
+             quando a compra foi feita com rendimento do fundo)
     o tipo vai dentro da parte cifrada: o repo não mostra qual investimento é;
   - a chave AES vai embrulhada com RSA-OAEP (SHA-256, MGF1-SHA-256, sem rótulo);
   - entrada: {"id", "wrappedKey", "iv", "ciphertext"}, tudo em base64
@@ -148,6 +149,8 @@ def main() -> None:
     p.add_argument("--taxa", type=ler_taxa, help="IPCA+: taxa real em decimal, ex.: 0.0650")
     p.add_argument("--cotas", type=ler_cotas, help="FII: quantidade de cotas, ex.: 10")
     p.add_argument("--preco", type=ler_valor, help="FII: preço pago por cota, ex.: 9.80")
+    p.add_argument("--origem", choices=["aporte", "rendimento"], default="aporte",
+                   help="FII: aporte (seu dinheiro) ou rendimento (compra com rendimento do fundo)")
     p.add_argument("--keys", type=Path, default=PASTA / "keys.json", help="caminho do keys.json")
     p.add_argument("--arquivo", type=Path, default=PASTA / "data.json", help="caminho do data.json")
     p.add_argument("--config", type=Path, default=PASTA / "config.json", help="caminho do config.json (só para o aviso do IPCA)")
@@ -155,11 +158,15 @@ def main() -> None:
     if args.tipo == "ipca":
         if args.valor is None or args.taxa is None or args.cotas is not None or args.preco is not None:
             p.error("IPCA+ usa --valor e --taxa (sem --cotas/--preco)")
+        if args.origem != "aporte":
+            p.error("--origem só vale para FII")
         payload = {"data": args.data, "valor": args.valor, "taxa": args.taxa}
     else:
         if args.cotas is None or args.preco is None or args.valor is not None or args.taxa is not None:
             p.error("FII usa --cotas e --preco (sem --valor/--taxa)")
         payload = {"tipo": "fii", "data": args.data, "cotas": args.cotas, "preco": args.preco}
+        if args.origem == "rendimento":
+            payload["origem"] = "rendimento"
 
     if not args.keys.exists():
         raise SystemExit(f"Não achei {args.keys}. Crie as chaves pela página primeiro.")

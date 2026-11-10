@@ -504,8 +504,8 @@
 <script type="module">
 // ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
-import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator } from './calculo.js?v=6';
-import * as cripto from './cripto.js?v=6';
+import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator } from './calculo.js?v=7';
+import * as cripto from './cripto.js?v=7';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
@@ -585,7 +585,7 @@ async function abrirComChave(chave, lembrada) {
             const a = await cripto.decifrarEntrada(chave, entrada);
             if (!/^\d{4}-\d{2}-\d{2}$/.test(a.data)) throw new Error('payload');
             if (a.tipo === 'fii') {
-                if (!(a.cotas > 0) || !(a.preco > 0)) throw new Error('payload');
+                if (!(a.cotas > 0) || !(a.preco > 0) || ![undefined, 'rendimento'].includes(a.origem)) throw new Error('payload');
             } else if (a.tipo !== undefined || !(a.valor > 0) || typeof a.taxa !== 'number') {
                 throw new Error('payload');
             }
@@ -1082,9 +1082,11 @@ function mostrarFii(rf, dataFinal, fmt) {
     if (!rf) return;
     const n = aportesFii.length;
     $('fiiCotas').textContent = rf.cotasHoje.toLocaleString('pt-BR');
-    $('fiiPreco').textContent = `a ${brl.format(rf.preco)} (último aporte)`;
+    $('fiiPreco').textContent = `a ${brl.format(rf.preco)} (última compra)`;
     $('fiiInvestido').textContent = brl.format(rf.investido);
-    $('fiiNumero').textContent = `${n} aporte${n === 1 ? '' : 's'}`;
+    const compras = aportesFii.filter(a => a.origem !== 'rendimento').length;
+    $('fiiNumero').textContent = `${compras} aporte${compras === 1 ? '' : 's'}`
+        + (rf.reinvestido > 0 ? ` · + ${brl.format(rf.reinvestido)} de rendimentos reinvestidos` : '');
     $('fiiFuturos').textContent = rf.numeroAportesFuturos ? `${rf.numeroAportesFuturos} aportes até a data` : 'sem aportes mensais';
     $('fiiTaxa').textContent = pct(rf.taxaMensal);
     const ganho = rf.ganhoRealEquivalente;
@@ -1224,7 +1226,7 @@ function recalcular() {
         `Real = líquido em R$ de ${mesBase} (data do primeiro aporte entre todos os investimentos, ${dataBr(r.dataBaseReal)}); a base não muda com o passar dos anos.`,
     ]);
     preencherAjuda('ajudaFii', [
-        `A cota fica parada no preço do último aporte (${rf ? brl.format(rf.preco) : '—'}): a página é estática e não tem cotação ao vivo.`,
+        `A cota fica parada no preço da última compra (${rf ? brl.format(rf.preco) : '—'}): a página é estática e não tem cotação ao vivo.`,
         `Rendimento mensal = rendimento por cota ÷ preço da cota${rf ? ` (${brl.format(rf.preco)})` : ''}, mantido igual até a data final. O valor de hoje vem de uma Selic alta: se ela cair, o fundo tende a pagar menos. Baixe o valor para simular um cenário mais conservador.`,
         `Ganho real equivalente = quanto essa taxa rende por ano acima da inflação projetada de ${pct(r.inflacao)}. Num FII de recebíveis a correção pela inflação vem dentro do rendimento.`,
         `Todo dia ${(config.fii || {}).diaAporteFuturo || 15}, rendimento + aporte compram cotas inteiras; o troco fica guardado para o mês seguinte.`,
@@ -1236,7 +1238,7 @@ function recalcular() {
         `Tesouro IPCA+: líquido se resgatado na data (taxa contratada, sem marcação a mercado), contando os aportes mensais até ela.`,
         `FII: projetado até a data, com os aportes mensais e o rendimento por cota da aba do FII.`,
         `A data vai de hoje até 15/08/2050 (vencimento do IPCA+) e também é a data final do FII.`,
-        `Total aportado = soma do que você investiu (IPCA+ + FII). Patrimônio hoje = estimativa do que receberia resgatando tudo hoje: IPCA+ pela taxa contratada, já sem IR e custódia; FII pelas cotas × preço do último aporte. O valor real de resgate no Tesouro muda todo dia com o mercado.`,
+        `Total aportado = soma do dinheiro que saiu do seu bolso (IPCA+ + FII). Compras de cotas feitas com rendimento do fundo (Origem = Rendimento no Notion) contam nas cotas, mas não no total aportado. Patrimônio hoje = estimativa do que receberia resgatando tudo hoje: IPCA+ pela taxa contratada, já sem IR e custódia; FII pelas cotas × preço da última compra. O valor real de resgate no Tesouro muda todo dia com o mercado.`,
         `Real = total trazido a R$ de ${mesBase} (data do primeiro aporte entre todos os investimentos) pela inflação projetada de ${pct(r.inflacao)} a.a.`,
     ]);
 

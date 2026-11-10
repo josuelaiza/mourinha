@@ -6,7 +6,8 @@ Roda no GitHub Actions (todo dia e pelo botão "Sincronizar" do site):
 
 Lê os dois bancos do Notion listados em config.json ("sincronizacao"):
   - Tesouro IPCA+: Data (título, dd/mm/aaaa), Valor (R$), Taxa fixa (decimal)
-  - FII:           Data (título, dd/mm/aaaa), Cotas, Valor (R$ TOTAL pago)
+  - FII:           Data (título, dd/mm/aaaa), Cotas, Valor (R$ TOTAL pago) e
+                   Origem (seleção: "Aporte" ou "Rendimento"; vazio = Aporte)
 e cifra cada linha nova do mesmo jeito que o add_aporte.py (só com a chave
 pública). Para não importar a mesma linha duas vezes, o data.json guarda em
 "importados" o SHA-256 do id de cada página do Notion já trazida: não revela
@@ -114,7 +115,12 @@ def aporte_fii(props: dict) -> dict:
     if cotas <= 0 or cotas != int(cotas) or not valor > 0:
         raise LinhaInvalida("cotas ou valor fora do esperado")
     cotas = int(cotas)
-    return {"tipo": "fii", "data": data, "cotas": cotas, "preco": round(valor / cotas, 6)}
+    aporte = {"tipo": "fii", "data": data, "cotas": cotas, "preco": round(valor / cotas, 6)}
+    # compra feita com rendimento do fundo: conta nas cotas, não no total aportado
+    origem = ((props.get("Origem") or {}).get("select") or {}).get("name", "")
+    if origem.strip().lower().startswith("rend"):
+        aporte["origem"] = "rendimento"
+    return aporte
 
 
 LEITORES = {"ipca": aporte_ipca, "fii": aporte_fii}

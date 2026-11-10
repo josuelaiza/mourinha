@@ -119,7 +119,7 @@ const SINCRONIZAR = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools',
 const titulo = t => ({ title: [{ plain_text: t }] });
 const num = n => ({ number: n });
 const paginaIpca = (id, data, valor, taxa) => ({ id, properties: { Data: titulo(data), Valor: num(valor), 'Taxa fixa': num(taxa) } });
-const paginaFii = (id, data, cotas, valor) => ({ id, properties: { Data: titulo(data), Cotas: num(cotas), Valor: num(valor) } });
+const paginaFii = (id, data, cotas, valor, origem) => ({ id, properties: { Data: titulo(data), Cotas: num(cotas), Valor: num(valor), Origem: { select: origem ? { name: origem } : null } } });
 
 test('sincronização: importa só linhas novas, cifradas, sem repetir e sem mostrar valores', async () => {
     const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
@@ -155,11 +155,16 @@ test('sincronização: importa só linhas novas, cifradas, sem repetir e sem mos
         assert.deepEqual(await decifrarEntrada(chave, dados.entries[1]), { tipo: 'fii', data: '2031-02-16', cotas: 3, preco: 9.87 });
 
         // rodar de novo não duplica; uma linha nova entra
-        paginas.fii.push(paginaFii('66666666-6666-4666-8666-666666666666', '15/04/2031', 1, 9.9));
+        paginas.fii.push(paginaFii('66666666-6666-4666-8666-666666666666', '15/04/2031', 1, 9.9, 'Rendimento'));
+        paginas.fii.push(paginaFii('77777777-7777-4777-8777-777777777777', '16/04/2031', 1, 9.9, 'Aporte'));
         writeFileSync(arq('paginas.json'), JSON.stringify(paginas));
-        assert.match(rodar(), /^1 aporte\(s\) novo\(s\)/);
+        assert.match(rodar(), /^2 aporte\(s\) novo\(s\)/);
         assert.match(rodar(), /^0 aporte\(s\) novo\(s\)/);
-        assert.equal(JSON.parse(readFileSync(arq('data.json'), 'utf8')).entries.length, 3);
+        const depois = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
+        assert.equal(depois.entries.length, 4);
+        assert.ok(!/rendimento/i.test(JSON.stringify(depois)), 'origem em claro no data.json');
+        assert.deepEqual(await decifrarEntrada(chave, depois.entries[2]), { tipo: 'fii', data: '2031-04-15', cotas: 1, preco: 9.9, origem: 'rendimento' });
+        assert.deepEqual(await decifrarEntrada(chave, depois.entries[3]), { tipo: 'fii', data: '2031-04-16', cotas: 1, preco: 9.9 });
     } finally {
         rmSync(pasta, { recursive: true, force: true });
     }
@@ -172,4 +177,21 @@ test('cifrarEntrada (chave pública) volta com decifrarEntrada (privada)', async
     assert.ok(!JSON.stringify(entrada).includes('ficticio'));
     const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
     assert.deepEqual(await decifrarEntrada(chave, entrada), { token: 'ficticio_123' });
+});
+
+test('add_aporte: --origem rendimento só para FII', async () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
+    try {
+        const keys = await gerarChaves(SENHA_FICTICIA);
+        const k = join(pasta, 'keys.json'), d = join(pasta, 'data.json');
+        writeFileSync(k, JSON.stringify(keys));
+        writeFileSync(d, JSON.stringify({ version: 1, entries: [] }));
+        rodarScript(['--tipo', 'fii', '--data', '2031-05-15', '--cotas', '2', '--preco', '9.5', '--origem', 'rendimento', '--keys', k, '--arquivo', d]);
+        const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
+        const e = JSON.parse(readFileSync(d, 'utf8')).entries[0];
+        assert.deepEqual(await decifrarEntrada(chave, e), { tipo: 'fii', data: '2031-05-15', cotas: 2, preco: 9.5, origem: 'rendimento' });
+        assert.throws(() => rodarScript(['--data', '2031-05-15', '--valor', '10', '--taxa', '0.06', '--origem', 'rendimento', '--keys', k, '--arquivo', d]));
+    } finally {
+        rmSync(pasta, { recursive: true, force: true });
+    }
 });

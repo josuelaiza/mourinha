@@ -211,7 +211,7 @@ function datasMensais(inicio, fim, dia) {
 // FII (ex.: MXRF11)
 // ------------------------------------------------------------------ //
 // aportes = [{ data, cotas, preco }]. Modelo de FII de recebíveis (CRI):
-// - a cota fica parada no preço do último aporte;
+// - a cota fica parada no preço da última compra (aporte ou reinvestimento);
 // - todo dia `dia`, do mês que vem até a data final, o fundo paga
 //   `rendimentoPorCota` (R$, o valor que ele paga hoje) por cota que você tem;
 //   taxa mensal = rendimento por cota ÷ preço da cota;
@@ -225,7 +225,10 @@ export function simularFii({ aportes, hoje, dataFinal, inflacao, rendimentoPorCo
     if (!aportes.length) return null;
     const preco = [...aportes].sort((a, b) => a.data.localeCompare(b.data)).at(-1).preco;
     const cotasHoje = aportes.reduce((s, a) => s + a.cotas, 0);
-    const investido = aportes.reduce((s, a) => s + a.cotas * a.preco, 0);
+    // Compras com rendimento do fundo (origem "rendimento") contam nas cotas,
+    // mas não no investido: investido = só o dinheiro que saiu do bolso.
+    const investido = aportes.filter(a => a.origem !== 'rendimento').reduce((s, a) => s + a.cotas * a.preco, 0);
+    const reinvestido = aportes.filter(a => a.origem === 'rendimento').reduce((s, a) => s + a.cotas * a.preco, 0);
     const porCota = rendimentoPorCota > 0 ? rendimentoPorCota : 0;
     const taxaMensal = porCota / preco;
     const ganhoRealEquivalente = Math.pow(1 + taxaMensal, 12) / (1 + inflacao) - 1;
@@ -251,7 +254,7 @@ export function simularFii({ aportes, hoje, dataFinal, inflacao, rendimentoPorCo
     const rendaMensal = cotas * preco * taxaMensal;
     const rendaGastavel = cotas * preco * taxaGastavel;
     return {
-        preco, cotasHoje, investido, patrimonioHoje: cotasHoje * preco, taxaMensal, ganhoRealEquivalente,
+        preco, cotasHoje, investido, reinvestido, patrimonioHoje: cotasHoje * preco, taxaMensal, ganhoRealEquivalente,
         cotasFinal: cotas, sobra, patrimonio, real: patrimonio / divisor,
         numeroAportesFuturos: aporte ? meses.length : 0, aportadoFuturo: aporte * meses.length, rendimentos,
         rendaMensal, rendaMensalReal: rendaMensal / divisor,

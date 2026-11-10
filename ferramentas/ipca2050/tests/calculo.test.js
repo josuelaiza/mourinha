@@ -286,3 +286,18 @@ test('panorama: base real comum e valor do IPCA numa data alvo', () => {
     // no próprio dia dos aportes, vale o investido
     perto(simular({ ...base, dataAlvo: '2029-11-09' }).naData.liquido, 4000, 1e-9);
 });
+
+test('FII: compra com rendimento conta nas cotas, não no investido', () => {
+    const r = simularFii({
+        aportes: [
+            { data: '2030-01-10', cotas: 10, preco: 10 },
+            { data: '2030-02-10', cotas: 1, preco: 10.5, origem: 'rendimento' },
+        ],
+        hoje: '2030-02-10', dataFinal: '2030-02-10', inflacao: 0, rendimentoPorCota: 0.1, aporteMensal: 0, dia: 15,
+    });
+    assert.equal(r.cotasHoje, 11);
+    assert.equal(r.investido, 100);
+    assert.equal(r.reinvestido, 10.5);
+    assert.equal(r.preco, 10.5); // preço da compra mais recente, qualquer origem
+    assert.equal(r.patrimonioHoje, 115.5);
+});

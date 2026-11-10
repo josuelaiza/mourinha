@@ -203,6 +203,25 @@
             background: var(--cartao); color: var(--texto); border: 1px solid var(--borda); border-radius: 10px; padding: 14px;
         }
         dialog#janelaPrecos::backdrop { background: rgba(0, 0, 0, 0.6); }
+        dialog#janelaToken {
+            margin: auto; width: min(480px, calc(100vw - 24px)); max-height: calc(100vh - 48px);
+            background: var(--cartao); color: var(--texto); border: 1px solid var(--borda); border-radius: 10px; padding: 14px;
+        }
+        dialog#janelaToken::backdrop { background: rgba(0, 0, 0, 0.6); }
+        dialog h2 { font-size: 0.85rem; font-weight: 600; color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.4px; }
+        .texto-janela { font-size: 0.8rem; color: var(--texto-2); margin-bottom: 8px; }
+        .passos { font-size: 0.8rem; color: var(--texto-2); margin: 0 0 10px 18px; }
+        .passos li + li { margin-top: 3px; }
+        .botoes-janela { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+        .aviso-sync { border-left-color: var(--destaque); }
+        .status-sync { font-size: 0.75rem; color: var(--texto-3); margin: -4px 2px 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .status-sync .ponto { width: 7px; height: 7px; border-radius: 50%; background: var(--texto-3); flex: none; }
+        .status-sync .ponto.ok { background: var(--ok); }
+        .status-sync .ponto.erro { background: var(--erro); }
+        .status-sync .ponto.andando { background: var(--aviso); }
+        .status-sync a { color: var(--texto-3); }
+        .aviso-sync.erro { border-left-color: var(--erro); }
+        .aviso-sync a, .aviso-sync button.link { color: var(--destaque); background: none; border: none; font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
 
         .so-estreito { display: none; }
         @media (max-width: 560px) {
@@ -232,6 +251,7 @@
         <div class="acoes" id="acoesSessao" hidden>
             <span id="estadoLembrar"></span>
             <button type="button" class="botao secundario" id="botaoPrecos" hidden>Preços de referência</button>
+            <button type="button" class="botao secundario" id="botaoSincronizar" hidden>Sincronizar</button>
             <button type="button" class="botao secundario" id="botaoEsquecer"><span class="so-largo">Esquecer neste dispositivo</span><span class="so-estreito">Esquecer</span></button>
         </div>
     </header>
@@ -283,6 +303,9 @@
     <!-- Simulador -->
     <main id="telaSimulador" hidden>
         <div class="alerta" id="avisoSimulador" hidden></div>
+        <div class="alerta aviso-sync" id="avisoSync" role="status" hidden></div>
+
+        <p class="status-sync" id="statusSync" hidden></p>
 
         <nav class="abas" role="tablist" aria-label="Investimentos">
             <button type="button" class="aba" role="tab" id="abaPanorama" aria-controls="painelPanorama" aria-selected="true">Panorama</button>
@@ -436,6 +459,32 @@
             </div>
         </section>
 
+        <!-- Token do botão Sincronizar (janela) -->
+        <dialog id="janelaToken" aria-labelledby="tituloToken">
+            <form id="formToken" method="dialog">
+                <div class="cabecalho">
+                    <h2 id="tituloToken">Configurar sincronização</h2>
+                </div>
+                <p class="texto-janela">O botão pede ao GitHub para ler o Notion agora, em vez de esperar a rodada das 22h. Para isso ele precisa de um token do GitHub que só pode disparar automações do repositório <code>mourinha</code>.</p>
+                <ol class="passos">
+                    <li>No GitHub: Settings → Developer settings → Personal access tokens → <strong>Fine-grained tokens</strong> → Generate new token.</li>
+                    <li>Repository access: <strong>Only select repositories</strong> → <code>mourinha</code>.</li>
+                    <li>Permissions → Repository → <strong>Actions: Read and write</strong> (nenhuma outra).</li>
+                    <li>Gere, copie e cole aqui.</li>
+                </ol>
+                <div class="campo">
+                    <label for="tokenGithub">Token do GitHub</label>
+                    <input type="password" id="tokenGithub" autocomplete="off" spellcheck="false" required>
+                </div>
+                <p class="texto-janela">Ele fica guardado só neste aparelho, cifrado: só abre depois que a página é desbloqueada com a sua frase-senha.</p>
+                <div class="mensagem" id="mensagemToken" role="status"></div>
+                <div class="botoes-janela">
+                    <button type="button" class="botao secundario" id="cancelarToken">Cancelar</button>
+                    <button type="submit" class="botao" id="salvarToken">Salvar e sincronizar</button>
+                </div>
+            </form>
+        </dialog>
+
         <!-- Preços de referência (janela) -->
         <dialog id="janelaPrecos" aria-labelledby="tituloPrecos">
             <div class="cabecalho">
@@ -452,8 +501,8 @@
 <script type="module">
 // ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
-import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator } from './calculo.js?v=5';
-import * as cripto from './cripto.js?v=5';
+import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator } from './calculo.js?v=6';
+import * as cripto from './cripto.js?v=6';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
@@ -462,6 +511,7 @@ const CHAVE_DATA_FINAL = 'patrimonio.dataFinal';
 const CHAVE_FII_APORTE = 'patrimonio.fii.aporteMensal';
 const CHAVE_FII_RENDIMENTO = 'patrimonio.fii.rendimentoPorCota'; // R$ por cota por mês
 const CHAVE_ABA = 'patrimonio.aba';
+const CHAVE_TOKEN = 'patrimonio.tokenSincronizar'; // token do GitHub, cifrado com a chave pública
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const anosAbertos = new Set(); // anos abertos na tabela mês a mês (sobrevive ao recálculo)
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -647,6 +697,10 @@ $('formSenha').addEventListener('submit', async evento => {
 
 $('botaoEsquecer').addEventListener('click', async () => {
     try { await cripto.esquecerChave(); } catch { /* nada a apagar */ }
+    try { localStorage.removeItem(CHAVE_TOKEN); } catch { /* sem storage */ }
+    $('avisoSync').hidden = true;
+    $('statusSync').hidden = true;
+    clearInterval(acompanhando);
     chavePrivada = null;
     aportes = [];
     aportesFii = [];
@@ -695,6 +749,8 @@ function abrirSimulador() {
     $('dataFinal').max = config.vencimento;
     $('dataFinal').value = lerDataFinal();
     mostrarPrecos();
+    $('botaoSincronizar').hidden = !(config.sincronizacao && config.sincronizacao.repo);
+    if (!$('botaoSincronizar').hidden) atualizarStatusSync();
     mostrar('telaSimulador');
     let aba = 'abaPanorama';
     try { aba = localStorage.getItem(CHAVE_ABA) || aba; } catch { /* sem storage */ }
@@ -767,6 +823,175 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharAjudas
 function preencherAjuda(id, textos) {
     $(id).querySelector('ul').replaceChildren(...textos.map(t => { const li = document.createElement('li'); li.textContent = t; return li; }));
 }
+
+// ------------------------------------------------------------------ //
+// Botão Sincronizar: dispara a automação do GitHub que lê o Notion
+// ------------------------------------------------------------------ //
+function avisoSync(partes, erro = false) {
+    const caixa = $('avisoSync');
+    caixa.classList.toggle('erro', erro);
+    caixa.replaceChildren(...partes);
+    caixa.hidden = false;
+}
+
+function linkAcompanhar() {
+    const { repo, workflow } = config.sincronizacao;
+    const a = document.createElement('a');
+    a.href = `https://github.com/${repo}/actions/workflows/${workflow}`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = 'Acompanhar no GitHub';
+    return a;
+}
+
+function botaoTrocarToken() {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'link';
+    b.textContent = 'Trocar token';
+    b.addEventListener('click', abrirJanelaToken);
+    return b;
+}
+
+function abrirJanelaToken() {
+    $('tokenGithub').value = '';
+    $('mensagemToken').textContent = '';
+    $('mensagemToken').className = 'mensagem';
+    $('janelaToken').showModal();
+    $('tokenGithub').focus();
+}
+
+async function tokenGuardado() {
+    let salvo = null;
+    try { salvo = localStorage.getItem(CHAVE_TOKEN); } catch { /* sem storage */ }
+    if (!salvo || !chavePrivada) return null;
+    try { return (await cripto.decifrarEntrada(chavePrivada, JSON.parse(salvo))).token || null; } catch { return null; }
+}
+
+async function dispararSincronizacao(token) {
+    const { repo, workflow } = config.sincronizacao;
+    $('botaoSincronizar').disabled = true;
+    avisoSync(['Pedindo a sincronização ao GitHub…']);
+    try {
+        const resposta = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${workflow}/dispatches`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/vnd.github+json',
+                'Authorization': `Bearer ${token}`,
+                'X-GitHub-Api-Version': '2022-11-28',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ref: 'main' }),
+        });
+        if (resposta.status === 204) {
+            acompanharSync(token, Date.now());
+            const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            avisoSync([`Sincronização pedida às ${hora}. O GitHub lê o Notion em cerca de 1 minuto; o aporte novo aparece aqui em até uns 10 minutos (recarregue a página). `, linkAcompanhar()]);
+        } else if ([401, 403, 404].includes(resposta.status)) {
+            avisoSync([`O GitHub recusou o token (HTTP ${resposta.status}): pode ter expirado ou estar sem a permissão Actions. `, botaoTrocarToken()], true);
+        } else {
+            avisoSync([`O GitHub respondeu HTTP ${resposta.status}. Tente de novo daqui a pouco. `, linkAcompanhar()], true);
+        }
+    } catch {
+        avisoSync(['Sem conexão com o GitHub. Tente de novo quando tiver internet.'], true);
+    } finally {
+        $('botaoSincronizar').disabled = false;
+    }
+}
+
+// Última execução da automação, lida da API pública do GitHub (repo público:
+// não precisa de token; com o token do botão o limite de consultas é maior).
+async function ultimaExecucao(token) {
+    const { repo, workflow } = config.sincronizacao;
+    const headers = { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const resposta = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${workflow}/runs?per_page=1`, { headers, cache: 'no-store' });
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    const corpo = await resposta.json();
+    return (corpo.workflow_runs || [])[0] || null;
+}
+
+function dataHora(iso) {
+    const d = new Date(iso);
+    return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function mostrarStatusSync(execucao) {
+    const linha = $('statusSync');
+    const ponto = document.createElement('span');
+    ponto.className = 'ponto';
+    const texto = document.createElement('span');
+    if (!execucao) {
+        texto.textContent = 'Nenhuma sincronização com o Notion ainda.';
+    } else {
+        const como = execucao.event === 'schedule' ? 'automática' : 'pelo botão';
+        if (execucao.status !== 'completed') {
+            ponto.classList.add('andando');
+            texto.textContent = `Sincronizando com o Notion… (${como}, iniciada em ${dataHora(execucao.run_started_at || execucao.created_at)})`;
+        } else if (execucao.conclusion === 'success') {
+            ponto.classList.add('ok');
+            texto.textContent = `Última sincronização com o Notion: ${dataHora(execucao.updated_at)} (${como})`;
+        } else {
+            ponto.classList.add('erro');
+            texto.textContent = `Última sincronização falhou em ${dataHora(execucao.updated_at)} (${como}). `;
+            const a = document.createElement('a');
+            a.href = execucao.html_url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.textContent = 'Ver detalhes';
+            texto.appendChild(a);
+        }
+    }
+    linha.replaceChildren(ponto, texto);
+    linha.hidden = false;
+}
+
+async function atualizarStatusSync(token) {
+    try {
+        const execucao = await ultimaExecucao(token);
+        mostrarStatusSync(execucao);
+        return execucao;
+    } catch {
+        return undefined; // sem internet ou limite da API: só não mostra
+    }
+}
+
+// Depois do botão: acompanha até a execução nova terminar (no máximo ~4 min)
+let acompanhando = null;
+function acompanharSync(token, desde) {
+    clearInterval(acompanhando);
+    let tentativas = 0;
+    acompanhando = setInterval(async () => {
+        tentativas++;
+        const execucao = await atualizarStatusSync(token);
+        const nova = execucao && new Date(execucao.created_at).getTime() >= desde - 60000;
+        if ((nova && execucao.status === 'completed') || tentativas >= 30) clearInterval(acompanhando);
+    }, 8000);
+}
+
+$('botaoSincronizar').addEventListener('click', async () => {
+    const token = await tokenGuardado();
+    if (token) dispararSincronizacao(token);
+    else abrirJanelaToken();
+});
+
+$('cancelarToken').addEventListener('click', () => $('janelaToken').close());
+$('formToken').addEventListener('submit', async e => {
+    e.preventDefault();
+    const token = $('tokenGithub').value.trim();
+    if (!token) return;
+    try {
+        const cifrado = await cripto.cifrarEntrada(keys.publicKeySpki, { token });
+        localStorage.setItem(CHAVE_TOKEN, JSON.stringify(cifrado));
+    } catch {
+        $('mensagemToken').className = 'mensagem erro';
+        $('mensagemToken').textContent = 'Não consegui guardar o token neste navegador.';
+        return;
+    }
+    $('tokenGithub').value = '';
+    $('janelaToken').close();
+    dispararSincronizacao(token);
+});
 
 $('botaoPrecos').addEventListener('click', () => $('janelaPrecos').showModal());
 $('fecharPrecos').addEventListener('click', () => $('janelaPrecos').close());

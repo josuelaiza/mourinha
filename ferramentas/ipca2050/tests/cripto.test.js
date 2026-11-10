@@ -113,3 +113,63 @@ test('aporte de FII: tipo vai dentro da parte cifrada e a página decifra', asyn
         rmSync(pasta, { recursive: true, force: true });
     }
 });
+
+// Sincronização Notion -> data.json, com páginas FICTÍCIAS no formato da API do Notion
+const SINCRONIZAR = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools', 'sincronizar_notion.py');
+const titulo = t => ({ title: [{ plain_text: t }] });
+const num = n => ({ number: n });
+const paginaIpca = (id, data, valor, taxa) => ({ id, properties: { Data: titulo(data), Valor: num(valor), 'Taxa fixa': num(taxa) } });
+const paginaFii = (id, data, cotas, valor) => ({ id, properties: { Data: titulo(data), Cotas: num(cotas), Valor: num(valor) } });
+
+test('sincronização: importa só linhas novas, cifradas, sem repetir e sem mostrar valores', async () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
+    try {
+        const keys = await gerarChaves(SENHA_FICTICIA);
+        const arq = n => join(pasta, n);
+        writeFileSync(arq('keys.json'), JSON.stringify(keys));
+        writeFileSync(arq('config.json'), JSON.stringify({ sincronizacao: { notion: { ipca: 'x', fii: 'y' } } }));
+        writeFileSync(arq('data.json'), JSON.stringify({ version: 1, entries: [] }));
+        const paginas = {
+            ipca: [
+                paginaIpca('11111111-1111-4111-8111-111111111111', '15/02/2031', 1234.56, 0.0612),
+                paginaIpca('22222222-2222-4222-8222-222222222222', '2031-02-15', 10, 0.06), // data fora do formato
+                { ...paginaIpca('33333333-3333-4333-8333-333333333333', '15/03/2031', 10, 0.06), archived: true },
+            ],
+            fii: [
+                paginaFii('44444444-4444-4444-8444-444444444444', '16/02/2031', 3, 29.61),
+                paginaFii('55555555-5555-4555-8555-555555555555', '16/02/2031', 2.5, 20), // cota fracionada
+            ],
+        };
+        writeFileSync(arq('paginas.json'), JSON.stringify(paginas));
+        const rodar = () => execFileSync(PYTHON, [SINCRONIZAR, '--keys', arq('keys.json'), '--arquivo', arq('data.json'), '--config', arq('config.json'), '--paginas', arq('paginas.json')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+
+        const saida = rodar();
+        assert.match(saida, /2 aporte\(s\) novo\(s\).*2 linha\(s\) ignorada\(s\)/);
+        assert.ok(!/1234|29[.,]61|2031/.test(saida), 'a saída mostrou valores');
+        const dados = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
+        assert.equal(dados.entries.length, 2);
+        assert.equal(dados.importados.length, 2);
+        assert.ok(!/1234|29\.61|fii|2031/.test(JSON.stringify(dados)), 'valor em claro no data.json');
+        const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { data: '2031-02-15', valor: 1234.56, taxa: 0.0612 });
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[1]), { tipo: 'fii', data: '2031-02-16', cotas: 3, preco: 9.87 });
+
+        // rodar de novo não duplica; uma linha nova entra
+        paginas.fii.push(paginaFii('66666666-6666-4666-8666-666666666666', '15/04/2031', 1, 9.9));
+        writeFileSync(arq('paginas.json'), JSON.stringify(paginas));
+        assert.match(rodar(), /^1 aporte\(s\) novo\(s\)/);
+        assert.match(rodar(), /^0 aporte\(s\) novo\(s\)/);
+        assert.equal(JSON.parse(readFileSync(arq('data.json'), 'utf8')).entries.length, 3);
+    } finally {
+        rmSync(pasta, { recursive: true, force: true });
+    }
+});
+
+test('cifrarEntrada (chave pública) volta com decifrarEntrada (privada)', async () => {
+    const { cifrarEntrada } = await import('../cripto.js');
+    const keys = await gerarChaves(SENHA_FICTICIA);
+    const entrada = await cifrarEntrada(keys.publicKeySpki, { token: 'ficticio_123' });
+    assert.ok(!JSON.stringify(entrada).includes('ficticio'));
+    const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
+    assert.deepEqual(await decifrarEntrada(chave, entrada), { token: 'ficticio_123' });
+});

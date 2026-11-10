@@ -27,5 +27,11 @@
       "iv": "4D9j/I8x9QEbOm8a",
       "ciphertext": "1+gg1KsTVEYOhpIxyaVwyf/qsGBSTwM2yiGXU5qwrAJ9bdgMOfY9MNbBvp9+VJDBbOO/4Jt86cORSc/rZPUdZb/zR2vJAq+dRKY="
     }
+  ],
+  "importados": [
+    "3d0807dab87c26f7ed36f7b895610d7711c6ddf6704ae6658a31e3988ee80292",
+    "bf2d685148ca8c064339a7992960d2ebd4457802c2c78f52839b83ac13a009de",
+    "0cbba2b5e9aa0b877a404c69689a964d4d7987b6adb4a5dfae870391af2e4e00",
+    "322855a0a096b714a8a5f41f09d3298978bd86989d1cb0aebec0c5f400448a5c"
   ]
 }

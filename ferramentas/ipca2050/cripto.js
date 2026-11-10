@@ -85,6 +85,22 @@ export async function abrirChavePrivada(keys, senha) {
 }
 
 // Decifra uma entrada do data.json -> { data, valor, taxa }
+// O inverso de decifrarEntrada, só com a chave pública (SPKI em base64): mesmo
+// formato do add_aporte.py. A página usa para guardar o token do botão
+// "Sincronizar" de forma que só abre depois de desbloquear com a frase-senha.
+export async function cifrarEntrada(publicKeySpki, conteudo) {
+    const publica = await subtle.importKey('spki', deBase64(publicKeySpki), RSA, false, ['wrapKey']);
+    const aes = await subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const cifrado = await subtle.encrypt({ name: 'AES-GCM', iv }, aes, new TextEncoder().encode(JSON.stringify(conteudo)));
+    const embrulhada = await subtle.wrapKey('raw', aes, publica, { name: 'RSA-OAEP' });
+    return {
+        wrappedKey: paraBase64(new Uint8Array(embrulhada)),
+        iv: paraBase64(iv),
+        ciphertext: paraBase64(new Uint8Array(cifrado)),
+    };
+}
+
 export async function decifrarEntrada(chavePrivada, entrada) {
     const aes = await subtle.unwrapKey(
         'raw', deBase64(entrada.wrappedKey), chavePrivada, { name: 'RSA-OAEP' },

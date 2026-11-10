@@ -1,0 +1,56 @@
+# Traz os aportes novos do Notion para ferramentas/ipca2050/data.json, já cifrados.
+# Roda todo dia às 22h de Manaus (02h UTC) e pelo botão "Sincronizar" do site
+# (workflow_dispatch). Os registros desta execução são públicos: o script só
+# imprime contagens, nunca valores.
+name: Sincronizar aportes do Notion
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # gravar o data.json
+  pages: write      # pedir a republicação do site
+
+concurrency:
+  group: sincronizar-aportes
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar cryptography
+        run: pip install --disable-pip-version-check cryptography==50.0.2
+
+      - name: Ler o Notion e cifrar os aportes novos
+        id: sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: python ferramentas/ipca2050/tools/sincronizar_notion.py
+
+      - name: Gravar no repositório
+        if: steps.sync.outputs.novos != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ferramentas/ipca2050/data.json
+          git commit -m "chore: novo aporte patrimonio"
+          git push
+
+      # Gravação feita pela automação pode não disparar a publicação do site
+      # sozinha; pedir explicitamente não faz mal se ela já tiver começado.
+      - name: Republicar o site
+        if: steps.sync.outputs.novos != '0'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent

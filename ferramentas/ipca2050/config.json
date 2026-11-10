@@ -25,5 +25,10 @@
   "metaReal": 500000,
   "diaAporteFuturo": 15,
   "ultimoMesAporteFuturo": "2050-07",
-  "fii": { "nome": "MXRF11", "rendimentoPorCotaPadrao": 0.10, "aporteMensalPadrao": 0, "diaAporteFuturo": 15 }
+  "fii": { "nome": "MXRF11", "rendimentoPorCotaPadrao": 0.10, "aporteMensalPadrao": 0, "diaAporteFuturo": 15 },
+  "sincronizacao": {
+    "repo": "josuelaiza/mourinha",
+    "workflow": "sincronizar-aportes.yml",
+    "notion": { "ipca": "71e2e703068840b6ae46d92fa4b038cd", "fii": "aaead848b3bc4b36a62249537f0abee5" }
+  }
 }

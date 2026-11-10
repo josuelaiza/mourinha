@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Acrescenta um aporte CIFRADO ao data.json do simulador Tesouro IPCA+ 2050.
+"""Acrescenta um aporte CIFRADO ao data.json do simulador de patrimônio.
 
 Uso:
-    python add_aporte.py --data AAAA-MM-DD --valor 100.00 --taxa 0.0650
+    python add_aporte.py --data AAAA-MM-DD --valor 100.00 --taxa 0.0650      (Tesouro IPCA+ 2050)
+    python add_aporte.py --tipo fii --data AAAA-MM-DD --cotas 10 --preco 9.80 (FII)
 
 Só precisa da chave pública (keys.json). O aporte em claro existe apenas na
 memória deste processo: não é gravado em arquivo nem impresso na tela.
 
 Formato (o mesmo que a página decifra com a Web Crypto API):
-  - chave AES-256-GCM aleatória cifra o JSON {"data", "valor", "taxa"};
+  - chave AES-256-GCM aleatória cifra o JSON do aporte:
+      IPCA+: {"data", "valor", "taxa"}   (sem "tipo", como os primeiros aportes)
+      FII:   {"tipo": "fii", "data", "cotas", "preco"}
+    o tipo vai dentro da parte cifrada: o repo não mostra qual investimento é;
   - a chave AES vai embrulhada com RSA-OAEP (SHA-256, MGF1-SHA-256, sem rótulo);
   - entrada: {"id", "wrappedKey", "iv", "ciphertext"}, tudo em base64
     (o ciphertext do AES-GCM já leva a tag de 16 bytes no final).
@@ -65,6 +69,16 @@ def ler_taxa(texto: str) -> float:
     if not 0 < taxa < 1:
         raise argparse.ArgumentTypeError("a taxa vai em decimal (6,50% = 0.0650)")
     return taxa
+
+
+def ler_cotas(texto: str) -> int:
+    try:
+        cotas = int(texto)
+    except ValueError:
+        raise argparse.ArgumentTypeError("cotas são um número inteiro, ex.: 10")
+    if cotas <= 0:
+        raise argparse.ArgumentTypeError("as cotas precisam ser mais que zero")
+    return cotas
 
 
 def carregar_chave_publica(caminho: Path) -> rsa.RSAPublicKey:
@@ -128,13 +142,24 @@ def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Acrescenta um aporte cifrado ao data.json.")
+    p.add_argument("--tipo", choices=["ipca", "fii"], default="ipca", help="investimento (padrão: ipca)")
     p.add_argument("--data", required=True, type=ler_data, help="data do aporte, AAAA-MM-DD")
-    p.add_argument("--valor", required=True, type=ler_valor, help="valor em reais, ex.: 100.50")
-    p.add_argument("--taxa", required=True, type=ler_taxa, help="taxa real em decimal, ex.: 0.0650")
+    p.add_argument("--valor", type=ler_valor, help="IPCA+: valor em reais, ex.: 100.50")
+    p.add_argument("--taxa", type=ler_taxa, help="IPCA+: taxa real em decimal, ex.: 0.0650")
+    p.add_argument("--cotas", type=ler_cotas, help="FII: quantidade de cotas, ex.: 10")
+    p.add_argument("--preco", type=ler_valor, help="FII: preço pago por cota, ex.: 9.80")
     p.add_argument("--keys", type=Path, default=PASTA / "keys.json", help="caminho do keys.json")
     p.add_argument("--arquivo", type=Path, default=PASTA / "data.json", help="caminho do data.json")
     p.add_argument("--config", type=Path, default=PASTA / "config.json", help="caminho do config.json (só para o aviso do IPCA)")
     args = p.parse_args()
+    if args.tipo == "ipca":
+        if args.valor is None or args.taxa is None or args.cotas is not None or args.preco is not None:
+            p.error("IPCA+ usa --valor e --taxa (sem --cotas/--preco)")
+        payload = {"data": args.data, "valor": args.valor, "taxa": args.taxa}
+    else:
+        if args.cotas is None or args.preco is None or args.valor is not None or args.taxa is not None:
+            p.error("FII usa --cotas e --preco (sem --valor/--taxa)")
+        payload = {"tipo": "fii", "data": args.data, "cotas": args.cotas, "preco": args.preco}
 
     if not args.keys.exists():
         raise SystemExit(f"Não achei {args.keys}. Crie as chaves pela página primeiro.")
@@ -144,7 +169,7 @@ def main() -> None:
     if dados.get("version") != 1 or not isinstance(dados.get("entries"), list):
         raise SystemExit("data.json em formato inesperado (esperava version 1 e lista entries).")
 
-    entrada = cifrar(chave, {"data": args.data, "valor": args.valor, "taxa": args.taxa})
+    entrada = cifrar(chave, payload)
     dados["entries"].append(entrada)
     gravar_atomico(args.arquivo, dados)
     print(f"Aporte cifrado acrescentado (id {entrada['id']}). Total de entradas: {len(dados['entries'])}.")

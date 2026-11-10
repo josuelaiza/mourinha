@@ -4,7 +4,7 @@
     <script src="../../senha.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Tesouro IPCA+ 2050</title>
+    <title>Patrimônio · Tesouro IPCA+ 2050 e FII</title>
     <style>
         :root {
             color-scheme: dark;
@@ -131,6 +131,26 @@
         .dica strong { font-variant-numeric: tabular-nums; color: var(--texto); min-width: 7.5em; text-align: right; }
         .dica .nome { color: var(--texto-3); }
 
+        /* Panorama e seções */
+        .secao { font-size: 0.95rem; font-weight: 600; margin: 18px 2px 8px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+        .secao .sub { font-size: 0.75rem; font-weight: 400; color: var(--texto-3); }
+        .panorama { margin-bottom: 4px; }
+        .panorama-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .panorama-topo h2 { margin-bottom: 0; }
+        .panorama-topo label { font-size: 0.75rem; color: var(--texto-2); display: flex; align-items: center; gap: 6px; }
+        .panorama-topo input {
+            font: inherit; font-size: 0.9rem; color: var(--texto); padding: 3px 6px;
+            background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 4px; color-scheme: dark;
+        }
+        .panorama-topo input:focus { outline: none; border-color: var(--destaque); }
+        .panorama-topo input.invalido { border-color: var(--erro); }
+        .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+        .numeros > div { background: var(--cartao-2); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+        .numeros .rotulo { font-size: 0.7rem; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.3px; }
+        .numeros .valor { font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .numeros .detalhe { font-size: 0.7rem; color: var(--texto-3); margin-top: 1px; }
+        .numeros .principal .valor { font-size: 1.3rem; }
+
         /* Preços de referência */
         #secaoPrecos { margin-top: 10px; }
         .precos-sub { font-size: 0.72rem; color: var(--texto-3); margin: -4px 0 8px; }
@@ -154,6 +174,8 @@
             .tabela .longo { display: none; }
             .tabela .curto, .curto-bloco { display: inline; }
             .tabela td:first-child { white-space: nowrap; }
+            .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+            .numeros .principal { grid-column: 1 / -1; }
         }
     </style>
 </head>
@@ -162,8 +184,8 @@
 
     <header class="topo">
         <div>
-            <h1>Tesouro IPCA+ 2050</h1>
-            <div class="sub">Vencimento 15/08/2050 · projeção</div>
+            <h1>Patrimônio</h1>
+            <div class="sub">Tesouro IPCA+ 2050 e FII · projeção</div>
         </div>
         <div class="acoes" id="acoesSessao" hidden>
             <span id="estadoLembrar"></span>
@@ -219,6 +241,21 @@
     <main id="telaSimulador" hidden>
         <div class="alerta" id="avisoSimulador" hidden></div>
 
+        <section class="cartao panorama">
+            <div class="panorama-topo">
+                <h2>Panorama</h2>
+                <label for="dataFinal">Data <input type="date" id="dataFinal"></label>
+            </div>
+            <div class="numeros">
+                <div class="principal"><div class="rotulo" id="rotuloPanReal">Total real</div><div class="valor" id="panReal">—</div><div class="detalhe" id="panRealDetalhe"></div></div>
+                <div><div class="rotulo">Total nominal</div><div class="valor" id="panNominal">—</div><div class="detalhe" id="panNominalDetalhe"></div></div>
+                <div><div class="rotulo">Tesouro IPCA+ 2050</div><div class="valor" id="panIpca">—</div><div class="detalhe">líquido, se resgatado na data</div></div>
+                <div><div class="rotulo" id="rotuloPanFii">FII</div><div class="valor" id="panFii">—</div><div class="detalhe" id="panFiiDetalhe"></div></div>
+                <div><div class="rotulo">Patrimônio hoje</div><div class="valor" id="panHoje">—</div><div class="detalhe" id="panHojeDetalhe"></div></div>
+            </div>
+        </section>
+
+        <h2 class="secao">Tesouro IPCA+ 2050 <span class="sub">vencimento 15/08/2050</span></h2>
         <div class="kpis">
             <div class="kpi"><div class="rotulo">Total aportado</div><div class="valor" id="kpiTotal">—</div><div class="detalhe" id="kpiNumero"></div></div>
             <div class="kpi"><div class="rotulo">Taxa média</div><div class="valor" id="kpiTaxa">—</div><div class="detalhe">ponderada pelo valor</div></div>
@@ -268,6 +305,41 @@
             </div>
         </section>
 
+        <h2 class="secao"><span id="tituloFii">FII</span> <span class="sub" id="subFii"></span></h2>
+        <div class="alerta" id="avisoFii" hidden></div>
+        <div id="blocoFii">
+            <div class="kpis">
+                <div class="kpi"><div class="rotulo">Cotas</div><div class="valor" id="fiiCotas">—</div><div class="detalhe" id="fiiPreco"></div></div>
+                <div class="kpi"><div class="rotulo">Investido</div><div class="valor" id="fiiInvestido">—</div><div class="detalhe" id="fiiNumero"></div></div>
+                <div class="kpi">
+                    <label class="rotulo" for="fiiAporteMensal">Aporte mensal (R$)</label>
+                    <input type="number" id="fiiAporteMensal" min="0" step="50" inputmode="decimal">
+                    <div class="detalhe" id="fiiFuturos"></div>
+                </div>
+                <div class="kpi">
+                    <label class="rotulo" for="fiiGanhoReal">Ganho real (% a.a.)</label>
+                    <input type="number" id="fiiGanhoReal" min="0" max="30" step="0.5" inputmode="decimal">
+                    <div class="detalhe">acima da inflação</div>
+                </div>
+                <div class="kpi"><div class="rotulo">Rendimento</div><div class="valor" id="fiiTaxa">—</div><div class="detalhe">inflação + ganho real, reinvestido</div></div>
+            </div>
+            <section class="cartao">
+                <h2 id="tituloFiiTabela">Na data final</h2>
+                <div class="rolagem">
+                <table class="tabela">
+                    <thead>
+                        <tr><th scope="col"></th><th scope="col">Nominal</th><th scope="col"><span class="longo" id="rotuloFiiReal">Real</span><span class="curto" id="rotuloFiiRealCurto">Real</span></th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Patrimônio</td><td id="fiiPatrimonio">—</td><td id="fiiPatrimonioReal" class="destaque">—</td></tr>
+                        <tr><td><span class="longo">Renda mensal total</span><span class="curto">Renda total/mês</span></td><td id="fiiRenda">—</td><td id="fiiRendaReal" class="destaque">—</td></tr>
+                        <tr><td><span class="longo">Renda mensal gastável (mantém o poder de compra)</span><span class="curto">Gastável/mês</span></td><td id="fiiGastavel">—</td><td id="fiiGastavelReal" class="destaque">—</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </section>
+        </div>
+
         <ul class="notas" id="notas"></ul>
 
         <section class="cartao" id="secaoPrecos" hidden>
@@ -282,12 +354,15 @@
 <script type="module">
 // ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
-import { simular, hojeLocal, aporteParaMeta } from './calculo.js?v=2';
-import * as cripto from './cripto.js?v=2';
+import { simular, simularFii, hojeLocal, aporteParaMeta, primeiraData, deflator } from './calculo.js?v=3';
+import * as cripto from './cripto.js?v=3';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
 const CHAVE_META = 'ipca2050.metaReal';
+const CHAVE_DATA_FINAL = 'patrimonio.dataFinal';
+const CHAVE_FII_APORTE = 'patrimonio.fii.aporteMensal';
+const CHAVE_FII_GANHO = 'patrimonio.fii.ganhoReal'; // em % a.a.
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const brlCompacto = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
 const numero = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -297,7 +372,7 @@ const pct = v => (v * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, m
 const dataBr = iso => iso.split('-').reverse().join('/');
 
 let config = null, keys = null, dados = null, precos = null;
-let chavePrivada = null, aportes = [], ultimoResultado = null;
+let chavePrivada = null, aportes = [], aportesFii = [], ultimoResultado = null;
 
 // ------------------------------------------------------------------ //
 // Telas
@@ -354,7 +429,12 @@ async function abrirComChave(chave, lembrada) {
     for (const entrada of dados.entries) {
         try {
             const a = await cripto.decifrarEntrada(chave, entrada);
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(a.data) || !(a.valor > 0) || typeof a.taxa !== 'number') throw new Error('payload');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(a.data)) throw new Error('payload');
+            if (a.tipo === 'fii') {
+                if (!(a.cotas > 0) || !(a.preco > 0)) throw new Error('payload');
+            } else if (a.tipo !== undefined || !(a.valor > 0) || typeof a.taxa !== 'number') {
+                throw new Error('payload');
+            }
             lidos.push(a);
         } catch {
             falhas++;
@@ -363,7 +443,9 @@ async function abrirComChave(chave, lembrada) {
     if (dados.entries.length && !lidos.length) return false;
 
     chavePrivada = chave;
-    aportes = lidos.sort((x, y) => x.data.localeCompare(y.data));
+    lidos.sort((x, y) => x.data.localeCompare(y.data));
+    aportes = lidos.filter(a => a.tipo === undefined);
+    aportesFii = lidos.filter(a => a.tipo === 'fii');
     $('estadoLembrar').textContent = lembrada ? 'Lembrado neste dispositivo' : '';
     $('avisoSimulador').hidden = falhas === 0;
     $('avisoSimulador').textContent = falhas ? `${falhas} entrada(s) do data.json não puderam ser decifradas e ficaram fora da conta.` : '';
@@ -476,6 +558,17 @@ $('botaoEsquecer').addEventListener('click', async () => {
 // ------------------------------------------------------------------ //
 // Simulador
 // ------------------------------------------------------------------ //
+// data do panorama (e data final do FII): entre hoje e o vencimento do IPCA+
+function limitarData(d) {
+    const hoje = hojeLocal();
+    return d < hoje ? hoje : d > config.vencimento ? config.vencimento : d;
+}
+function lerDataFinal() {
+    let salva = null;
+    try { salva = localStorage.getItem(CHAVE_DATA_FINAL); } catch { /* sem storage */ }
+    return limitarData(/^\d{4}-\d{2}-\d{2}$/.test(salva || '') ? salva : config.vencimento);
+}
+
 // valor salvo neste navegador, ou o padrão do config.json
 function lerSalvo(chave, padrao) {
     try {
@@ -491,6 +584,14 @@ function abrirSimulador() {
     }
     $('aporteMensal').value = lerSalvo(CHAVE_APORTE, config.aportePadrao);
     $('metaReal').value = lerSalvo(CHAVE_META, config.metaReal);
+    const fii = config.fii || {};
+    $('fiiAporteMensal').value = lerSalvo(CHAVE_FII_APORTE, fii.aporteMensalPadrao ?? 0);
+    $('fiiGanhoReal').value = lerSalvo(CHAVE_FII_GANHO, (fii.ganhoRealPadrao ?? 0.06) * 100);
+    $('tituloFii').textContent = fii.nome ? `FII ${fii.nome}` : 'FII';
+    $('rotuloPanFii').textContent = fii.nome || 'FII';
+    $('dataFinal').min = hojeLocal();
+    $('dataFinal').max = config.vencimento;
+    $('dataFinal').value = lerDataFinal();
     mostrarPrecos();
     mostrar('telaSimulador');
     recalcular();
@@ -518,7 +619,16 @@ function mostrarPrecos() {
     }));
 }
 
-for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_META]]) {
+$('dataFinal').addEventListener('change', () => {
+    const campo = $('dataFinal');
+    const valido = /^\d{4}-\d{2}-\d{2}$/.test(campo.value) && campo.value === limitarData(campo.value);
+    campo.classList.toggle('invalido', !valido);
+    if (!valido) return;
+    try { localStorage.setItem(CHAVE_DATA_FINAL, campo.value); } catch { /* sem storage */ }
+    recalcular();
+});
+
+for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_META], ['fiiAporteMensal', CHAVE_FII_APORTE], ['fiiGanhoReal', CHAVE_FII_GANHO]]) {
     $(id).addEventListener('input', () => {
         const campo = $(id);
         const v = Number(campo.value);
@@ -555,10 +665,46 @@ function mostrarMeta(r) {
         : `com ${aporteAtual}: falta ${brlCompacto.format(-diferenca)}`;
 }
 
+function mostrarFii(rf, dataFinal, fmt) {
+    $('blocoFii').hidden = !rf;
+    $('avisoFii').hidden = !!rf;
+    $('avisoFii').textContent = rf ? '' : 'Sem aportes de FII registrados ainda.';
+    $('subFii').textContent = `até ${dataBr(dataFinal)} (data do panorama)`;
+    if (!rf) return;
+    const n = aportesFii.length;
+    $('fiiCotas').textContent = rf.cotasHoje.toLocaleString('pt-BR');
+    $('fiiPreco').textContent = `a ${brl.format(rf.preco)} (último aporte)`;
+    $('fiiInvestido').textContent = brl.format(rf.investido);
+    $('fiiNumero').textContent = `${n} aporte${n === 1 ? '' : 's'}`;
+    $('fiiFuturos').textContent = rf.numeroAportesFuturos ? `${rf.numeroAportesFuturos} aportes até a data` : 'sem aportes mensais';
+    const ganho = (Number($('fiiGanhoReal').value) || 0) / 100;
+    const taxaMensal = Math.pow((1 + ultimoResultado.inflacao) * (1 + ganho), 1 / 12) - 1;
+    $('fiiTaxa').textContent = pct(taxaMensal) + ' a.m.';
+    $('tituloFiiTabela').textContent = `Na data final · ${dataBr(dataFinal)}`;
+    for (const [id, v] of [
+        ['fiiPatrimonio', rf.patrimonio], ['fiiPatrimonioReal', rf.real],
+        ['fiiRenda', rf.rendaMensal], ['fiiRendaReal', rf.rendaMensalReal],
+        ['fiiGastavel', rf.rendaGastavel], ['fiiGastavelReal', rf.rendaGastavelReal],
+    ]) $(id).textContent = fmt(v);
+}
+
 function recalcular() {
     const aporteMensal = Number($('aporteMensal').value) || 0;
-    const r = simular({ aportes, hoje: hojeLocal(), config, aporteMensal });
+    const hoje = hojeLocal();
+    // data inválida no campo: segue com a última válida (salva) até ele ser corrigido
+    const campoData = $('dataFinal');
+    const dataFinal = campoData.classList.contains('invalido') || !campoData.value ? lerDataFinal() : campoData.value;
+    // base do valor real: primeiro aporte entre TODOS os investimentos
+    const dataBaseReal = primeiraData(aportes, aportesFii) || hoje;
+    const r = simular({ aportes, hoje, config, aporteMensal, dataBaseReal, dataAlvo: dataFinal });
     ultimoResultado = r;
+    const fiiCfg = config.fii || {};
+    const rf = simularFii({
+        aportes: aportesFii, hoje, dataFinal, inflacao: r.inflacao,
+        ganhoReal: (Number($('fiiGanhoReal').value) || 0) / 100,
+        aporteMensal: Number($('fiiAporteMensal').value) || 0,
+        dia: fiiCfg.diaAporteFuturo || 15, dataBaseReal,
+    });
 
     const anos = config.ipcaAnual.map(x => x.ano);
     $('kpiTotal').textContent = brl.format(r.totalAportado);
@@ -578,6 +724,27 @@ function recalcular() {
     const mesBase = `${MESES[mesNum - 1]}/${anoBase}`;
     $('rotuloReal').textContent = `Real (R$ de ${mesBase})`;
     $('rotuloRealCurto').textContent = `Real (${MESES[mesNum - 1]}/${String(anoBase).slice(2)})`;
+    $('rotuloFiiReal').textContent = `Real (R$ de ${mesBase})`;
+    $('rotuloFiiRealCurto').textContent = `Real (${MESES[mesNum - 1]}/${String(anoBase).slice(2)})`;
+
+    // Panorama
+    const ipcaNaData = r.naData ? r.naData.liquido : 0;
+    const fiiNaData = rf ? rf.patrimonio : 0;
+    const totalNaData = ipcaNaData + fiiNaData;
+    const ipcaHoje = r.serie[0].existentesLiquido;
+    const fiiHoje = rf ? rf.patrimonioHoje : 0;
+    $('rotuloPanReal').textContent = `Total real (R$ de ${mesBase})`;
+    $('panReal').textContent = brl.format(totalNaData / deflator(r.inflacao, dataBaseReal, dataFinal));
+    $('panRealDetalhe').textContent = `em ${dataBr(dataFinal)}, com o poder de compra de ${mesBase}`;
+    $('panNominal').textContent = brl.format(totalNaData);
+    $('panNominalDetalhe').textContent = `em ${dataBr(dataFinal)}`;
+    $('panIpca').textContent = brl.format(ipcaNaData);
+    $('panFii').textContent = brl.format(fiiNaData);
+    $('panFiiDetalhe').textContent = rf ? 'projetado até a data' : 'sem aportes ainda';
+    $('panHoje').textContent = brl.format(ipcaHoje + fiiHoje);
+    $('panHojeDetalhe').textContent = `IPCA+ ${brlCompacto.format(ipcaHoje)} · FII ${brlCompacto.format(fiiHoje)}`;
+
+    mostrarFii(rf, dataFinal, fmt);
 
     $('exBruto').textContent = fmt(r.existentes.bruto);
     $('exLiquido').textContent = fmt(r.existentes.liquido);
@@ -597,6 +764,8 @@ function recalcular() {
         `Inflação futura = média geométrica do IPCA de ${Math.min(...anos)} a ${Math.max(...anos)} (config.json). Real = líquido trazido a R$ de ${mesBase} (data do primeiro aporte, ${dataBr(r.dataBaseReal)}) por essa inflação; a base não muda com o passar dos anos.`,
         `Custódia B3 de ${pct(config.custodiaAnual)} a.a. sobre o saldo; IR regressivo pelo prazo de cada lote (22,5% a 15%) sobre o ganho após a custódia.`,
         `Aportes futuros: um por mês no dia ${config.diaAporteFuturo}, do mês que vem até jul/2050, à taxa média ponderada dos aportes atuais.`,
+        `FII: cota parada no preço do último aporte; rendimento mensal = (1 + inflação projetada) × (1 + ganho real) ao ano, em taxa mensal, todo reinvestido em mais cotas (frações aceitas) até a data do panorama. Sem IR: rendimento de FII é isento para pessoa física e a ideia é não vender. Renda gastável = só o ganho real; gastando só ela, o patrimônio mantém o poder de compra.`,
+        `Panorama: IPCA+ pelo líquido se resgatado na data (taxa contratada, sem marcação a mercado) + FII projetado até a data. Real = trazido a R$ de ${mesBase}, data do primeiro aporte entre todos os investimentos.`,
     ];
     $('notas').replaceChildren(...notas.map(t => { const li = document.createElement('li'); li.textContent = t; return li; }));
 

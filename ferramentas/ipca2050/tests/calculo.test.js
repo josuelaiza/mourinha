@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import {
     diasEntre, mediaGeometrica, taxaMediaPonderada, aliquotaIR,
     calcularLote, aportesFuturos, datasDoGrafico, simular, aporteParaMeta,
+    simularFii, primeiraData, deflator,
 } from '../calculo.js';
 
 const TABELA_IR = [
@@ -172,4 +173,69 @@ test('aporte mensal para a meta: valor real é linear no aporte e o resultado ba
     assert.equal(aporteParaMeta(r, 1000), 0);
     // sem aportes não há taxa média para projetar
     assert.equal(aporteParaMeta(simular({ ...base, aportes: [], aporteMensal: 700 }), meta), null);
+});
+
+// FII: com a taxa composta por fração de mês, o resultado tem forma fechada:
+// cada real cresce (1+i)(1+g) elevado a (dias até a data final / 365,25).
+test('FII sem aportes mensais: cresce (1+i)(1+g) pelo prazo, renda e real batem', () => {
+    const i = 0.05, g = 0.06;
+    const r = simularFii({
+        aportes: [{ data: '2030-01-10', cotas: 60, preco: 9 }, { data: '2030-01-15', cotas: 40, preco: 10 }],
+        hoje: '2030-01-15', dataFinal: '2031-01-15', inflacao: i, ganhoReal: g, aporteMensal: 0, dia: 15,
+        dataBaseReal: '2030-01-10',
+    });
+    assert.equal(r.preco, 10); // preço do último aporte
+    assert.equal(r.cotasHoje, 100);
+    assert.equal(r.investido, 940);
+    assert.equal(r.patrimonioHoje, 1000);
+    const esperado = 1000 * Math.pow(1.05 * 1.06, 365 / 365.25);
+    perto(r.patrimonio, esperado, 1e-9);
+    perto(r.real, esperado / Math.pow(1.05, 370 / 365.25), 1e-9);
+    perto(r.rendaMensal, esperado * (Math.pow(1.05 * 1.06, 1 / 12) - 1), 1e-9);
+    perto(r.rendaGastavel, esperado * (Math.pow(1.06, 1 / 12) - 1), 1e-9);
+    perto(r.rendimentos, esperado - 1000, 1e-9);
+    assert.equal(r.numeroAportesFuturos, 0);
+});
+
+test('FII com aportes mensais e data final fora do dia de aporte', () => {
+    const fator = dias => Math.pow(1.04 * 1.05, dias / 365.25);
+    const r = simularFii({
+        aportes: [{ data: '2030-03-02', cotas: 10, preco: 10 }],
+        hoje: '2030-03-02', dataFinal: '2030-06-20', inflacao: 0.04, ganhoReal: 0.05, aporteMensal: 200, dia: 15,
+    });
+    // aportes em 15/04, 15/05 e 15/06; o existente rende de 02/03 a 20/06
+    assert.equal(r.numeroAportesFuturos, 3);
+    assert.equal(r.aportadoFuturo, 600);
+    const esperado = 100 * fator(110) + 200 * (fator(66) + fator(36) + fator(5));
+    perto(r.patrimonio, esperado, 1e-9);
+    perto(r.cotasFinal, esperado / 10, 1e-9);
+});
+
+test('FII: data final hoje não projeta nada; sem aportes devolve null', () => {
+    const base = { hoje: '2030-01-15', inflacao: 0.05, ganhoReal: 0.06, aporteMensal: 500, dia: 15 };
+    const r = simularFii({ ...base, aportes: [{ data: '2030-01-15', cotas: 3, preco: 10 }], dataFinal: '2030-01-15' });
+    assert.equal(r.patrimonio, 30);
+    assert.equal(r.numeroAportesFuturos, 0);
+    assert.equal(simularFii({ ...base, aportes: [], dataFinal: '2031-01-15' }), null);
+});
+
+test('panorama: base real comum e valor do IPCA numa data alvo', () => {
+    assert.equal(primeiraData([{ data: '2030-05-01' }], [{ data: '2030-02-01' }, { data: '2031-01-01' }]), '2030-02-01');
+    assert.equal(primeiraData([], []), null);
+    perto(deflator(0.05, '2030-01-01', '2034-01-01'), Math.pow(1.05, 4), 1e-12);
+    assert.equal(deflator(0.05, '2030-01-01', '2029-01-01'), 1);
+
+    const base = {
+        hoje: '2029-11-09', config: CONFIG_FICTICIO, aporteMensal: 700,
+        aportes: [{ data: '2029-11-09', valor: 1000, taxa: 0.06 }, { data: '2029-11-09', valor: 3000, taxa: 0.07 }],
+    };
+    // base dada mais antiga deixa o real menor, na proporção da inflação do intervalo
+    const r0 = simular(base);
+    const r1 = simular({ ...base, dataBaseReal: '2028-11-09' });
+    perto(r1.existentes.real, r0.existentes.real / deflator(r0.inflacao, '2028-11-09', '2029-11-09'), 1e-9);
+    // na data do vencimento, naData = cenário com aportes; datas além dele ficam no vencimento
+    perto(simular({ ...base, dataAlvo: CONFIG_FICTICIO.vencimento }).naData.liquido, r0.comAportes.liquido, 1e-9);
+    perto(simular({ ...base, dataAlvo: '2099-01-01' }).naData.liquido, r0.comAportes.liquido, 1e-9);
+    // no próprio dia dos aportes, vale o investido
+    perto(simular({ ...base, dataAlvo: '2029-11-09' }).naData.liquido, 4000, 1e-9);
 });

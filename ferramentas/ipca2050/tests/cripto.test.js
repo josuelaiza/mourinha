@@ -89,3 +89,27 @@ test('script recusa taxa em porcentagem e data fora do formato', () => {
     assert.throws(() => rodarScript(['--data', '2031-02-15', '--valor', '10', '--taxa', '6.12']));
     assert.throws(() => rodarScript(['--data', '15/02/2031', '--valor', '10', '--taxa', '0.06']));
 });
+
+test('aporte de FII: tipo vai dentro da parte cifrada e a página decifra', async () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
+    try {
+        const keys = await gerarChaves(SENHA_FICTICIA);
+        const caminhoKeys = join(pasta, 'keys.json');
+        const caminhoData = join(pasta, 'data.json');
+        writeFileSync(caminhoKeys, JSON.stringify(keys));
+        writeFileSync(caminhoData, JSON.stringify({ version: 1, entries: [] }));
+        const saida = rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--cotas', '37', '--preco', '9.87', '--keys', caminhoKeys, '--arquivo', caminhoData]);
+        assert.ok(!saida.includes('9.87') && !saida.includes('37 '), 'o script imprimiu o aporte');
+        const dados = JSON.parse(readFileSync(caminhoData, 'utf8'));
+        assert.ok(!JSON.stringify(dados).includes('fii'), 'tipo em claro no data.json');
+        const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { tipo: 'fii', data: '2031-04-15', cotas: 37, preco: 9.87 });
+
+        // misturar campos dos dois tipos é recusado
+        assert.throws(() => rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--cotas', '3', '--preco', '9', '--taxa', '0.06', '--keys', caminhoKeys, '--arquivo', caminhoData]));
+        assert.throws(() => rodarScript(['--data', '2031-04-15', '--valor', '10', '--keys', caminhoKeys, '--arquivo', caminhoData]));
+        assert.throws(() => rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--cotas', '2.5', '--preco', '9', '--keys', caminhoKeys, '--arquivo', caminhoData]));
+    } finally {
+        rmSync(pasta, { recursive: true, force: true });
+    }
+});

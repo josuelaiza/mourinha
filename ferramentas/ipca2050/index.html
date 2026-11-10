@@ -744,8 +744,21 @@ for (const botao of document.querySelectorAll('.ajuda-botao')) {
         const abrir = botao.getAttribute('aria-expanded') !== 'true';
         fecharAjudas(botao);
         botao.setAttribute('aria-expanded', String(abrir));
-        $(botao.getAttribute('aria-controls')).hidden = !abrir;
+        const caixa = $(botao.getAttribute('aria-controls'));
+        caixa.hidden = !abrir;
+        if (abrir) manterNaTela(caixa);
     });
+}
+// A caixa abre alinhada à direita do "?". Quando o "?" fica no meio da tela
+// (cabeçalho quebrado em duas linhas no celular), ela passaria da borda
+// esquerda: empurra de volta para dentro, com 8 px de folga.
+function manterNaTela(caixa) {
+    caixa.style.right = '0px';
+    const folga = 8;
+    const r = caixa.getBoundingClientRect();
+    const largura = document.documentElement.clientWidth;
+    if (r.left < folga) caixa.style.right = `${r.left - folga}px`;
+    else if (r.right > largura - folga) caixa.style.right = `${r.right - (largura - folga)}px`;
 }
 document.addEventListener('click', e => { if (!e.target.closest('.ajuda')) fecharAjudas(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharAjudas(); });

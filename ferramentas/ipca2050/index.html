@@ -140,7 +140,7 @@
         .rotulo-data input:focus { outline: none; border-color: var(--destaque); }
         .rotulo-data input.invalido { border-color: var(--erro); }
         .rotulo-data { font-size: 0.75rem; color: var(--texto-2); }
-        .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+        .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
         .numeros > div { background: var(--cartao-2); border-radius: 6px; padding: 8px 10px; min-width: 0; }
         .numeros .rotulo { font-size: 0.7rem; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.3px; }
         .numeros .valor { font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -237,6 +237,8 @@
             .tabela td:first-child { white-space: nowrap; }
             .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
             .numeros .principal { grid-column: 1 / -1; }
+            /* sobrou um card sozinho na última linha: ocupa a linha inteira */
+            .numeros > div:last-child:nth-child(2n) { grid-column: 1 / -1; }
         }
     </style>
 </head>
@@ -328,6 +330,7 @@
                     <div><div class="rotulo">Total nominal</div><div class="valor" id="panNominal">—</div><div class="detalhe" id="panNominalDetalhe"></div></div>
                     <div><div class="rotulo">Tesouro IPCA+ 2050</div><div class="valor" id="panIpca">—</div><div class="detalhe">líquido, se resgatado na data</div></div>
                     <div><div class="rotulo" id="rotuloPanFii">FII</div><div class="valor" id="panFii">—</div><div class="detalhe" id="panFiiDetalhe"></div></div>
+                    <div><div class="rotulo">Total aportado</div><div class="valor" id="panAportado">—</div><div class="detalhe" id="panAportadoDetalhe"></div></div>
                     <div><div class="rotulo">Patrimônio hoje</div><div class="valor" id="panHoje">—</div><div class="detalhe" id="panHojeDetalhe"></div></div>
                 </div>
             </div>
@@ -1192,8 +1195,11 @@ function recalcular() {
     $('panIpca').textContent = brl.format(ipcaNaData);
     $('panFii').textContent = brl.format(fiiNaData);
     $('panFiiDetalhe').textContent = rf ? 'projetado até a data' : 'sem aportes ainda';
+    const fiiAportado = rf ? rf.investido : 0;
+    $('panAportado').textContent = brl.format(r.totalAportado + fiiAportado);
+    $('panAportadoDetalhe').textContent = `IPCA+ ${brlCompacto.format(r.totalAportado)} · ${(config.fii || {}).nome || 'FII'} ${brlCompacto.format(fiiAportado)}`;
     $('panHoje').textContent = brl.format(ipcaHoje + fiiHoje);
-    $('panHojeDetalhe').textContent = `IPCA+ ${brlCompacto.format(ipcaHoje)} · FII ${brlCompacto.format(fiiHoje)}`;
+    $('panHojeDetalhe').textContent = 'se resgatasse tudo hoje (estimativa)';
 
     mostrarFii(rf, dataFinal, fmt);
 
@@ -1230,6 +1236,7 @@ function recalcular() {
         `Tesouro IPCA+: líquido se resgatado na data (taxa contratada, sem marcação a mercado), contando os aportes mensais até ela.`,
         `FII: projetado até a data, com os aportes mensais e o rendimento por cota da aba do FII.`,
         `A data vai de hoje até 15/08/2050 (vencimento do IPCA+) e também é a data final do FII.`,
+        `Total aportado = soma do que você investiu (IPCA+ + FII). Patrimônio hoje = estimativa do que receberia resgatando tudo hoje: IPCA+ pela taxa contratada, já sem IR e custódia; FII pelas cotas × preço do último aporte. O valor real de resgate no Tesouro muda todo dia com o mercado.`,
         `Real = total trazido a R$ de ${mesBase} (data do primeiro aporte entre todos os investimentos) pela inflação projetada de ${pct(r.inflacao)} a.a.`,
     ]);
 

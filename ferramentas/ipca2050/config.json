@@ -22,6 +22,7 @@
     { "ateDias": null, "aliquota": 0.15 }
   ],
   "aportePadrao": 700,
+  "metaReal": 500000,
   "diaAporteFuturo": 15,
   "ultimoMesAporteFuturo": "2050-07"
 }

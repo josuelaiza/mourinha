@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     diasEntre, mediaGeometrica, taxaMediaPonderada, aliquotaIR,
-    calcularLote, aportesFuturos, datasDoGrafico, simular,
+    calcularLote, aportesFuturos, datasDoGrafico, simular, aporteParaMeta,
 } from '../calculo.js';
 
 const TABELA_IR = [
@@ -146,4 +146,30 @@ test('sem aportes: cenário com aportes mensais fica vazio', () => {
     assert.equal(r.comAportes, null);
     assert.equal(r.existentes.liquido, 0);
     assert.equal(r.serie[0].comAportesLiquido, null);
+});
+
+test('aporte mensal para a meta: valor real é linear no aporte e o resultado bate a meta', () => {
+    const base = {
+        hoje: '2029-11-09',
+        config: CONFIG_FICTICIO,
+        aportes: [
+            { data: '2029-11-09', valor: 1000, taxa: 0.06 },
+            { data: '2029-11-09', valor: 3000, taxa: 0.07 },
+        ],
+    };
+    const r = simular({ ...base, aporteMensal: 700 });
+    // linearidade: existentes + 700 × (real por R$ 1/mês) = cenário com aportes
+    perto(r.existentes.real + 700 * r.realPorRealMensal, r.comAportes.real, 1e-9);
+
+    const meta = 9000; // fictícia
+    const aporte = aporteParaMeta(r, meta);
+    assert.ok(simular({ ...base, aporteMensal: aporte }).comAportes.real >= meta);
+    assert.ok(simular({ ...base, aporteMensal: aporte - 0.01 }).comAportes.real < meta);
+    // não depende do aporte mensal que está na tela
+    assert.equal(aporteParaMeta(simular({ ...base, aporteMensal: 50 }), meta), aporte);
+
+    // existentes já passam da meta
+    assert.equal(aporteParaMeta(r, 1000), 0);
+    // sem aportes não há taxa média para projetar
+    assert.equal(aporteParaMeta(simular({ ...base, aportes: [], aporteMensal: 700 }), meta), null);
 });

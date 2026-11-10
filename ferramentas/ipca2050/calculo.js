@@ -144,6 +144,13 @@ export function simular({ aportes, hoje, config, aporteMensal }) {
     const todos = futuros ? aportes.concat(futuros) : null;
     const comAportes = todos ? cenario(todos) : null;
 
+    // Valor real que cada R$ 1 de aporte mensal acrescenta no vencimento.
+    // Bruto, custódia e IR de um lote são proporcionais ao valor dele, então o
+    // valor real é linear no aporte mensal: real = existentes + aporte × isto.
+    const realPorRealMensal = futuros
+        ? cenario(futuros.map(f => ({ ...f, valor: 1 }))).real
+        : null;
+
     const serie = datasDoGrafico(hoje, venc, config.diaAporteFuturo).map(data => {
         const a = somar(aportes, data, p);
         const b = todos ? somar(todos, data, p) : null;
@@ -159,6 +166,16 @@ export function simular({ aportes, hoje, config, aporteMensal }) {
         totalAportado: aportes.reduce((s, a) => s + a.valor, 0),
         numeroAportes: aportes.length,
         numeroAportesFuturos: futuros ? futuros.length : 0,
-        existentes, comAportes, serie,
+        existentes, comAportes, realPorRealMensal, serie,
     };
+}
+
+// Aporte mensal que leva o valor real no vencimento exatamente até `meta`
+// (arredondado para cima no centavo). 0 se os aportes existentes já bastam;
+// null se não dá para calcular (sem taxa média ou sem meses de aporte pela frente).
+export function aporteParaMeta(resultado, meta) {
+    const falta = meta - resultado.existentes.real;
+    if (falta <= 0) return 0;
+    if (!resultado.realPorRealMensal) return null;
+    return Math.ceil((falta / resultado.realPorRealMensal) * 100 - 1e-9) / 100;
 }

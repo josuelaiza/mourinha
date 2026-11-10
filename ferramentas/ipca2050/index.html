@@ -95,6 +95,9 @@
         }
         .kpi input:focus { outline: none; border-color: var(--destaque); }
         .kpi input.invalido { border-color: var(--erro); }
+        .kpi-meta .detalhe strong { color: var(--texto); font-weight: 600; font-variant-numeric: tabular-nums; }
+        .meta-texto { font-size: 0.8rem; color: var(--texto-2); margin: -2px 2px 10px; }
+        .meta-texto strong { color: var(--texto); }
 
         /* Tabela de resultados */
         .tabela { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -226,7 +229,14 @@
                 <div class="detalhe" id="kpiFuturos"></div>
             </div>
             <div class="kpi"><div class="rotulo">Prazo</div><div class="valor" id="kpiPrazo">—</div><div class="detalhe">até o vencimento</div></div>
+            <div class="kpi kpi-meta">
+                <label class="rotulo" for="metaReal">Meta real (R$)</label>
+                <input type="number" id="metaReal" min="0" step="10000" inputmode="decimal">
+                <div class="detalhe" id="kpiMetaAporte"></div>
+                <div class="detalhe" id="kpiMetaFalta"></div>
+            </div>
         </div>
+        <p class="meta-texto">Minha meta: <strong>R$ 500 mil em valor real</strong> no vencimento. O card "Meta real" mostra o aporte mensal que chega lá.</p>
 
         <section class="cartao">
             <h2>No vencimento <span class="curto-bloco" style="text-transform: none; font-weight: 400; color: var(--texto-3)">· em R$</span></h2>
@@ -270,11 +280,12 @@
 </div>
 
 <script type="module">
-import { simular, hojeLocal } from './calculo.js';
+import { simular, hojeLocal, aporteParaMeta } from './calculo.js';
 import * as cripto from './cripto.js';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
+const CHAVE_META = 'ipca2050.metaReal';
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const brlCompacto = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
 const numero = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -463,19 +474,21 @@ $('botaoEsquecer').addEventListener('click', async () => {
 // ------------------------------------------------------------------ //
 // Simulador
 // ------------------------------------------------------------------ //
-function lerAporteSalvo() {
+// valor salvo neste navegador, ou o padrão do config.json
+function lerSalvo(chave, padrao) {
     try {
-        const salvo = Number(localStorage.getItem(CHAVE_APORTE));
-        if (localStorage.getItem(CHAVE_APORTE) !== null && salvo >= 0) return salvo;
+        const texto = localStorage.getItem(chave);
+        if (texto !== null && Number(texto) >= 0) return Number(texto);
     } catch { /* sem storage */ }
-    return config.aportePadrao;
+    return padrao;
 }
 
 function abrirSimulador() {
     if (!Array.isArray(config.ipcaAnual) || !config.ipcaAnual.length) {
         return erroFatal('config.json ainda não tem a série do IPCA (ipcaAnual). Preencha os 10 anos para a simulação funcionar.');
     }
-    $('aporteMensal').value = lerAporteSalvo();
+    $('aporteMensal').value = lerSalvo(CHAVE_APORTE, config.aportePadrao);
+    $('metaReal').value = lerSalvo(CHAVE_META, config.metaReal);
     mostrarPrecos();
     mostrar('telaSimulador');
     recalcular();
@@ -503,15 +516,42 @@ function mostrarPrecos() {
     }));
 }
 
-$('aporteMensal').addEventListener('input', () => {
-    const campo = $('aporteMensal');
-    const v = Number(campo.value);
-    const valido = campo.value !== '' && v >= 0;
-    campo.classList.toggle('invalido', !valido);
-    if (!valido) return;
-    try { localStorage.setItem(CHAVE_APORTE, String(v)); } catch { /* sem storage */ }
-    recalcular();
-});
+for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_META]]) {
+    $(id).addEventListener('input', () => {
+        const campo = $(id);
+        const v = Number(campo.value);
+        const valido = campo.value !== '' && v >= 0;
+        campo.classList.toggle('invalido', !valido);
+        if (!valido) return;
+        try { localStorage.setItem(chave, String(v)); } catch { /* sem storage */ }
+        recalcular();
+    });
+}
+
+function mostrarMeta(r) {
+    const meta = Number($('metaReal').value) || 0;
+    const necessario = meta > 0 ? aporteParaMeta(r, meta) : null;
+    const aporte = $('kpiMetaAporte'), falta = $('kpiMetaFalta');
+    if (meta <= 0) {
+        aporte.textContent = 'sem meta definida';
+        falta.textContent = '';
+        return;
+    }
+    if (necessario === null) {
+        aporte.textContent = 'sem taxa média ainda';
+        falta.textContent = '';
+        return;
+    }
+    aporte.replaceChildren(
+        necessario === 0 ? 'já atingida sem novos aportes' : 'precisa ',
+        ...(necessario === 0 ? [] : [Object.assign(document.createElement('strong'), { textContent: brl.format(necessario) }), '/mês']),
+    );
+    const diferenca = r.comAportes.real - meta;
+    const aporteAtual = brl.format(Number($('aporteMensal').value) || 0).replace(/,00$/, '');
+    falta.textContent = diferenca >= 0
+        ? `com ${aporteAtual}: sobra ${brlCompacto.format(diferenca)}`
+        : `com ${aporteAtual}: falta ${brlCompacto.format(-diferenca)}`;
+}
 
 function recalcular() {
     const aporteMensal = Number($('aporteMensal').value) || 0;
@@ -526,6 +566,7 @@ function recalcular() {
     $('kpiInflacaoDetalhe').textContent = `média geométrica ${Math.min(...anos)}–${Math.max(...anos)}`;
     $('kpiFuturos').textContent = r.comAportes ? `${r.numeroAportesFuturos} aportes até jul/2050` : 'sem taxa média ainda';
     $('kpiPrazo').textContent = r.anosAteVenc.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' anos';
+    mostrarMeta(r);
 
     // na tela estreita a tabela vai sem "R$ " (o título avisa que é em R$)
     const fmt = telaEstreita.matches ? (v => numero.format(v)) : (v => brl.format(v));

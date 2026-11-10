@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {
     diasEntre, mediaGeometrica, taxaMediaPonderada, aliquotaIR,
     calcularLote, aportesFuturos, datasDoGrafico, simular, aporteParaMeta,
-    simularFii, primeiraData, deflator,
+    simularFii, fiiPorAno, primeiraData, deflator,
 } from '../calculo.js';
 
 const TABELA_IR = [
@@ -175,46 +175,93 @@ test('aporte mensal para a meta: valor real é linear no aporte e o resultado ba
     assert.equal(aporteParaMeta(simular({ ...base, aportes: [], aporteMensal: 700 }), meta), null);
 });
 
-// FII: com a taxa composta por fração de mês, o resultado tem forma fechada:
-// cada real cresce (1+i)(1+g) elevado a (dias até a data final / 365,25).
-test('FII sem aportes mensais: cresce (1+i)(1+g) pelo prazo, renda e real batem', () => {
-    const i = 0.05, g = 0.06;
+// FII: cota a R$ 10 pagando R$ 0,10 = 1% ao mês, para dar para conferir à mão.
+
+test('FII mês a mês: cotas inteiras, troco guardado para o mês seguinte', () => {
     const r = simularFii({
-        aportes: [{ data: '2030-01-10', cotas: 60, preco: 9 }, { data: '2030-01-15', cotas: 40, preco: 10 }],
-        hoje: '2030-01-15', dataFinal: '2031-01-15', inflacao: i, ganhoReal: g, aporteMensal: 0, dia: 15,
-        dataBaseReal: '2030-01-10',
+        aportes: [{ data: '2030-01-05', cotas: 60, preco: 9 }, { data: '2030-01-10', cotas: 40, preco: 10 }],
+        hoje: '2030-01-10', dataFinal: '2030-04-20', inflacao: 0, rendimentoPorCota: 0.10, aporteMensal: 25, dia: 15,
+        dataBaseReal: '2030-01-05',
     });
     assert.equal(r.preco, 10); // preço do último aporte
     assert.equal(r.cotasHoje, 100);
     assert.equal(r.investido, 940);
     assert.equal(r.patrimonioHoje, 1000);
-    const esperado = 1000 * Math.pow(1.05 * 1.06, 365 / 365.25);
-    perto(r.patrimonio, esperado, 1e-9);
-    perto(r.real, esperado / Math.pow(1.05, 370 / 365.25), 1e-9);
-    perto(r.rendaMensal, esperado * (Math.pow(1.05 * 1.06, 1 / 12) - 1), 1e-9);
-    perto(r.rendaGastavel, esperado * (Math.pow(1.06, 1 / 12) - 1), 1e-9);
-    perto(r.rendimentos, esperado - 1000, 1e-9);
+    // conta à mão (cota a R$ 10, aporte de R$ 25):
+    // fev: rende 10,00 -> só ele compra 1; 10 + 25 = 35 compra 3, sobra 5   (103 cotas)
+    // mar: rende 10,30 -> 5 + 10,30 compra 1; 15,30 + 25 compra 4, sobra 0,30 (107)
+    // abr: rende 10,70 -> 0,30 + 10,70 = 11 compra 1; 36 compra 3, sobra 6   (110)
+    assert.deepEqual(r.meses.map(m => m.data), ['2030-02-15', '2030-03-15', '2030-04-15']);
+    assert.deepEqual(r.meses.map(m => m.cotasDoRendimento), [1, 1, 1]);
+    assert.deepEqual(r.meses.map(m => m.cotasCompradas), [3, 4, 3]);
+    assert.deepEqual(r.meses.map(m => m.cotas), [103, 107, 110]);
+    perto(r.meses[0].rendimento, 10, 1e-9);
+    perto(r.meses[1].rendimento, 10.3, 1e-9);
+    perto(r.meses[2].rendimento, 10.7, 1e-9);
+    perto(r.meses[1].sobra, 0.3, 1e-9);
+    perto(r.sobra, 6, 1e-9);
+    perto(r.patrimonio, 1106, 1e-9);
+    perto(r.meses[2].patrimonio, 1106, 1e-9);
+    perto(r.rendimentos, 31, 1e-9);
+    assert.equal(r.numeroAportesFuturos, 3);
+    assert.equal(r.aportadoFuturo, 75);
+    perto(r.taxaMensal, 0.01, 1e-12);
+    perto(r.ganhoRealEquivalente, Math.pow(1.01, 12) - 1, 1e-12);
+    // renda no fim é sobre as cotas (não sobre o troco); inflação 0 -> real = nominal
+    perto(r.rendaMensal, 11, 1e-9);
+    perto(r.rendaGastavel, 11, 1e-9);
+    perto(r.real, 1106, 1e-9);
+});
+
+test('FII: rendimento abaixo do preço da cota vai juntando até comprar', () => {
+    const r = simularFii({
+        aportes: [{ data: '2030-01-15', cotas: 30, preco: 10 }],
+        hoje: '2030-01-15', dataFinal: '2030-05-15', inflacao: 0, rendimentoPorCota: 0.10, aporteMensal: 0, dia: 15,
+    });
+    // rende 3,00 por mês: compra a 1ª cota no 4º mês (3+3+3+3 = 12), sobra 2
+    assert.deepEqual(r.meses.map(m => m.cotasDoRendimento), [0, 0, 0, 1]);
+    assert.deepEqual(r.meses.map(m => m.cotasCompradas), [0, 0, 0, 1]);
+    perto(r.sobra, 2, 1e-9);
     assert.equal(r.numeroAportesFuturos, 0);
 });
 
-test('FII com aportes mensais e data final fora do dia de aporte', () => {
-    const fator = dias => Math.pow(1.04 * 1.05, dias / 365.25);
+test('FII: ganho real equivalente, renda gastável, valor real e agrupamento por ano', () => {
     const r = simularFii({
-        aportes: [{ data: '2030-03-02', cotas: 10, preco: 10 }],
-        hoje: '2030-03-02', dataFinal: '2030-06-20', inflacao: 0.04, ganhoReal: 0.05, aporteMensal: 200, dia: 15,
+        aportes: [{ data: '2030-11-15', cotas: 1000, preco: 10 }],
+        hoje: '2030-11-15', dataFinal: '2032-02-15', inflacao: 0.05, rendimentoPorCota: 0.09, aporteMensal: 100, dia: 15,
     });
-    // aportes em 15/04, 15/05 e 15/06; o existente rende de 02/03 a 20/06
-    assert.equal(r.numeroAportesFuturos, 3);
-    assert.equal(r.aportadoFuturo, 600);
-    const esperado = 100 * fator(110) + 200 * (fator(66) + fator(36) + fator(5));
-    perto(r.patrimonio, esperado, 1e-9);
-    perto(r.cotasFinal, esperado / 10, 1e-9);
+    perto(r.taxaMensal, 0.009, 1e-15);
+    perto(r.ganhoRealEquivalente, Math.pow(1.009, 12) / 1.05 - 1, 1e-12);
+    perto(r.meses[0].rendimento, 90, 1e-9); // 1000 cotas × R$ 0,09
+    perto(r.real, r.patrimonio / Math.pow(1.05, diasEntre('2030-11-15', '2032-02-15') / 365.25), 1e-9);
+    perto(r.rendaMensal, r.cotasFinal * 0.09, 1e-9);
+    perto(r.rendaGastavel, r.cotasFinal * 10 * (1.009 / Math.pow(1.05, 1 / 12) - 1), 1e-9);
+
+    const anos = fiiPorAno(r.meses);
+    assert.deepEqual(anos.map(a => a.ano), ['2030', '2031', '2032']);
+    assert.deepEqual(anos.map(a => a.meses.length), [1, 12, 2]);
+    perto(anos[1].rendimento, r.meses.slice(1, 13).reduce((s, m) => s + m.rendimento, 0), 1e-9);
+    assert.equal(anos[1].aporte, 1200);
+    assert.equal(anos[1].cotasCompradas, r.meses.slice(1, 13).reduce((s, m) => s + m.cotasCompradas, 0));
+    assert.equal(anos[2].cotas, r.cotasFinal);
+    perto(anos[2].patrimonio, r.patrimonio, 1e-9);
+});
+
+test('FII: rendimento abaixo da inflação não tem renda gastável', () => {
+    const r = simularFii({
+        aportes: [{ data: '2030-01-15', cotas: 100, preco: 10 }],
+        hoje: '2030-01-15', dataFinal: '2031-01-15', inflacao: 0.10, rendimentoPorCota: 0.05, aporteMensal: 0, dia: 15,
+    });
+    assert.ok(r.ganhoRealEquivalente < 0);
+    assert.equal(r.rendaGastavel, 0);
+    assert.ok(r.rendaMensal > 0);
 });
 
 test('FII: data final hoje não projeta nada; sem aportes devolve null', () => {
-    const base = { hoje: '2030-01-15', inflacao: 0.05, ganhoReal: 0.06, aporteMensal: 500, dia: 15 };
+    const base = { hoje: '2030-01-15', inflacao: 0.05, rendimentoPorCota: 0.10, aporteMensal: 500, dia: 15 };
     const r = simularFii({ ...base, aportes: [{ data: '2030-01-15', cotas: 3, preco: 10 }], dataFinal: '2030-01-15' });
     assert.equal(r.patrimonio, 30);
+    assert.equal(r.meses.length, 0);
     assert.equal(r.numeroAportesFuturos, 0);
     assert.equal(simularFii({ ...base, aportes: [], dataFinal: '2031-01-15' }), null);
 });

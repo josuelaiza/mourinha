@@ -132,18 +132,14 @@
         .dica .nome { color: var(--texto-3); }
 
         /* Panorama e seções */
-        .secao { font-size: 0.95rem; font-weight: 600; margin: 18px 2px 8px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-        .secao .sub { font-size: 0.75rem; font-weight: 400; color: var(--texto-3); }
-        .panorama { margin-bottom: 4px; }
-        .panorama-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-        .panorama-topo h2 { margin-bottom: 0; }
-        .panorama-topo label { font-size: 0.75rem; color: var(--texto-2); display: flex; align-items: center; gap: 6px; }
-        .panorama-topo input {
-            font: inherit; font-size: 0.9rem; color: var(--texto); padding: 3px 6px;
+        /* Data do panorama */
+        .rotulo-data input {
+            font: inherit; font-size: 0.85rem; color: var(--texto); padding: 3px 6px; margin-left: 4px;
             background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 4px; color-scheme: dark;
         }
-        .panorama-topo input:focus { outline: none; border-color: var(--destaque); }
-        .panorama-topo input.invalido { border-color: var(--erro); }
+        .rotulo-data input:focus { outline: none; border-color: var(--destaque); }
+        .rotulo-data input.invalido { border-color: var(--erro); }
+        .rotulo-data { font-size: 0.75rem; color: var(--texto-2); }
         .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
         .numeros > div { background: var(--cartao-2); border-radius: 6px; padding: 8px 10px; min-width: 0; }
         .numeros .rotulo { font-size: 0.7rem; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.3px; }
@@ -152,7 +148,6 @@
         .numeros .principal .valor { font-size: 1.3rem; }
 
         /* Preços de referência */
-        #secaoPrecos { margin-top: 10px; }
         .precos-sub { font-size: 0.72rem; color: var(--texto-3); margin: -4px 0 8px; }
         .precos { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
         .precos li {
@@ -162,11 +157,58 @@
         .precos .nome { font-size: 0.75rem; color: var(--texto-2); overflow: hidden; text-overflow: ellipsis; }
         .precos .preco { font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-        .notas { font-size: 0.72rem; color: var(--texto-3); margin-top: 10px; padding: 0 2px; }
-        .notas li { margin-left: 16px; }
+        /* Abas */
+        .abas { display: flex; gap: 2px; border-bottom: 1px solid var(--borda); margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
+        .aba {
+            font: inherit; font-size: 0.85rem; font-weight: 500; color: var(--texto-3); background: none; border: none;
+            border-bottom: 2px solid transparent; padding: 9px 14px; cursor: pointer; white-space: nowrap; margin-bottom: -1px;
+        }
+        .aba:hover { color: var(--texto-2); }
+        .aba[aria-selected="true"] { color: var(--texto); border-bottom-color: var(--destaque); }
+        .aba:focus-visible { outline: 2px solid var(--destaque); outline-offset: -2px; border-radius: 4px; }
 
+        /* Cabeçalho de cartão com ajuda */
+        .cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .cabecalho h2 { margin-bottom: 0; }
+        .cabecalho .lado { display: flex; align-items: center; gap: 8px; }
+        .ajuda-envoltorio { position: relative; }
+        .ajuda-botao {
+            width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--borda); background: var(--cartao-2);
+            color: var(--texto-3); font: inherit; font-size: 0.72rem; font-weight: 600; line-height: 1; cursor: pointer;
+        }
+        .ajuda-botao:hover, .ajuda-botao[aria-expanded="true"] { color: var(--texto); border-color: var(--texto-3); }
+        .ajuda {
+            position: absolute; right: 0; top: 26px; z-index: 5; width: min(340px, calc(100vw - 32px));
+            background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 8px; padding: 10px 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); font-size: 0.78rem; color: var(--texto-2); line-height: 1.45;
+        }
+        .ajuda ul { list-style: none; }
+        .ajuda li + li { margin-top: 6px; }
+        .ajuda strong { color: var(--texto); font-weight: 600; }
+
+        /* Mês a mês do FII */
+        .tabela-anos tr.ano td { font-weight: 500; }
+        .tabela-anos tr.ano button {
+            font: inherit; color: var(--texto); background: none; border: none; cursor: pointer; padding: 0;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .tabela-anos tr.ano button::before { content: "▸"; color: var(--texto-3); font-size: 0.75rem; width: 0.8em; }
+        .tabela-anos tr.ano button[aria-expanded="true"]::before { content: "▾"; }
+        .tabela-anos tr.mes td { color: var(--texto-2); font-size: 0.8rem; background: var(--cartao-2); }
+        .tabela-anos tr.mes td:first-child { padding-left: 22px; }
+
+        /* Janela de preços */
+        dialog#janelaPrecos {
+            margin: auto; width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 48px);
+            background: var(--cartao); color: var(--texto); border: 1px solid var(--borda); border-radius: 10px; padding: 14px;
+        }
+        dialog#janelaPrecos::backdrop { background: rgba(0, 0, 0, 0.6); }
+
+        .so-estreito { display: none; }
         @media (max-width: 560px) {
             .pagina { padding: 8px; }
+            .so-largo, #estadoLembrar { display: none; }
+            .so-estreito { display: inline; }
             .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
             .tabela th, .tabela td { padding: 6px 3px; }
             .tabela td { font-size: 0.8rem; }
@@ -189,7 +231,8 @@
         </div>
         <div class="acoes" id="acoesSessao" hidden>
             <span id="estadoLembrar"></span>
-            <button type="button" class="botao secundario" id="botaoEsquecer">Esquecer neste dispositivo</button>
+            <button type="button" class="botao secundario" id="botaoPrecos" hidden>Preços de referência</button>
+            <button type="button" class="botao secundario" id="botaoEsquecer"><span class="so-largo">Esquecer neste dispositivo</span><span class="so-estreito">Esquecer</span></button>
         </div>
     </header>
 
@@ -241,112 +284,167 @@
     <main id="telaSimulador" hidden>
         <div class="alerta" id="avisoSimulador" hidden></div>
 
-        <section class="cartao panorama">
-            <div class="panorama-topo">
-                <h2>Panorama</h2>
-                <label for="dataFinal">Data <input type="date" id="dataFinal"></label>
-            </div>
-            <div class="numeros">
-                <div class="principal"><div class="rotulo" id="rotuloPanReal">Total real</div><div class="valor" id="panReal">—</div><div class="detalhe" id="panRealDetalhe"></div></div>
-                <div><div class="rotulo">Total nominal</div><div class="valor" id="panNominal">—</div><div class="detalhe" id="panNominalDetalhe"></div></div>
-                <div><div class="rotulo">Tesouro IPCA+ 2050</div><div class="valor" id="panIpca">—</div><div class="detalhe">líquido, se resgatado na data</div></div>
-                <div><div class="rotulo" id="rotuloPanFii">FII</div><div class="valor" id="panFii">—</div><div class="detalhe" id="panFiiDetalhe"></div></div>
-                <div><div class="rotulo">Patrimônio hoje</div><div class="valor" id="panHoje">—</div><div class="detalhe" id="panHojeDetalhe"></div></div>
+        <nav class="abas" role="tablist" aria-label="Investimentos">
+            <button type="button" class="aba" role="tab" id="abaPanorama" aria-controls="painelPanorama" aria-selected="true">Panorama</button>
+            <button type="button" class="aba" role="tab" id="abaIpca" aria-controls="painelIpca" aria-selected="false" tabindex="-1">Tesouro IPCA+ 2050</button>
+            <button type="button" class="aba" role="tab" id="abaFii" aria-controls="painelFii" aria-selected="false" tabindex="-1">FII</button>
+        </nav>
+
+        <!-- Panorama -->
+        <section id="painelPanorama" role="tabpanel" aria-labelledby="abaPanorama">
+            <div class="cartao">
+                <div class="cabecalho">
+                    <h2>Patrimônio na data</h2>
+                    <div class="lado">
+                        <label class="rotulo-data" for="dataFinal">Data <input type="date" id="dataFinal"></label>
+                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaPanorama" aria-label="Como o panorama é calculado">?</button><div class="ajuda" id="ajudaPanorama" hidden><ul></ul></div></div>
+                    </div>
+                </div>
+                <div class="numeros">
+                    <div class="principal"><div class="rotulo" id="rotuloPanReal">Total real</div><div class="valor" id="panReal">—</div><div class="detalhe" id="panRealDetalhe"></div></div>
+                    <div><div class="rotulo">Total nominal</div><div class="valor" id="panNominal">—</div><div class="detalhe" id="panNominalDetalhe"></div></div>
+                    <div><div class="rotulo">Tesouro IPCA+ 2050</div><div class="valor" id="panIpca">—</div><div class="detalhe">líquido, se resgatado na data</div></div>
+                    <div><div class="rotulo" id="rotuloPanFii">FII</div><div class="valor" id="panFii">—</div><div class="detalhe" id="panFiiDetalhe"></div></div>
+                    <div><div class="rotulo">Patrimônio hoje</div><div class="valor" id="panHoje">—</div><div class="detalhe" id="panHojeDetalhe"></div></div>
+                </div>
             </div>
         </section>
 
-        <h2 class="secao">Tesouro IPCA+ 2050 <span class="sub">vencimento 15/08/2050</span></h2>
-        <div class="kpis">
-            <div class="kpi"><div class="rotulo">Total aportado</div><div class="valor" id="kpiTotal">—</div><div class="detalhe" id="kpiNumero"></div></div>
-            <div class="kpi"><div class="rotulo">Taxa média</div><div class="valor" id="kpiTaxa">—</div><div class="detalhe">ponderada pelo valor</div></div>
-            <div class="kpi"><div class="rotulo">Inflação projetada</div><div class="valor" id="kpiInflacao">—</div><div class="detalhe" id="kpiInflacaoDetalhe"></div></div>
-            <div class="kpi">
-                <label class="rotulo" for="aporteMensal">Aporte mensal (R$)</label>
-                <input type="number" id="aporteMensal" min="0" step="50" inputmode="decimal">
-                <div class="detalhe" id="kpiFuturos"></div>
-            </div>
-            <div class="kpi"><div class="rotulo">Prazo</div><div class="valor" id="kpiPrazo">—</div><div class="detalhe">até o vencimento</div></div>
-            <div class="kpi kpi-meta">
-                <label class="rotulo" for="metaReal">Meta real (R$)</label>
-                <input type="number" id="metaReal" min="0" step="10000" inputmode="decimal">
-                <div class="detalhe" id="kpiMetaAporte"></div>
-                <div class="detalhe" id="kpiMetaFalta"></div>
-            </div>
-        </div>
-        <p class="meta-texto">Minha meta: <strong>R$ 500 mil em valor real</strong> no vencimento. O card "Meta real" mostra o aporte mensal que chega lá.</p>
-
-        <section class="cartao">
-            <h2>No vencimento <span class="curto-bloco" style="text-transform: none; font-weight: 400; color: var(--texto-3)">· em R$</span></h2>
-            <div class="rolagem">
-            <table class="tabela">
-                <thead>
-                    <tr><th scope="col">Cenário</th><th scope="col">Bruto</th><th scope="col">Líquido</th><th scope="col"><span class="longo" id="rotuloReal">Real</span><span class="curto" id="rotuloRealCurto">Real</span></th></tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><span class="chave-serie" style="background: var(--serie-existe)"></span><span class="longo">Só com o que já existe</span><span class="curto">Só o atual</span></td>
-                        <td id="exBruto">—</td><td id="exLiquido">—</td><td id="exReal" class="destaque">—</td>
-                    </tr>
-                    <tr>
-                        <td><span class="chave-serie" style="background: var(--serie-com)"></span><span class="longo" id="rotuloComAportes">Com aportes mensais</span><span class="curto" id="rotuloComAportesCurto">Com aportes</span></td>
-                        <td id="caBruto">—</td><td id="caLiquido">—</td><td id="caReal" class="destaque">—</td>
-                    </tr>
-                </tbody>
-            </table>
-            </div>
-        </section>
-
-        <section class="cartao">
-            <h2>Evolução até 2050 <span style="text-transform: none; font-weight: 400; color: var(--texto-3)">· valor se resgatado em cada data, R$ nominais</span></h2>
-            <ul class="legenda" id="legenda"></ul>
-            <div class="grafico" id="grafico">
-                <svg id="svgGrafico" tabindex="0" role="img" aria-label="Evolução do valor bruto e líquido até 2050 nos dois cenários. Use as setas para percorrer as datas."></svg>
-                <div class="dica" id="dica" hidden></div>
-            </div>
-        </section>
-
-        <h2 class="secao"><span id="tituloFii">FII</span> <span class="sub" id="subFii"></span></h2>
-        <div class="alerta" id="avisoFii" hidden></div>
-        <div id="blocoFii">
+        <!-- Tesouro IPCA+ 2050 -->
+        <section id="painelIpca" role="tabpanel" aria-labelledby="abaIpca" hidden>
             <div class="kpis">
-                <div class="kpi"><div class="rotulo">Cotas</div><div class="valor" id="fiiCotas">—</div><div class="detalhe" id="fiiPreco"></div></div>
-                <div class="kpi"><div class="rotulo">Investido</div><div class="valor" id="fiiInvestido">—</div><div class="detalhe" id="fiiNumero"></div></div>
+                <div class="kpi"><div class="rotulo">Total aportado</div><div class="valor" id="kpiTotal">—</div><div class="detalhe" id="kpiNumero"></div></div>
+                <div class="kpi"><div class="rotulo">Taxa média</div><div class="valor" id="kpiTaxa">—</div><div class="detalhe">ponderada pelo valor</div></div>
+                <div class="kpi"><div class="rotulo">Inflação projetada</div><div class="valor" id="kpiInflacao">—</div><div class="detalhe" id="kpiInflacaoDetalhe"></div></div>
                 <div class="kpi">
-                    <label class="rotulo" for="fiiAporteMensal">Aporte mensal (R$)</label>
-                    <input type="number" id="fiiAporteMensal" min="0" step="50" inputmode="decimal">
-                    <div class="detalhe" id="fiiFuturos"></div>
+                    <label class="rotulo" for="aporteMensal">Aporte mensal (R$)</label>
+                    <input type="number" id="aporteMensal" min="0" step="50" inputmode="decimal">
+                    <div class="detalhe" id="kpiFuturos"></div>
                 </div>
-                <div class="kpi">
-                    <label class="rotulo" for="fiiGanhoReal">Ganho real (% a.a.)</label>
-                    <input type="number" id="fiiGanhoReal" min="0" max="30" step="0.5" inputmode="decimal">
-                    <div class="detalhe">acima da inflação</div>
+                <div class="kpi"><div class="rotulo">Prazo</div><div class="valor" id="kpiPrazo">—</div><div class="detalhe">até 15/08/2050</div></div>
+                <div class="kpi kpi-meta">
+                    <label class="rotulo" for="metaReal">Meta real (R$)</label>
+                    <input type="number" id="metaReal" min="0" step="10000" inputmode="decimal">
+                    <div class="detalhe" id="kpiMetaAporte"></div>
+                    <div class="detalhe" id="kpiMetaFalta"></div>
                 </div>
-                <div class="kpi"><div class="rotulo">Rendimento</div><div class="valor" id="fiiTaxa">—</div><div class="detalhe">inflação + ganho real, reinvestido</div></div>
             </div>
-            <section class="cartao">
-                <h2 id="tituloFiiTabela">Na data final</h2>
+            <p class="meta-texto">Minha meta: <strong>R$ 500 mil em valor real</strong> no vencimento. O card "Meta real" mostra o aporte mensal que chega lá.</p>
+
+            <div class="cartao">
+                <div class="cabecalho">
+                    <h2>No vencimento <span class="curto-bloco" style="text-transform: none; font-weight: 400; color: var(--texto-3)">· em R$</span></h2>
+                    <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaIpca" aria-label="Como o Tesouro IPCA+ é calculado">?</button><div class="ajuda" id="ajudaIpca" hidden><ul></ul></div></div>
+                </div>
                 <div class="rolagem">
                 <table class="tabela">
                     <thead>
-                        <tr><th scope="col"></th><th scope="col">Nominal</th><th scope="col"><span class="longo" id="rotuloFiiReal">Real</span><span class="curto" id="rotuloFiiRealCurto">Real</span></th></tr>
+                        <tr><th scope="col">Cenário</th><th scope="col">Bruto</th><th scope="col">Líquido</th><th scope="col"><span class="longo" id="rotuloReal">Real</span><span class="curto" id="rotuloRealCurto">Real</span></th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Patrimônio</td><td id="fiiPatrimonio">—</td><td id="fiiPatrimonioReal" class="destaque">—</td></tr>
-                        <tr><td><span class="longo">Renda mensal total</span><span class="curto">Renda total/mês</span></td><td id="fiiRenda">—</td><td id="fiiRendaReal" class="destaque">—</td></tr>
-                        <tr><td><span class="longo">Renda mensal gastável (mantém o poder de compra)</span><span class="curto">Gastável/mês</span></td><td id="fiiGastavel">—</td><td id="fiiGastavelReal" class="destaque">—</td></tr>
+                        <tr>
+                            <td><span class="chave-serie" style="background: var(--serie-existe)"></span><span class="longo">Só com o que já existe</span><span class="curto">Só o atual</span></td>
+                            <td id="exBruto">—</td><td id="exLiquido">—</td><td id="exReal" class="destaque">—</td>
+                        </tr>
+                        <tr>
+                            <td><span class="chave-serie" style="background: var(--serie-com)"></span><span class="longo" id="rotuloComAportes">Com aportes mensais</span><span class="curto" id="rotuloComAportesCurto">Com aportes</span></td>
+                            <td id="caBruto">—</td><td id="caLiquido">—</td><td id="caReal" class="destaque">—</td>
+                        </tr>
                     </tbody>
                 </table>
                 </div>
-            </section>
-        </div>
+            </div>
 
-        <ul class="notas" id="notas"></ul>
+            <div class="cartao">
+                <h2>Evolução até 2050 <span style="text-transform: none; font-weight: 400; color: var(--texto-3)">· R$ nominais</span></h2>
+                <ul class="legenda" id="legenda"></ul>
+                <div class="grafico" id="grafico">
+                    <svg id="svgGrafico" tabindex="0" role="img" aria-label="Evolução do valor bruto e líquido até 2050 nos dois cenários. Use as setas para percorrer as datas."></svg>
+                    <div class="dica" id="dica" hidden></div>
+                </div>
+            </div>
+        </section>
 
-        <section class="cartao" id="secaoPrecos" hidden>
-            <h2 id="tituloPrecos">Preços de referência</h2>
+        <!-- FII -->
+        <section id="painelFii" role="tabpanel" aria-labelledby="abaFii" hidden>
+            <div class="alerta" id="avisoFii" hidden></div>
+            <div id="blocoFii">
+                <div class="kpis">
+                    <div class="kpi"><div class="rotulo">Cotas</div><div class="valor" id="fiiCotas">—</div><div class="detalhe" id="fiiPreco"></div></div>
+                    <div class="kpi"><div class="rotulo">Investido</div><div class="valor" id="fiiInvestido">—</div><div class="detalhe" id="fiiNumero"></div></div>
+                    <div class="kpi">
+                        <label class="rotulo" for="fiiAporteMensal">Aporte mensal (R$)</label>
+                        <input type="number" id="fiiAporteMensal" min="0" step="50" inputmode="decimal">
+                        <div class="detalhe" id="fiiFuturos"></div>
+                    </div>
+                    <div class="kpi">
+                        <label class="rotulo" for="fiiRendimentoCota">Rendimento por cota (R$)</label>
+                        <input type="number" id="fiiRendimentoCota" min="0" step="0.01" inputmode="decimal">
+                        <div class="detalhe">quanto o fundo paga hoje, por mês</div>
+                    </div>
+                    <div class="kpi"><div class="rotulo">Rendimento mensal</div><div class="valor" id="fiiTaxa">—</div><div class="detalhe" id="fiiGanhoEquivalente"></div></div>
+                </div>
+
+                <div class="cartao">
+                    <div class="cabecalho">
+                        <h2 id="tituloFiiTabela">Na data final</h2>
+                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaFii" aria-label="Como o FII é calculado">?</button><div class="ajuda" id="ajudaFii" hidden><ul></ul></div></div>
+                    </div>
+                    <div class="rolagem">
+                    <table class="tabela">
+                        <thead>
+                            <tr><th scope="col"></th><th scope="col">Nominal</th><th scope="col"><span class="longo" id="rotuloFiiReal">Real</span><span class="curto" id="rotuloFiiRealCurto">Real</span></th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Patrimônio</td><td id="fiiPatrimonio">—</td><td id="fiiPatrimonioReal" class="destaque">—</td></tr>
+                            <tr><td><span class="longo">Renda mensal total</span><span class="curto">Renda total/mês</span></td><td id="fiiRenda">—</td><td id="fiiRendaReal" class="destaque">—</td></tr>
+                            <tr><td><span class="longo">Renda mensal gastável</span><span class="curto">Gastável/mês</span></td><td id="fiiGastavel">—</td><td id="fiiGastavelReal" class="destaque">—</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div class="cartao">
+                    <div class="cabecalho">
+                        <h2>Mês a mês <span style="text-transform: none; font-weight: 400; color: var(--texto-3)">· em R$</span></h2>
+                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaMeses" aria-label="O que cada coluna mostra">?</button><div class="ajuda" id="ajudaMeses" hidden><ul>
+                            <li><strong>Rendimento:</strong> o que o fundo paga no dia 15 sobre as cotas que você tem.</li>
+                            <li><strong>Cotas (rendimento):</strong> quantas cotas inteiras o rendimento sozinho compra, somado à sobra do mês anterior.</li>
+                            <li><strong>Cotas (rend. + aporte):</strong> quantas cotas inteiras rendimento, aporte e sobra compram juntos. É o que entra na carteira.</li>
+                            <li><strong>Sobra:</strong> o troco que não completa uma cota; fica guardado (sem render) e entra na compra do mês seguinte.</li>
+                            <li>Clique no ano para abrir os meses. Na linha do ano, os valores são a soma do ano; cotas totais e patrimônio são os do fim do ano.</li>
+                        </ul></div></div>
+                    </div>
+                    <div class="rolagem">
+                    <table class="tabela tabela-anos">
+                        <thead>
+                            <tr>
+                                <th scope="col">Período</th>
+                                <th scope="col">Rendimento</th>
+                                <th scope="col"><span class="longo">Cotas (rendimento)</span><span class="curto">Cotas rend.</span></th>
+                                <th scope="col">Aporte</th>
+                                <th scope="col"><span class="longo">Cotas (rend. + aporte)</span><span class="curto">Cotas total</span></th>
+                                <th scope="col">Sobra</th>
+                                <th scope="col"><span class="longo">Cotas na carteira</span><span class="curto">Carteira</span></th>
+                                <th scope="col">Patrimônio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoMeses"></tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Preços de referência (janela) -->
+        <dialog id="janelaPrecos" aria-labelledby="tituloPrecos">
+            <div class="cabecalho">
+                <h2 id="tituloPrecos">Preços de referência</h2>
+                <button type="button" class="botao secundario" id="fecharPrecos">Fechar</button>
+            </div>
             <p class="precos-sub">Retrato fixo, para comparar com os preços do futuro.</p>
             <ul class="precos" id="listaPrecos"></ul>
-        </section>
+        </dialog>
     </main>
 
 </div>
@@ -354,15 +452,18 @@
 <script type="module">
 // ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
-import { simular, simularFii, hojeLocal, aporteParaMeta, primeiraData, deflator } from './calculo.js?v=3';
-import * as cripto from './cripto.js?v=3';
+import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator } from './calculo.js?v=5';
+import * as cripto from './cripto.js?v=5';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
 const CHAVE_META = 'ipca2050.metaReal';
 const CHAVE_DATA_FINAL = 'patrimonio.dataFinal';
 const CHAVE_FII_APORTE = 'patrimonio.fii.aporteMensal';
-const CHAVE_FII_GANHO = 'patrimonio.fii.ganhoReal'; // em % a.a.
+const CHAVE_FII_RENDIMENTO = 'patrimonio.fii.rendimentoPorCota'; // R$ por cota por mês
+const CHAVE_ABA = 'patrimonio.aba';
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const anosAbertos = new Set(); // anos abertos na tabela mês a mês (sobrevive ao recálculo)
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const brlCompacto = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
 const numero = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -548,6 +649,7 @@ $('botaoEsquecer').addEventListener('click', async () => {
     try { await cripto.esquecerChave(); } catch { /* nada a apagar */ }
     chavePrivada = null;
     aportes = [];
+    aportesFii = [];
     ultimoResultado = null;
     $('svgGrafico').replaceChildren();
     $('mensagemSenha').className = 'mensagem';
@@ -586,25 +688,92 @@ function abrirSimulador() {
     $('metaReal').value = lerSalvo(CHAVE_META, config.metaReal);
     const fii = config.fii || {};
     $('fiiAporteMensal').value = lerSalvo(CHAVE_FII_APORTE, fii.aporteMensalPadrao ?? 0);
-    $('fiiGanhoReal').value = lerSalvo(CHAVE_FII_GANHO, (fii.ganhoRealPadrao ?? 0.06) * 100);
-    $('tituloFii').textContent = fii.nome ? `FII ${fii.nome}` : 'FII';
+    $('fiiRendimentoCota').value = lerSalvo(CHAVE_FII_RENDIMENTO, fii.rendimentoPorCotaPadrao ?? 0.10);
+    $('abaFii').textContent = fii.nome || 'FII';
     $('rotuloPanFii').textContent = fii.nome || 'FII';
     $('dataFinal').min = hojeLocal();
     $('dataFinal').max = config.vencimento;
     $('dataFinal').value = lerDataFinal();
     mostrarPrecos();
     mostrar('telaSimulador');
+    let aba = 'abaPanorama';
+    try { aba = localStorage.getItem(CHAVE_ABA) || aba; } catch { /* sem storage */ }
+    selecionarAba($(aba) && $(aba).getAttribute('role') === 'tab' ? aba : 'abaPanorama', false);
     recalcular();
 }
+
+// ------------------------------------------------------------------ //
+// Abas, ajuda (?) e janela de preços
+// ------------------------------------------------------------------ //
+const ABAS = ['abaPanorama', 'abaIpca', 'abaFii'];
+
+function selecionarAba(id, focar = true) {
+    for (const outra of ABAS) {
+        const ativa = outra === id;
+        $(outra).setAttribute('aria-selected', String(ativa));
+        $(outra).tabIndex = ativa ? 0 : -1;
+        $($(outra).getAttribute('aria-controls')).hidden = !ativa;
+    }
+    if (focar) $(id).focus();
+    fecharAjudas();
+    try { localStorage.setItem(CHAVE_ABA, id); } catch { /* sem storage */ }
+}
+
+for (const id of ABAS) {
+    $(id).addEventListener('click', () => selecionarAba(id, false));
+    $(id).addEventListener('keydown', e => {
+        const i = ABAS.indexOf(id);
+        const destino = { ArrowRight: ABAS[(i + 1) % ABAS.length], ArrowLeft: ABAS[(i - 1 + ABAS.length) % ABAS.length], Home: ABAS[0], End: ABAS.at(-1) }[e.key];
+        if (!destino) return;
+        e.preventDefault();
+        selecionarAba(destino);
+    });
+}
+
+function fecharAjudas(exceto) {
+    for (const botao of document.querySelectorAll('.ajuda-botao')) {
+        if (botao === exceto) continue;
+        botao.setAttribute('aria-expanded', 'false');
+        $(botao.getAttribute('aria-controls')).hidden = true;
+    }
+}
+
+for (const botao of document.querySelectorAll('.ajuda-botao')) {
+    botao.addEventListener('click', e => {
+        e.stopPropagation();
+        const abrir = botao.getAttribute('aria-expanded') !== 'true';
+        fecharAjudas(botao);
+        botao.setAttribute('aria-expanded', String(abrir));
+        $(botao.getAttribute('aria-controls')).hidden = !abrir;
+    });
+}
+document.addEventListener('click', e => { if (!e.target.closest('.ajuda')) fecharAjudas(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharAjudas(); });
+
+// conteúdo de uma caixa de ajuda: lista de textos
+function preencherAjuda(id, textos) {
+    $(id).querySelector('ul').replaceChildren(...textos.map(t => { const li = document.createElement('li'); li.textContent = t; return li; }));
+}
+
+$('botaoPrecos').addEventListener('click', () => $('janelaPrecos').showModal());
+$('fecharPrecos').addEventListener('click', () => $('janelaPrecos').close());
+// clique fora da caixa (no fundo escurecido) fecha
+$('janelaPrecos').addEventListener('click', e => { if (e.target === $('janelaPrecos')) $('janelaPrecos').close(); });
 
 // precos.json: { "data": "AAAA-MM-DD", "itens": [{ "nome": "...", "preco": 0.00 }] }
 function mostrarPrecos() {
     const itens = (precos && Array.isArray(precos.itens) ? precos.itens : [])
         .filter(item => typeof item.nome === 'string' && typeof item.preco === 'number');
-    $('secaoPrecos').hidden = !itens.length;
+    $('botaoPrecos').hidden = !itens.length;
     if (!itens.length) return;
     const data = /^\d{4}-\d{2}-\d{2}$/.test(precos.data || '') ? dataBr(precos.data) : '';
     $('tituloPrecos').textContent = data ? `Preços de referência · ${data}` : 'Preços de referência';
+    const largo = document.createElement('span'), estreito = document.createElement('span');
+    largo.className = 'so-largo';
+    largo.textContent = data ? `Preços de ${data}` : 'Preços de referência';
+    estreito.className = 'so-estreito';
+    estreito.textContent = 'Preços';
+    $('botaoPrecos').replaceChildren(largo, estreito);
     $('listaPrecos').replaceChildren(...itens.map(item => {
         const li = document.createElement('li');
         const nome = document.createElement('span');
@@ -628,7 +797,7 @@ $('dataFinal').addEventListener('change', () => {
     recalcular();
 });
 
-for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_META], ['fiiAporteMensal', CHAVE_FII_APORTE], ['fiiGanhoReal', CHAVE_FII_GANHO]]) {
+for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_META], ['fiiAporteMensal', CHAVE_FII_APORTE], ['fiiRendimentoCota', CHAVE_FII_RENDIMENTO]]) {
     $(id).addEventListener('input', () => {
         const campo = $(id);
         const v = Number(campo.value);
@@ -669,7 +838,6 @@ function mostrarFii(rf, dataFinal, fmt) {
     $('blocoFii').hidden = !rf;
     $('avisoFii').hidden = !!rf;
     $('avisoFii').textContent = rf ? '' : 'Sem aportes de FII registrados ainda.';
-    $('subFii').textContent = `até ${dataBr(dataFinal)} (data do panorama)`;
     if (!rf) return;
     const n = aportesFii.length;
     $('fiiCotas').textContent = rf.cotasHoje.toLocaleString('pt-BR');
@@ -677,15 +845,61 @@ function mostrarFii(rf, dataFinal, fmt) {
     $('fiiInvestido').textContent = brl.format(rf.investido);
     $('fiiNumero').textContent = `${n} aporte${n === 1 ? '' : 's'}`;
     $('fiiFuturos').textContent = rf.numeroAportesFuturos ? `${rf.numeroAportesFuturos} aportes até a data` : 'sem aportes mensais';
-    const ganho = (Number($('fiiGanhoReal').value) || 0) / 100;
-    const taxaMensal = Math.pow((1 + ultimoResultado.inflacao) * (1 + ganho), 1 / 12) - 1;
-    $('fiiTaxa').textContent = pct(taxaMensal) + ' a.m.';
+    $('fiiTaxa').textContent = pct(rf.taxaMensal);
+    const ganho = rf.ganhoRealEquivalente;
+    $('fiiGanhoEquivalente').textContent = `≈ ${pct(Math.abs(ganho))} a.a. ${ganho >= 0 ? 'acima' : 'abaixo'} da inflação`;
     $('tituloFiiTabela').textContent = `Na data final · ${dataBr(dataFinal)}`;
     for (const [id, v] of [
         ['fiiPatrimonio', rf.patrimonio], ['fiiPatrimonioReal', rf.real],
         ['fiiRenda', rf.rendaMensal], ['fiiRendaReal', rf.rendaMensalReal],
         ['fiiGastavel', rf.rendaGastavel], ['fiiGastavelReal', rf.rendaGastavelReal],
     ]) $(id).textContent = fmt(v);
+    mostrarMeses(rf);
+}
+
+// Tabela mês a mês, agrupada por ano (clique no ano abre os meses)
+function mostrarMeses(rf) {
+    const cotasFmt = n => n.toLocaleString('pt-BR');
+    const celulas = (tr, valores) => {
+        for (const v of valores) { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); }
+    };
+    const linhas = [];
+    for (const g of fiiPorAno(rf.meses)) {
+        const tr = document.createElement('tr');
+        tr.className = 'ano';
+        const td = document.createElement('td');
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.textContent = `${g.ano} · ${g.meses.length} ${g.meses.length === 1 ? 'mês' : 'meses'}`;
+        botao.setAttribute('aria-expanded', String(anosAbertos.has(g.ano)));
+        td.appendChild(botao);
+        tr.appendChild(td);
+        celulas(tr, [numero.format(g.rendimento), cotasFmt(g.cotasDoRendimento), numero.format(g.aporte), cotasFmt(g.cotasCompradas), numero.format(g.sobra), cotasFmt(g.cotas), numero.format(g.patrimonio)]);
+        linhas.push(tr);
+        const filhas = g.meses.map(m => {
+            const linha = document.createElement('tr');
+            linha.className = 'mes';
+            linha.hidden = !anosAbertos.has(g.ano);
+            celulas(linha, [`${MESES[Number(m.data.slice(5, 7)) - 1]}/${m.data.slice(2, 4)}`, numero.format(m.rendimento), cotasFmt(m.cotasDoRendimento), numero.format(m.aporte), cotasFmt(m.cotasCompradas), numero.format(m.sobra), cotasFmt(m.cotas), numero.format(m.patrimonio)]);
+            return linha;
+        });
+        botao.addEventListener('click', () => {
+            const abrir = !anosAbertos.has(g.ano);
+            if (abrir) anosAbertos.add(g.ano); else anosAbertos.delete(g.ano);
+            botao.setAttribute('aria-expanded', String(abrir));
+            for (const f of filhas) f.hidden = !abrir;
+        });
+        linhas.push(...filhas);
+    }
+    if (!linhas.length) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.textContent = 'Nenhum mês até a data escolhida.';
+        tr.appendChild(td);
+        linhas.push(tr);
+    }
+    $('corpoMeses').replaceChildren(...linhas);
 }
 
 function recalcular() {
@@ -701,7 +915,7 @@ function recalcular() {
     const fiiCfg = config.fii || {};
     const rf = simularFii({
         aportes: aportesFii, hoje, dataFinal, inflacao: r.inflacao,
-        ganhoReal: (Number($('fiiGanhoReal').value) || 0) / 100,
+        rendimentoPorCota: Number($('fiiRendimentoCota').value) || 0,
         aporteMensal: Number($('fiiAporteMensal').value) || 0,
         dia: fiiCfg.diaAporteFuturo || 15, dataBaseReal,
     });
@@ -719,7 +933,6 @@ function recalcular() {
     // na tela estreita a tabela vai sem "R$ " (o título avisa que é em R$)
     const fmt = telaEstreita.matches ? (v => numero.format(v)) : (v => brl.format(v));
     // rótulo do valor real com o mês/ano da base (primeiro aporte), ex.: "nov/2026"
-    const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
     const [anoBase, mesNum] = r.dataBaseReal.split('-').map(Number);
     const mesBase = `${MESES[mesNum - 1]}/${anoBase}`;
     $('rotuloReal').textContent = `Real (R$ de ${mesBase})`;
@@ -759,15 +972,28 @@ function recalcular() {
         $('avisoSimulador').textContent = 'Sem aportes registrados: não há taxa média para simular os aportes mensais.';
     }
 
-    const notas = [
-        `Rentabilidade de cada lote: (1 + inflação) × (1 + taxa contratada), capitalizada pelos anos até o vencimento (anos = dias corridos ÷ 365,25).`,
-        `Inflação futura = média geométrica do IPCA de ${Math.min(...anos)} a ${Math.max(...anos)} (config.json). Real = líquido trazido a R$ de ${mesBase} (data do primeiro aporte, ${dataBr(r.dataBaseReal)}) por essa inflação; a base não muda com o passar dos anos.`,
-        `Custódia B3 de ${pct(config.custodiaAnual)} a.a. sobre o saldo; IR regressivo pelo prazo de cada lote (22,5% a 15%) sobre o ganho após a custódia.`,
+    preencherAjuda('ajudaIpca', [
+        `Rentabilidade de cada aporte: (1 + inflação) × (1 + taxa contratada), capitalizada pelos anos até o vencimento (anos = dias corridos ÷ 365,25).`,
+        `Inflação futura: ${pct(r.inflacao)} a.a., média geométrica do IPCA de ${Math.min(...anos)} a ${Math.max(...anos)}.`,
+        `Custódia B3 de ${pct(config.custodiaAnual)} a.a. sobre o saldo; IR regressivo pelo prazo de cada aporte (22,5% a 15%) sobre o ganho após a custódia.`,
         `Aportes futuros: um por mês no dia ${config.diaAporteFuturo}, do mês que vem até jul/2050, à taxa média ponderada dos aportes atuais.`,
-        `FII: cota parada no preço do último aporte; rendimento mensal = (1 + inflação projetada) × (1 + ganho real) ao ano, em taxa mensal, todo reinvestido em mais cotas (frações aceitas) até a data do panorama. Sem IR: rendimento de FII é isento para pessoa física e a ideia é não vender. Renda gastável = só o ganho real; gastando só ela, o patrimônio mantém o poder de compra.`,
-        `Panorama: IPCA+ pelo líquido se resgatado na data (taxa contratada, sem marcação a mercado) + FII projetado até a data. Real = trazido a R$ de ${mesBase}, data do primeiro aporte entre todos os investimentos.`,
-    ];
-    $('notas').replaceChildren(...notas.map(t => { const li = document.createElement('li'); li.textContent = t; return li; }));
+        `Real = líquido em R$ de ${mesBase} (data do primeiro aporte entre todos os investimentos, ${dataBr(r.dataBaseReal)}); a base não muda com o passar dos anos.`,
+    ]);
+    preencherAjuda('ajudaFii', [
+        `A cota fica parada no preço do último aporte (${rf ? brl.format(rf.preco) : '—'}): a página é estática e não tem cotação ao vivo.`,
+        `Rendimento mensal = rendimento por cota ÷ preço da cota${rf ? ` (${brl.format(rf.preco)})` : ''}, mantido igual até a data final. O valor de hoje vem de uma Selic alta: se ela cair, o fundo tende a pagar menos. Baixe o valor para simular um cenário mais conservador.`,
+        `Ganho real equivalente = quanto essa taxa rende por ano acima da inflação projetada de ${pct(r.inflacao)}. Num FII de recebíveis a correção pela inflação vem dentro do rendimento.`,
+        `Todo dia ${(config.fii || {}).diaAporteFuturo || 15}, rendimento + aporte compram cotas inteiras; o troco fica guardado para o mês seguinte.`,
+        `Sem IR: rendimento de FII é isento para pessoa física, e a ideia é não vender.`,
+        `Renda gastável = só a parte do ganho real. Gastando só ela, o patrimônio mantém o poder de compra; gastando a renda total, ele encolhe em valor real. Se o rendimento não cobre a inflação, a renda gastável é zero.`,
+        `Real = em R$ de ${mesBase}, data do primeiro aporte entre todos os investimentos.`,
+    ]);
+    preencherAjuda('ajudaPanorama', [
+        `Tesouro IPCA+: líquido se resgatado na data (taxa contratada, sem marcação a mercado), contando os aportes mensais até ela.`,
+        `FII: projetado até a data, com os aportes mensais e o rendimento por cota da aba do FII.`,
+        `A data vai de hoje até 15/08/2050 (vencimento do IPCA+) e também é a data final do FII.`,
+        `Real = total trazido a R$ de ${mesBase} (data do primeiro aporte entre todos os investimentos) pela inflação projetada de ${pct(r.inflacao)} a.a.`,
+    ]);
 
     desenharGrafico();
 }
@@ -800,7 +1026,8 @@ function teto(valor) {
 
 function desenharGrafico() {
     const r = ultimoResultado;
-    if (!r) return;
+    // sem resultado, ou aba do IPCA escondida: o ResizeObserver desenha quando ela aparecer
+    if (!r || !$('grafico').clientWidth) return;
     const svg = $('svgGrafico');
     const largura = Math.max(280, $('grafico').clientWidth);
     const estreito = largura < 520;
@@ -954,7 +1181,9 @@ svgGrafico.addEventListener('keydown', e => {
 let larguraAnterior = 0;
 new ResizeObserver(() => {
     const largura = $('grafico').clientWidth;
-    if (largura && largura !== larguraAnterior) {
+    // aba escondida (largura 0): esquece a largura, para redesenhar quando a aba voltar
+    if (!largura) { larguraAnterior = 0; return; }
+    if (largura !== larguraAnterior) {
         larguraAnterior = largura;
         esconderPonto();
         desenharGrafico();

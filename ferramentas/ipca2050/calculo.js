@@ -211,44 +211,72 @@ function datasMensais(inicio, fim, dia) {
 // FII (ex.: MXRF11)
 // ------------------------------------------------------------------ //
 // aportes = [{ data, cotas, preco }]. Modelo de FII de recebíveis (CRI):
-// a cota fica parada no preço do último aporte e o rendimento mensal é
-// (1 + inflação) × (1 + ganho real) ao ano, em taxa mensal equivalente,
-// todo reinvestido em mais cotas (frações aceitas). Aportes mensais no dia
-// `dia`, do mês que vem até a data final. Sem imposto: rendimento de FII é
-// isento para pessoa física e a ideia é não vender.
+// - a cota fica parada no preço do último aporte;
+// - todo dia `dia`, do mês que vem até a data final, o fundo paga
+//   `rendimentoPorCota` (R$, o valor que ele paga hoje) por cota que você tem;
+//   taxa mensal = rendimento por cota ÷ preço da cota;
+// - rendimento + aporte do mês + a sobra guardada compram cotas INTEIRAS, como
+//   na corretora; o troco fica guardado (sem render) e entra no mês seguinte.
+// Sem imposto: rendimento de FII é isento para pessoa física e a ideia é não vender.
+// Ganho real equivalente = quanto essa taxa rende acima da inflação projetada.
 // Renda gastável = só a parte do ganho real: gastando só ela, o patrimônio
-// mantém o poder de compra.
-export function simularFii({ aportes, hoje, dataFinal, inflacao, ganhoReal, aporteMensal, dia, dataBaseReal }) {
+// mantém o poder de compra (zero se o rendimento nem cobre a inflação).
+export function simularFii({ aportes, hoje, dataFinal, inflacao, rendimentoPorCota, aporteMensal, dia, dataBaseReal }) {
     if (!aportes.length) return null;
     const preco = [...aportes].sort((a, b) => a.data.localeCompare(b.data)).at(-1).preco;
     const cotasHoje = aportes.reduce((s, a) => s + a.cotas, 0);
     const investido = aportes.reduce((s, a) => s + a.cotas * a.preco, 0);
-    const taxaMensal = Math.pow((1 + inflacao) * (1 + ganhoReal), 1 / 12) - 1;
-    const taxaGastavel = Math.pow(1 + ganhoReal, 1 / 12) - 1;
-    const MES = DIAS_POR_ANO / 12;
+    const porCota = rendimentoPorCota > 0 ? rendimentoPorCota : 0;
+    const taxaMensal = porCota / preco;
+    const ganhoRealEquivalente = Math.pow(1 + taxaMensal, 12) / (1 + inflacao) - 1;
+    const taxaGastavel = Math.max(0, (1 + taxaMensal) / Math.pow(1 + inflacao, 1 / 12) - 1);
+    const aporte = aporteMensal > 0 ? aporteMensal : 0;
+    // folga contra erro de ponto flutuante (ex.: 10,999999 cotas que são 11)
+    const inteiras = valor => Math.floor(valor / preco + 1e-9);
 
-    let cotas = cotasHoje, anterior = hoje, numeroAportesFuturos = 0, rendimentos = 0;
-    const render = ate => {
-        const r = cotas * preco * (Math.pow(1 + taxaMensal, diasEntre(anterior, ate) / MES) - 1);
-        rendimentos += r;
-        cotas += r / preco;
-        anterior = ate;
-    };
-    for (const d of datasMensais(hoje, dataFinal, dia)) {
-        render(d);
-        if (aporteMensal > 0) { cotas += aporteMensal / preco; numeroAportesFuturos++; }
-    }
-    if (dataFinal > anterior) render(dataFinal);
+    let cotas = cotasHoje, sobra = 0, rendimentos = 0;
+    const meses = datasMensais(hoje, dataFinal, dia).map(data => {
+        const rendimento = cotas * porCota;
+        rendimentos += rendimento;
+        const cotasDoRendimento = inteiras(sobra + rendimento);
+        const disponivel = sobra + rendimento + aporte;
+        const cotasCompradas = inteiras(disponivel);
+        sobra = disponivel - cotasCompradas * preco;
+        cotas += cotasCompradas;
+        return { data, rendimento, cotasDoRendimento, aporte, cotasCompradas, sobra, cotas, patrimonio: cotas * preco + sobra };
+    });
 
-    const patrimonio = cotas * preco;
+    const patrimonio = cotas * preco + sobra;
     const divisor = deflator(inflacao, dataBaseReal || primeiraData(aportes), dataFinal);
+    const rendaMensal = cotas * preco * taxaMensal;
+    const rendaGastavel = cotas * preco * taxaGastavel;
     return {
-        preco, cotasHoje, investido, patrimonioHoje: cotasHoje * preco,
-        cotasFinal: cotas, patrimonio, real: patrimonio / divisor,
-        numeroAportesFuturos, aportadoFuturo: numeroAportesFuturos * aporteMensal, rendimentos,
-        rendaMensal: patrimonio * taxaMensal, rendaMensalReal: patrimonio * taxaMensal / divisor,
-        rendaGastavel: patrimonio * taxaGastavel, rendaGastavelReal: patrimonio * taxaGastavel / divisor,
+        preco, cotasHoje, investido, patrimonioHoje: cotasHoje * preco, taxaMensal, ganhoRealEquivalente,
+        cotasFinal: cotas, sobra, patrimonio, real: patrimonio / divisor,
+        numeroAportesFuturos: aporte ? meses.length : 0, aportadoFuturo: aporte * meses.length, rendimentos,
+        rendaMensal, rendaMensalReal: rendaMensal / divisor,
+        rendaGastavel, rendaGastavelReal: rendaGastavel / divisor,
+        meses,
     };
+}
+
+// Linhas do mês a mês agrupadas por ano: totais do ano e a posição no fim dele
+export function fiiPorAno(meses) {
+    const anos = [];
+    for (const m of meses) {
+        const ano = m.data.slice(0, 4);
+        let g = anos.at(-1);
+        if (!g || g.ano !== ano) anos.push(g = { ano, rendimento: 0, cotasDoRendimento: 0, aporte: 0, cotasCompradas: 0, meses: [] });
+        g.rendimento += m.rendimento;
+        g.cotasDoRendimento += m.cotasDoRendimento;
+        g.aporte += m.aporte;
+        g.cotasCompradas += m.cotasCompradas;
+        g.sobra = m.sobra;
+        g.cotas = m.cotas;
+        g.patrimonio = m.patrimonio;
+        g.meses.push(m);
+    }
+    return anos;
 }
 
 // Aporte mensal que leva o valor real no vencimento exatamente até `meta`

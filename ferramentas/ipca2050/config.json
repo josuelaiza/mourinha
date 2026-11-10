@@ -25,5 +25,5 @@
   "metaReal": 500000,
   "diaAporteFuturo": 15,
   "ultimoMesAporteFuturo": "2050-07",
-  "fii": { "nome": "MXRF11", "ganhoRealPadrao": 0.06, "aporteMensalPadrao": 0, "diaAporteFuturo": 15 }
+  "fii": { "nome": "MXRF11", "rendimentoPorCotaPadrao": 0.10, "aporteMensalPadrao": 0, "diaAporteFuturo": 15 }
 }

@@ -280,8 +280,10 @@
 </div>
 
 <script type="module">
-import { simular, hojeLocal, aporteParaMeta } from './calculo.js';
-import * as cripto from './cripto.js';
+// ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
+// juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
+import { simular, hojeLocal, aporteParaMeta } from './calculo.js?v=2';
+import * as cripto from './cripto.js?v=2';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';

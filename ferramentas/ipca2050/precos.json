@@ -9,6 +9,7 @@
     { "nome": "Carne bovina, acém ou patinho (kg)", "preco": 35.00 },
     { "nome": "Leite em pó Ninho integral 400 g", "preco": 20.00 },
     { "nome": "Detergente", "preco": 1.99 },
+    { "nome": "Geladeira 1 porta (Consul ou Electrolux)", "preco": 1500.00 },
     { "nome": "Gasolina em Manaus (litro)", "preco": 6.99 },
     { "nome": "Salário mínimo", "preco": 1621.00 },
     { "nome": "Mercado do mês, 2 pessoas (sem luxo e sem miséria)", "preco": 1200.00 }

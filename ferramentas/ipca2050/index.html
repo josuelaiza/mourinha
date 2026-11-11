@@ -43,8 +43,26 @@
             padding: 4px 2px 12px;
         }
         .topo h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.2px; }
-        .topo .sub { color: var(--texto-3); font-size: 0.8rem; }
-        .topo .acoes { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--texto-3); }
+        .menu-topo { position: relative; }
+        .botao-menu {
+            display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+            background: var(--cartao); border: 1px solid var(--borda); color: var(--texto-2);
+        }
+        .botao-menu:hover, .botao-menu[aria-expanded="true"] { color: var(--texto); border-color: var(--texto-3); }
+        .botao-menu:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+        .painel-menu {
+            position: absolute; right: 0; top: 42px; z-index: 20; min-width: 240px;
+            background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 10px; padding: 6px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+        }
+        .item-menu {
+            display: block; width: 100%; text-align: left; font: inherit; font-size: 0.85rem; color: var(--texto);
+            background: none; border: none; border-radius: 6px; padding: 9px 10px; cursor: pointer;
+        }
+        .item-menu:hover, .item-menu:focus-visible { background: var(--cartao); outline: none; }
+        .item-menu:disabled { opacity: 0.5; cursor: default; }
+        .item-menu.perigo { color: var(--erro); }
+        .separador-menu { height: 1px; background: var(--borda); margin: 4px 6px; }
 
         .botao {
             font: inherit; font-size: 0.85rem; font-weight: 500;
@@ -73,6 +91,7 @@
         .campo input:focus { outline: none; border-color: var(--destaque); box-shadow: 0 0 0 3px rgba(57, 135, 229, 0.25); }
         .forca { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin: 2px 0 4px; }
         .forca span { height: 4px; border-radius: 2px; background: var(--borda); }
+        .dica-senha { font-size: 0.75rem; color: var(--texto-3); }
         .forca-texto { font-size: 0.75rem; color: var(--texto-3); min-height: 1.2em; }
         .mensagem { font-size: 0.8rem; min-height: 1.3em; margin-top: 8px; color: var(--texto-2); }
         .mensagem.erro { color: var(--erro); }
@@ -132,20 +151,49 @@
         .dica .nome { color: var(--texto-3); }
 
         /* Panorama e seções */
-        /* Data do panorama */
-        .rotulo-data input {
-            font: inherit; font-size: 0.85rem; color: var(--texto); padding: 3px 6px; margin-left: 4px;
-            background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 4px; color-scheme: dark;
+        /* Panorama */
+        .ajuda-botao.pequeno { width: 16px; height: 16px; font-size: 0.62rem; vertical-align: 1px; }
+        .rotulo-metrica { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.3px; }
+        .hoje { display: grid; grid-template-columns: 1fr 1fr; }
+        .hoje .metrica { padding: 2px 0; min-width: 0; }
+        .hoje .metrica + .metrica { border-left: 1px solid var(--borda); padding-left: 16px; }
+        .metrica .valor { font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .metrica .detalhe { font-size: 0.75rem; color: var(--texto-3); margin-top: 2px; }
+        .variacao { font-variant-numeric: tabular-nums; font-weight: 500; }
+        .variacao.ganho { color: var(--ok); }
+        .variacao.perda { color: var(--erro); }
+
+        .data-projecao { display: flex; align-items: center; gap: 6px; }
+        .data-projecao input {
+            font: inherit; font-size: 0.85rem; color: var(--texto); padding: 4px 6px;
+            background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 6px; color-scheme: dark;
         }
-        .rotulo-data input:focus { outline: none; border-color: var(--destaque); }
-        .rotulo-data input.invalido { border-color: var(--erro); }
-        .rotulo-data { font-size: 0.75rem; color: var(--texto-2); }
-        .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-        .numeros > div { background: var(--cartao-2); border-radius: 6px; padding: 8px 10px; min-width: 0; }
-        .numeros .rotulo { font-size: 0.7rem; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.3px; }
-        .numeros .valor { font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .numeros .detalhe { font-size: 0.7rem; color: var(--texto-3); margin-top: 1px; }
-        .numeros .principal .valor { font-size: 1.3rem; }
+        .data-projecao input:focus { outline: none; border-color: var(--destaque); }
+        .data-projecao input.invalido { border-color: var(--erro); }
+        .chip {
+            font: inherit; font-size: 0.75rem; color: var(--texto-2); background: var(--cartao-2);
+            border: 1px solid var(--borda); border-radius: 999px; padding: 4px 10px; cursor: pointer; white-space: nowrap;
+        }
+        .chip:hover { color: var(--texto); border-color: var(--texto-3); }
+        .chip[aria-pressed="true"] { color: var(--texto); border-color: var(--destaque); background: rgba(57, 135, 229, 0.15); }
+
+        .total-projecao { padding: 4px 0 14px; border-bottom: 1px solid var(--borda); }
+        .total-projecao .valor { font-size: 1.9rem; font-weight: 650; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+        .total-projecao .real { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.85rem; color: var(--texto-2); margin-top: 4px; }
+        .total-projecao .real strong { color: var(--texto); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+        .composicao-titulo { margin: 12px 0 8px; }
+        .barra-composicao { display: flex; gap: 2px; height: 8px; margin-bottom: 4px; }
+        .barra-composicao span { border-radius: 4px; min-width: 2px; }
+        .lista-composicao { list-style: none; }
+        .lista-composicao li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 10px; padding: 10px 0; }
+        .lista-composicao li + li { border-top: 1px solid var(--borda); }
+        .lista-composicao .marca { width: 10px; height: 10px; border-radius: 3px; }
+        .lista-composicao .nome { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--texto); min-width: 0; }
+        .lista-composicao .sub { grid-column: 2; font-size: 0.72rem; color: var(--texto-3); }
+        .lista-composicao .numero { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
+        .lista-composicao .parte { grid-column: 3; text-align: right; font-size: 0.72rem; color: var(--texto-3); font-variant-numeric: tabular-nums; }
+        :root { --cor-ipca: #3987e5; --cor-fii: #199e70; }
 
         /* Preços de referência */
         .precos-sub { font-size: 0.72rem; color: var(--texto-3); margin: -4px 0 8px; }
@@ -182,6 +230,7 @@
             background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 8px; padding: 10px 12px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); font-size: 0.78rem; color: var(--texto-2); line-height: 1.45;
         }
+        .ajuda { display: block; text-transform: none; letter-spacing: normal; font-weight: 400; text-align: left; white-space: normal; }
         .ajuda ul { list-style: none; }
         .ajuda li + li { margin-top: 6px; }
         .ajuda strong { color: var(--texto); font-weight: 600; }
@@ -223,11 +272,9 @@
         .aviso-sync.erro { border-left-color: var(--erro); }
         .aviso-sync a, .aviso-sync button.link { color: var(--destaque); background: none; border: none; font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
 
-        .so-estreito { display: none; }
+        .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
         @media (max-width: 560px) {
             .pagina { padding: 8px; }
-            .so-largo, #estadoLembrar { display: none; }
-            .so-estreito { display: inline; }
             .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
             .tabela th, .tabela td { padding: 6px 3px; }
             .tabela td { font-size: 0.8rem; }
@@ -235,10 +282,9 @@
             .tabela .longo { display: none; }
             .tabela .curto, .curto-bloco { display: inline; }
             .tabela td:first-child { white-space: nowrap; }
-            .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-            .numeros .principal { grid-column: 1 / -1; }
-            /* sobrou um card sozinho na última linha: ocupa a linha inteira */
-            .numeros > div:last-child:nth-child(2n) { grid-column: 1 / -1; }
+            .hoje .metrica + .metrica { padding-left: 12px; }
+            .metrica .valor { font-size: 1.15rem; }
+            .total-projecao .valor { font-size: 1.6rem; }
         }
     </style>
 </head>
@@ -246,15 +292,17 @@
 <div class="pagina">
 
     <header class="topo">
-        <div>
-            <h1>Patrimônio</h1>
-            <div class="sub">Tesouro IPCA+ 2050 e FII · projeção</div>
-        </div>
-        <div class="acoes" id="acoesSessao" hidden>
-            <span id="estadoLembrar"></span>
-            <button type="button" class="botao secundario" id="botaoPrecos" hidden>Preços de referência</button>
-            <button type="button" class="botao secundario" id="botaoSincronizar" hidden>Sincronizar</button>
-            <button type="button" class="botao secundario" id="botaoEsquecer"><span class="so-largo">Esquecer neste dispositivo</span><span class="so-estreito">Esquecer</span></button>
+        <h1>Patrimônio</h1>
+        <div class="menu-topo" id="acoesSessao" hidden>
+            <button type="button" class="botao-menu" id="botaoMenu" aria-expanded="false" aria-controls="painelMenu" aria-label="Menu">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+            </button>
+            <div class="painel-menu" id="painelMenu" hidden>
+                <button type="button" class="item-menu" id="botaoSincronizar" hidden>Sincronizar com o Notion</button>
+                <button type="button" class="item-menu" id="botaoPrecos" hidden>Preços de referência</button>
+                <div class="separador-menu"></div>
+                <button type="button" class="item-menu perigo" id="botaoEsquecer">Esquecer neste dispositivo</button>
+            </div>
         </div>
     </header>
 
@@ -296,6 +344,7 @@
             <div class="campo">
                 <label for="senhaAbrir">Frase-senha</label>
                 <input type="password" id="senhaAbrir" autocomplete="current-password" required>
+                <div class="dica-senha">Dica: senha lan house</div>
             </div>
             <button type="submit" class="botao" id="botaoAbrir">Desbloquear</button>
         </form>
@@ -317,22 +366,56 @@
 
         <!-- Panorama -->
         <section id="painelPanorama" role="tabpanel" aria-labelledby="abaPanorama">
+            <!-- Hoje: o que você pôs e quanto vale agora -->
             <div class="cartao">
-                <div class="cabecalho">
-                    <h2>Patrimônio na data</h2>
-                    <div class="lado">
-                        <label class="rotulo-data" for="dataFinal">Data <input type="date" id="dataFinal"></label>
-                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaPanorama" aria-label="Como o panorama é calculado">?</button><div class="ajuda" id="ajudaPanorama" hidden><ul></ul></div></div>
+                <div class="cabecalho"><h2>Hoje</h2></div>
+                <div class="hoje">
+                    <div class="metrica">
+                        <div class="rotulo-metrica">Total aportado <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaAportado" aria-label="O que é o total aportado">?</button><span class="ajuda" id="ajudaAportado" hidden><ul></ul></span></span></div>
+                        <div class="valor" id="panAportado">—</div>
+                        <div class="detalhe" id="panAportadoDetalhe"></div>
+                    </div>
+                    <div class="metrica">
+                        <div class="rotulo-metrica">Patrimônio hoje <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaHoje" aria-label="O que é o patrimônio hoje">?</button><span class="ajuda" id="ajudaHoje" hidden><ul></ul></span></span></div>
+                        <div class="valor" id="panHoje">—</div>
+                        <div class="detalhe" id="panHojeDetalhe"></div>
                     </div>
                 </div>
-                <div class="numeros">
-                    <div class="principal"><div class="rotulo" id="rotuloPanReal">Total real</div><div class="valor" id="panReal">—</div><div class="detalhe" id="panRealDetalhe"></div></div>
-                    <div><div class="rotulo">Total nominal</div><div class="valor" id="panNominal">—</div><div class="detalhe" id="panNominalDetalhe"></div></div>
-                    <div><div class="rotulo">Tesouro IPCA+ 2050</div><div class="valor" id="panIpca">—</div><div class="detalhe">líquido, se resgatado na data</div></div>
-                    <div><div class="rotulo" id="rotuloPanFii">FII</div><div class="valor" id="panFii">—</div><div class="detalhe" id="panFiiDetalhe"></div></div>
-                    <div><div class="rotulo">Total aportado</div><div class="valor" id="panAportado">—</div><div class="detalhe" id="panAportadoDetalhe"></div></div>
-                    <div><div class="rotulo">Patrimônio hoje</div><div class="valor" id="panHoje">—</div><div class="detalhe" id="panHojeDetalhe"></div></div>
+            </div>
+
+            <!-- Projeção: o total na data escolhida e de onde ele vem -->
+            <div class="cartao">
+                <div class="cabecalho">
+                    <h2>Projeção</h2>
+                    <div class="data-projecao">
+                        <label class="sr" for="dataFinal">Data da projeção</label>
+                        <input type="date" id="dataFinal">
+                        <button type="button" class="chip" id="dataUltima" aria-pressed="false">Última data</button>
+                    </div>
                 </div>
+                <div class="total-projecao">
+                    <div class="rotulo-metrica"><span id="rotuloPanNominal">Total nominal</span> <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaNominal" aria-label="O que é o total nominal">?</button><span class="ajuda" id="ajudaNominal" hidden><ul></ul></span></span></div>
+                    <div class="valor" id="panNominal">—</div>
+                    <div class="real">Em valor real: <strong id="panReal">—</strong> <span id="panRealBase"></span> <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaReal" aria-label="O que é o valor real">?</button><span class="ajuda" id="ajudaReal" hidden><ul></ul></span></span></div>
+                </div>
+                <div class="rotulo-metrica composicao-titulo">Composição</div>
+                <div class="barra-composicao" id="barraComposicao" aria-hidden="true"></div>
+                <ul class="lista-composicao">
+                    <li>
+                        <span class="marca" style="background: var(--cor-ipca)"></span>
+                        <span class="nome">Tesouro IPCA+ 2050 <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaCompIpca" aria-label="Como o Tesouro IPCA+ entra no total">?</button><span class="ajuda" id="ajudaCompIpca" hidden><ul></ul></span></span></span>
+                        <span class="numero" id="panIpca">—</span>
+                        <span class="sub">líquido, se resgatado na data</span>
+                        <span class="parte" id="panIpcaParte"></span>
+                    </li>
+                    <li>
+                        <span class="marca" style="background: var(--cor-fii)"></span>
+                        <span class="nome"><span id="rotuloPanFii">FII</span> <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaCompFii" aria-label="Como o FII entra no total">?</button><span class="ajuda" id="ajudaCompFii" hidden><ul></ul></span></span></span>
+                        <span class="numero" id="panFii">—</span>
+                        <span class="sub" id="panFiiDetalhe"></span>
+                        <span class="parte" id="panFiiParte"></span>
+                    </li>
+                </ul>
             </div>
         </section>
 
@@ -600,7 +683,6 @@ async function abrirComChave(chave, lembrada) {
     lidos.sort((x, y) => x.data.localeCompare(y.data));
     aportes = lidos.filter(a => a.tipo === undefined);
     aportesFii = lidos.filter(a => a.tipo === 'fii');
-    $('estadoLembrar').textContent = lembrada ? 'Lembrado neste dispositivo' : '';
     $('avisoSimulador').hidden = falhas === 0;
     $('avisoSimulador').textContent = falhas ? `${falhas} entrada(s) do data.json não puderam ser decifradas e ficaram fora da conta.` : '';
     abrirSimulador();
@@ -688,7 +770,6 @@ $('formSenha').addEventListener('submit', async evento => {
             msg.className = 'mensagem erro';
             msg.textContent = 'A chave abriu, mas nenhum aporte foi decifrado. O data.json é deste par de chaves?';
         }
-        if (!lembrou) $('estadoLembrar').textContent = 'Não foi possível lembrar neste dispositivo';
     } catch (e) {
         msg.className = 'mensagem erro';
         msg.textContent = e instanceof cripto.SenhaIncorreta ? 'Senha incorreta.' : 'Erro: ' + e.message;
@@ -703,6 +784,7 @@ $('botaoEsquecer').addEventListener('click', async () => {
     try { localStorage.removeItem(CHAVE_TOKEN); } catch { /* sem storage */ }
     $('avisoSync').hidden = true;
     $('statusSync').hidden = true;
+    abrirMenu(false);
     clearInterval(acompanhando);
     chavePrivada = null;
     aportes = [];
@@ -812,15 +894,40 @@ for (const botao of document.querySelectorAll('.ajuda-botao')) {
 // (cabeçalho quebrado em duas linhas no celular), ela passaria da borda
 // esquerda: empurra de volta para dentro, com 8 px de folga.
 function manterNaTela(caixa) {
-    caixa.style.right = '0px';
-    const folga = 8;
-    const r = caixa.getBoundingClientRect();
+    // "?" na metade esquerda da tela: a caixa abre para a direita; senão, para a esquerda.
+    // Se ainda assim passar de uma borda, empurra de volta com 8 px de folga.
+    const botao = caixa.parentElement.querySelector('.ajuda-botao').getBoundingClientRect();
     const largura = document.documentElement.clientWidth;
-    if (r.left < folga) caixa.style.right = `${r.left - folga}px`;
-    else if (r.right > largura - folga) caixa.style.right = `${r.right - (largura - folga)}px`;
+    const folga = 8;
+    const paraDireita = botao.left + botao.width / 2 < largura / 2;
+    caixa.style.left = paraDireita ? '0px' : 'auto';
+    caixa.style.right = paraDireita ? 'auto' : '0px';
+    const r = caixa.getBoundingClientRect();
+    let desloca = 0; // quanto mover para a direita (negativo = esquerda)
+    if (r.left < folga) desloca = folga - r.left;
+    else if (r.right > largura - folga) desloca = largura - folga - r.right;
+    if (desloca) {
+        if (paraDireita) caixa.style.left = `${desloca}px`;
+        else caixa.style.right = `${-desloca}px`;
+    }
 }
 document.addEventListener('click', e => { if (!e.target.closest('.ajuda')) fecharAjudas(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharAjudas(); });
+
+// Menu ☰ do topo: abre e fecha; fecha ao escolher um item, ao tocar fora ou com Esc
+function abrirMenu(abrir) {
+    $('botaoMenu').setAttribute('aria-expanded', String(abrir));
+    $('painelMenu').hidden = !abrir;
+}
+$('botaoMenu').addEventListener('click', e => {
+    e.stopPropagation();
+    abrirMenu($('painelMenu').hidden);
+});
+$('painelMenu').addEventListener('click', e => { if (e.target.closest('.item-menu')) abrirMenu(false); });
+document.addEventListener('click', e => { if (!e.target.closest('.menu-topo')) abrirMenu(false); });
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('painelMenu').hidden) { abrirMenu(false); $('botaoMenu').focus(); }
+});
 
 // conteúdo de uma caixa de ajuda: lista de textos
 function preencherAjuda(id, textos) {
@@ -1009,12 +1116,7 @@ function mostrarPrecos() {
     if (!itens.length) return;
     const data = /^\d{4}-\d{2}-\d{2}$/.test(precos.data || '') ? dataBr(precos.data) : '';
     $('tituloPrecos').textContent = data ? `Preços de referência · ${data}` : 'Preços de referência';
-    const largo = document.createElement('span'), estreito = document.createElement('span');
-    largo.className = 'so-largo';
-    largo.textContent = data ? `Preços de ${data}` : 'Preços de referência';
-    estreito.className = 'so-estreito';
-    estreito.textContent = 'Preços';
-    $('botaoPrecos').replaceChildren(largo, estreito);
+    $('botaoPrecos').textContent = data ? `Preços de referência (${data})` : 'Preços de referência';
     $('listaPrecos').replaceChildren(...itens.map(item => {
         const li = document.createElement('li');
         const nome = document.createElement('span');
@@ -1028,6 +1130,12 @@ function mostrarPrecos() {
         return li;
     }));
 }
+
+$('dataUltima').addEventListener('click', () => {
+    const campo = $('dataFinal');
+    campo.value = config.vencimento;
+    campo.dispatchEvent(new Event('change'));
+});
 
 $('dataFinal').addEventListener('change', () => {
     const campo = $('dataFinal');
@@ -1189,19 +1297,35 @@ function recalcular() {
     const totalNaData = ipcaNaData + fiiNaData;
     const ipcaHoje = r.serie[0].existentesLiquido;
     const fiiHoje = rf ? rf.patrimonioHoje : 0;
-    $('rotuloPanReal').textContent = `Total real (R$ de ${mesBase})`;
-    $('panReal').textContent = brl.format(totalNaData / deflator(r.inflacao, dataBaseReal, dataFinal));
-    $('panRealDetalhe').textContent = `em ${dataBr(dataFinal)}, com o poder de compra de ${mesBase}`;
+    const nomeFii = (config.fii || {}).nome || 'FII';
+    const fiiAportado = rf ? rf.investido : 0;
+    const totalAportado = r.totalAportado + fiiAportado;
+    const patrimonioHoje = ipcaHoje + fiiHoje;
+    // Hoje
+    $('panAportado').textContent = brl.format(totalAportado);
+    $('panAportadoDetalhe').textContent = `IPCA+ ${brlCompacto.format(r.totalAportado)} · ${nomeFii} ${brlCompacto.format(fiiAportado)}`;
+    $('panHoje').textContent = brl.format(patrimonioHoje);
+    const variacao = patrimonioHoje - totalAportado;
+    const sinal = document.createElement('span');
+    sinal.className = 'variacao ' + (variacao >= 0 ? 'ganho' : 'perda');
+    sinal.textContent = `${variacao >= 0 ? '▲ +' : '▼ −'}${brl.format(Math.abs(variacao))}`
+        + (totalAportado > 0 ? ` (${variacao >= 0 ? '+' : '−'}${pct(Math.abs(variacao) / totalAportado)})` : '');
+    $('panHojeDetalhe').replaceChildren(sinal, ' sobre o aportado');
+    // Projeção
+    $('dataUltima').setAttribute('aria-pressed', String(dataFinal === config.vencimento));
+    $('rotuloPanNominal').textContent = `Total nominal em ${dataBr(dataFinal)}`;
     $('panNominal').textContent = brl.format(totalNaData);
-    $('panNominalDetalhe').textContent = `em ${dataBr(dataFinal)}`;
+    $('panReal').textContent = brl.format(totalNaData / deflator(r.inflacao, dataBaseReal, dataFinal));
+    $('panRealBase').textContent = `(poder de compra de ${mesBase})`;
     $('panIpca').textContent = brl.format(ipcaNaData);
     $('panFii').textContent = brl.format(fiiNaData);
-    $('panFiiDetalhe').textContent = rf ? 'projetado até a data' : 'sem aportes ainda';
-    const fiiAportado = rf ? rf.investido : 0;
-    $('panAportado').textContent = brl.format(r.totalAportado + fiiAportado);
-    $('panAportadoDetalhe').textContent = `IPCA+ ${brlCompacto.format(r.totalAportado)} · ${(config.fii || {}).nome || 'FII'} ${brlCompacto.format(fiiAportado)}`;
-    $('panHoje').textContent = brl.format(ipcaHoje + fiiHoje);
-    $('panHojeDetalhe').textContent = 'se resgatasse tudo hoje (estimativa)';
+    $('panFiiDetalhe').textContent = rf ? 'projetado até a data, com reinvestimento' : 'sem aportes ainda';
+    const parte = v => (totalNaData > 0 ? v / totalNaData : 0);
+    $('panIpcaParte').textContent = `${pct(parte(ipcaNaData))} do total`;
+    $('panFiiParte').textContent = `${pct(parte(fiiNaData))} do total`;
+    $('barraComposicao').replaceChildren(...[[ipcaNaData, 'var(--cor-ipca)'], [fiiNaData, 'var(--cor-fii)']]
+        .filter(([v]) => v > 0)
+        .map(([v, cor]) => { const seg = document.createElement('span'); seg.style.flex = String(parte(v)); seg.style.background = cor; return seg; }));
 
     mostrarFii(rf, dataFinal, fmt);
 
@@ -1234,12 +1358,34 @@ function recalcular() {
         `Renda gastável = só a parte do ganho real. Gastando só ela, o patrimônio mantém o poder de compra; gastando a renda total, ele encolhe em valor real. Se o rendimento não cobre a inflação, a renda gastável é zero.`,
         `Real = em R$ de ${mesBase}, data do primeiro aporte entre todos os investimentos.`,
     ]);
-    preencherAjuda('ajudaPanorama', [
-        `Tesouro IPCA+: líquido se resgatado na data (taxa contratada, sem marcação a mercado), contando os aportes mensais até ela.`,
-        `FII: projetado até a data, com os aportes mensais e o rendimento por cota da aba do FII.`,
-        `A data vai de hoje até 15/08/2050 (vencimento do IPCA+) e também é a data final do FII.`,
-        `Total aportado = soma do dinheiro que saiu do seu bolso (IPCA+ + FII). Compras de cotas feitas com rendimento do fundo (Origem = Rendimento no Notion) contam nas cotas, mas não no total aportado. Patrimônio hoje = estimativa do que receberia resgatando tudo hoje: IPCA+ pela taxa contratada, já sem IR e custódia; FII pelas cotas × preço da última compra. O valor real de resgate no Tesouro muda todo dia com o mercado.`,
-        `Real = total trazido a R$ de ${mesBase} (data do primeiro aporte entre todos os investimentos) pela inflação projetada de ${pct(r.inflacao)} a.a.`,
+    preencherAjuda('ajudaAportado', [
+        `Soma do dinheiro que saiu do seu bolso: os aportes do Tesouro IPCA+ e as compras de cotas do ${nomeFii} com origem Aporte.`,
+        `Compras de cotas feitas com rendimento do fundo (Origem = Rendimento no Notion) não entram aqui: elas contam só nas cotas.`,
+    ]);
+    preencherAjuda('ajudaHoje', [
+        `Estimativa do que você receberia resgatando tudo hoje.`,
+        `Tesouro IPCA+: valor pela taxa contratada e pela inflação projetada, já líquido (sem IR e sem custódia).`,
+        `${nomeFii}: cotas na carteira × preço da última compra.`,
+        `Não é cotação de mercado: o título do Tesouro é marcado a mercado todo dia, e a página não tem esse preço.`,
+    ]);
+    preencherAjuda('ajudaNominal', [
+        `Soma, na data escolhida, do Tesouro IPCA+ e do ${nomeFii}, em reais daquela data (sem descontar a inflação).`,
+        `É líquido: o IPCA+ já sai sem IR e sem custódia; o ${nomeFii} não paga IR sobre o rendimento.`,
+        `A data vai de hoje até 15/08/2050, o vencimento do IPCA+. "Última data" pula direto para ela. Essa data também é a data final do ${nomeFii}.`,
+    ]);
+    preencherAjuda('ajudaReal', [
+        `O total nominal trazido para o poder de compra de ${mesBase} (data do primeiro aporte), pela inflação projetada de ${pct(r.inflacao)} a.a.`,
+        `É o número para comparar com o total aportado: mostra quanto o dinheiro cresceu de verdade, descontada a inflação.`,
+    ]);
+    preencherAjuda('ajudaCompIpca', [
+        `Valor líquido se você resgatasse o título na data: taxa contratada + inflação projetada, menos custódia B3 de ${pct(config.custodiaAnual)} a.a. e IR regressivo (22,5% a 15%, conforme o prazo).`,
+        `Inclui os aportes mensais da aba do Tesouro IPCA+ feitos até a data.`,
+        `Sem marcação a mercado: um resgate antes do vencimento pode valer mais ou menos que isso.`,
+    ]);
+    preencherAjuda('ajudaCompFii', [
+        `Cotas na carteira × preço da última compra, mais a sobra guardada que ainda não completou uma cota.`,
+        `Projeção com o rendimento por cota e os aportes mensais da aba do ${nomeFii}, com os rendimentos reinvestidos em cotas inteiras.`,
+        `Sem IR: rendimento de FII é isento para pessoa física, e a ideia é não vender.`,
     ]);
 
     desenharGrafico();

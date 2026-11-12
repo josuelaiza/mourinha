@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {
     diasEntre, mediaGeometrica, taxaMediaPonderada, aliquotaIR,
     calcularLote, aportesFuturos, datasDoGrafico, simular, aporteParaMeta,
-    simularFii, fiiPorAno, primeiraData, deflator,
+    simularFii, fiiPorAno, primeiraData, deflator, mediasMensais,
 } from '../calculo.js';
 
 const TABELA_IR = [
@@ -300,4 +300,30 @@ test('FII: compra com rendimento conta nas cotas, não no investido', () => {
     assert.equal(r.reinvestido, 10.5);
     assert.equal(r.preco, 10.5); // preço da compra mais recente, qualquer origem
     assert.equal(r.patrimonioHoje, 115.5);
+});
+
+test('médias mensais de aporte: desde o primeiro aporte e último ano', () => {
+    // jan R$ 1.000, fev nada, mar R$ 500 (FII 50 × 10), olhando em março
+    const curto = mediasMensais({
+        aportes: [{ data: '2030-01-05', valor: 1000, taxa: 0.07 }],
+        aportesFii: [{ data: '2030-03-20', cotas: 50, preco: 10 }],
+        hoje: '2030-03-25',
+    });
+    perto(curto.real, 500);
+    perto(curto.ultimoAno, 500); // menos de 12 meses: igual à média desde o início
+    assert.equal(curto.meses, 3);
+
+    // 14 meses (jan/2030 a fev/2031): só fev/2030..fev/2031 entram no último ano
+    const longo = mediasMensais({
+        aportes: [
+            { data: '2030-01-10', valor: 1400, taxa: 0.07 },
+            { data: '2031-02-10', valor: 1200, taxa: 0.07 },
+        ],
+        aportesFii: [{ data: '2030-06-10', cotas: 1, preco: 999, origem: 'rendimento' }], // não conta
+        hoje: '2031-02-28',
+    });
+    perto(longo.real, 2600 / 14);
+    perto(longo.ultimoAno, 1200 / 12);
+
+    assert.equal(mediasMensais({ aportes: [], aportesFii: [], hoje: '2030-01-01' }), null);
 });

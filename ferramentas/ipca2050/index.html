@@ -259,6 +259,15 @@
         .ajuda ul { list-style: none; }
         .ajuda li + li { margin-top: 6px; }
         .ajuda strong { color: var(--texto); font-weight: 600; }
+        .medias-aporte span { display: block; }
+        .medias-aporte strong { color: var(--texto-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+        /* divisão por ativo dentro de uma caixa de ajuda: um ativo por linha */
+        .ajuda .divisao { display: block; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--borda); }
+        .ajuda .divisao-linha { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 8px; padding: 3px 0; font-variant-numeric: tabular-nums; }
+        .ajuda .divisao-linha .marca { width: 8px; height: 8px; border-radius: 2px; }
+        .ajuda .divisao-linha .nome { color: var(--texto); }
+        .ajuda .divisao-linha .numero { color: var(--texto); font-weight: 600; text-align: right; }
+        .ajuda .divisao-linha .parte { min-width: 3.6em; text-align: right; }
 
         /* Mês a mês do FII */
         .tabela-anos tr.ano td { font-weight: 500; }
@@ -398,7 +407,10 @@
                     <div class="metrica">
                         <div class="rotulo-metrica">Total aportado <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaAportado" aria-label="O que é o total aportado">?</button><span class="ajuda" id="ajudaAportado" hidden><ul></ul></span></span></div>
                         <div class="valor" id="panAportado">—</div>
-                        <div class="detalhe" id="panAportadoDetalhe"></div>
+                        <div class="detalhe medias-aporte" id="panMedias" hidden>
+                            <span>MM Real: <strong id="panMediaReal">—</strong></span>
+                            <span>MM Último Ano: <strong id="panMediaAno">—</strong></span>
+                        </div>
                     </div>
                     <div class="metrica">
                         <div class="rotulo-metrica">Patrimônio hoje <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaHoje" aria-label="O que é o patrimônio hoje">?</button><span class="ajuda" id="ajudaHoje" hidden><ul></ul></span></span></div>
@@ -708,8 +720,8 @@
 <script type="module">
 // ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
-import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator } from './calculo.js?v=7';
-import * as cripto from './cripto.js?v=7';
+import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais } from './calculo.js?v=8';
+import * as cripto from './cripto.js?v=8';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
@@ -1053,6 +1065,32 @@ document.addEventListener('keydown', e => {
 // conteúdo de uma caixa de ajuda: lista de textos
 function preencherAjuda(id, textos) {
     $(id).querySelector('ul').replaceChildren(...textos.map(t => { const li = document.createElement('li'); li.textContent = t; return li; }));
+}
+
+// divisão por ativo no topo de uma caixa de ajuda: uma linha por ativo, com valor e % do total.
+// itens = [{ nome, valor, cor }]; um ativo novo é só mais um item na lista.
+function preencherDivisao(id, itens) {
+    const caixa = $(id);
+    let divisao = caixa.querySelector('.divisao');
+    if (!divisao) {
+        divisao = document.createElement('span');
+        divisao.className = 'divisao';
+        caixa.prepend(divisao);
+    }
+    const total = itens.reduce((soma, item) => soma + item.valor, 0);
+    divisao.replaceChildren(...itens.map(item => {
+        const linha = document.createElement('span');
+        linha.className = 'divisao-linha';
+        const partes = [['marca', ''], ['nome', item.nome], ['numero', brl.format(item.valor)], ['parte', pct(total > 0 ? item.valor / total : 0)]];
+        linha.replaceChildren(...partes.map(([classe, texto]) => {
+            const el = document.createElement('span');
+            el.className = classe;
+            el.textContent = texto;
+            return el;
+        }));
+        linha.firstChild.style.background = item.cor;
+        return linha;
+    }));
 }
 
 // ------------------------------------------------------------------ //
@@ -1424,7 +1462,12 @@ function recalcular() {
     const patrimonioHoje = ipcaHoje + fiiHoje;
     // Hoje
     $('panAportado').textContent = brl.format(totalAportado);
-    $('panAportadoDetalhe').textContent = `IPCA+ ${brlCompacto.format(r.totalAportado)} · ${nomeFii} ${brlCompacto.format(fiiAportado)}`;
+    const medias = mediasMensais({ aportes, aportesFii, hoje });
+    $('panMedias').hidden = !medias;
+    if (medias) {
+        $('panMediaReal').textContent = brl.format(medias.real);
+        $('panMediaAno').textContent = brl.format(medias.ultimoAno);
+    }
     $('panHoje').textContent = brl.format(patrimonioHoje);
     const variacao = patrimonioHoje - totalAportado;
     const sinal = document.createElement('span');
@@ -1479,9 +1522,15 @@ function recalcular() {
         `Renda gastável = só a parte do ganho real. Gastando só ela, o patrimônio mantém o poder de compra; gastando a renda total, ele encolhe em valor real. Se o rendimento não cobre a inflação, a renda gastável é zero.`,
         `Real = em R$ de ${mesBase}, data do primeiro aporte entre todos os investimentos.`,
     ]);
+    preencherDivisao('ajudaAportado', [
+        { nome: 'Tesouro IPCA+ 2050', valor: r.totalAportado, cor: 'var(--cor-ipca)' },
+        { nome: nomeFii, valor: fiiAportado, cor: 'var(--cor-fii)' },
+    ]);
     preencherAjuda('ajudaAportado', [
         `Soma do dinheiro que saiu do seu bolso: os aportes do Tesouro IPCA+ e as compras de cotas do ${nomeFii} com origem Aporte.`,
         `Compras de cotas feitas com rendimento do fundo (Origem = Rendimento no Notion) não entram aqui: elas contam só nas cotas.`,
+        `MM Real (média mensal): o total aportado dividido pelos meses desde o primeiro aporte até este mês${medias ? ` (${medias.meses} ${medias.meses === 1 ? 'mês' : 'meses'})` : ''}. Mês sem aporte também conta, então mostra quanto você aporta de verdade por mês. "Real" aqui é "de verdade", não é corrigido pela inflação.`,
+        `MM Último Ano: a mesma conta, só com este mês e os 11 anteriores. Mostra o seu ritmo recente. Enquanto o primeiro aporte não fizer 12 meses, é igual à MM Real.`,
     ]);
     preencherAjuda('ajudaHoje', [
         `Estimativa do que você receberia resgatando tudo hoje.`,

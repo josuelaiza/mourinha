@@ -127,6 +127,30 @@ export function primeiraData(...listas) {
     return menor;
 }
 
+// Média mensal do dinheiro aportado (IPCA+ e compras de FII com origem Aporte;
+// compras com rendimento do fundo não contam, como no total aportado).
+//   real:      total ÷ meses do mês do primeiro aporte até o mês atual, contando os dois
+//              e também os meses sem aporte
+//   ultimoAno: o mesmo, só com o mês atual e os 11 anteriores (ou menos meses,
+//              se o primeiro aporte foi há menos de 12 meses)
+// Sem aportes: null.
+export function mediasMensais({ aportes, aportesFii = [], hoje }) {
+    const mes = data => { const [a, m] = data.split('-').map(Number); return a * 12 + (m - 1); };
+    const lista = [
+        ...aportes.map(a => ({ data: a.data, valor: a.valor })),
+        ...aportesFii.filter(a => a.origem !== 'rendimento').map(a => ({ data: a.data, valor: a.cotas * a.preco })),
+    ];
+    if (!lista.length) return null;
+    const meses = lista.map(a => mes(a.data));
+    const fim = Math.max(mes(hoje), ...meses);
+    const inicio = Math.min(...meses);
+    const total = lista.reduce((s, a) => s + a.valor, 0);
+    const desde = fim - 11;
+    const totalAno = lista.reduce((s, a, i) => s + (meses[i] >= desde ? a.valor : 0), 0);
+    const quantos = fim - inicio + 1;
+    return { real: total / quantos, ultimoAno: totalAno / Math.min(12, quantos), meses: quantos };
+}
+
 // Divisor que leva R$ da data `fim` para R$ da data `base`, pela inflação projetada
 export function deflator(inflacao, base, fim) {
     return Math.pow(1 + inflacao, Math.max(0, diasEntre(base, fim)) / DIAS_POR_ANO);

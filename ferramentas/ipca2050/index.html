@@ -261,6 +261,14 @@
         .ajuda strong { color: var(--texto); font-weight: 600; }
         .medias-aporte span { display: block; }
         .medias-aporte strong { color: var(--texto-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+        /* nome de coluna que explica a coluna ao tocar */
+        .coluna-ajuda {
+            font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; background: none; border: none; padding: 0; cursor: pointer;
+        }
+        .coluna-ajuda:hover, .coluna-ajuda[aria-expanded="true"] { color: var(--texto); }
+        .coluna-ajuda:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; border-radius: 2px; }
+        .ajuda.ajuda-coluna { position: fixed; right: auto; z-index: 30; width: min(280px, calc(100vw - 16px)); }
+        .ajuda-coluna p { margin-top: 3px; }
         /* divisão por ativo dentro de uma caixa de ajuda: um ativo por linha */
         .ajuda .divisao { display: block; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--borda); }
         .ajuda .divisao-linha { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 8px; padding: 3px 0; font-variant-numeric: tabular-nums; }
@@ -600,11 +608,7 @@
                 <div class="cartao">
                     <div class="cabecalho">
                         <h2>Mês a mês <span style="text-transform: none; font-weight: 400; color: var(--texto-3)">· em R$</span></h2>
-                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaMeses" aria-label="O que cada coluna mostra">?</button><div class="ajuda" id="ajudaMeses" hidden><ul>
-                            <li><strong>Rendimento:</strong> o que o fundo paga no dia 15 sobre as cotas que você tem.</li>
-                            <li><strong>Cotas (rendimento):</strong> quantas cotas inteiras o rendimento sozinho compra, somado à sobra do mês anterior.</li>
-                            <li><strong>Cotas (rend. + aporte):</strong> quantas cotas inteiras rendimento, aporte e sobra compram juntos. É o que entra na carteira.</li>
-                            <li><strong>Sobra:</strong> o troco que não completa uma cota; fica guardado (sem render) e entra na compra do mês seguinte.</li>
+                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaMeses" aria-label="Como ler a tabela">?</button><div class="ajuda" id="ajudaMeses" hidden><ul>
                             <li>Clique no ano para abrir os meses. Na linha do ano, os valores são a soma do ano; cotas totais e patrimônio são os do fim do ano.</li>
                         </ul></div></div>
                     </div>
@@ -612,19 +616,20 @@
                     <table class="tabela tabela-anos">
                         <thead>
                             <tr>
-                                <th scope="col">Período</th>
-                                <th scope="col">Rendimento</th>
-                                <th scope="col"><span class="longo">Cotas (rendimento)</span><span class="curto">Cotas rend.</span></th>
-                                <th scope="col">Aporte</th>
-                                <th scope="col"><span class="longo">Cotas (rend. + aporte)</span><span class="curto">Cotas total</span></th>
-                                <th scope="col">Sobra</th>
-                                <th scope="col"><span class="longo">Cotas na carteira</span><span class="curto">Carteira</span></th>
-                                <th scope="col">Patrimônio</th>
+                                <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Período" data-ajuda="Ano ou mês da projeção. Toque no ano para abrir os meses dele.">Período</button></th>
+                                <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Rendimento" data-ajuda="O que o fundo paga no dia 15 sobre as cotas que você tem. Na linha do ano, a soma do ano.">Rendimento</button></th>
+                                <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Cotas (rendimento)" data-ajuda="Quantas cotas inteiras o rendimento sozinho compra, somado à sobra do mês anterior. Na linha do ano, a soma do ano."><span class="longo">Cotas (rendimento)</span><span class="curto">Cotas rend.</span></button></th>
+                                <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Aporte" data-ajuda="Dinheiro novo que você coloca no mês (o campo Aporte mensal). Na linha do ano, a soma do ano.">Aporte</button></th>
+                                <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Cotas (rend. + aporte)" data-ajuda="Quantas cotas inteiras rendimento, aporte e sobra compram juntos. É o que entra na carteira. Na linha do ano, a soma do ano."><span class="longo">Cotas (rend. + aporte)</span><span class="curto">Cotas total</span></button></th>
+                                <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Sobra" data-ajuda="O troco que não completa uma cota. Fica guardado (sem render) e entra na compra do mês seguinte. Na linha do ano, a sobra no fim do ano.">Sobra</button></th>
+                                <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Cotas na carteira" data-ajuda="Total de cotas depois das compras do mês. Na linha do ano, o total no fim do ano."><span class="longo">Cotas na carteira</span><span class="curto">Carteira</span></button></th>
+                                <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Patrimônio" data-ajuda="Cotas na carteira × preço da cota (fixo no preço da última compra), mais a sobra guardada. Na linha do ano, o do fim do ano.">Patrimônio</button></th>
                             </tr>
                         </thead>
                         <tbody id="corpoMeses"></tbody>
                     </table>
                     </div>
+                    <div class="ajuda ajuda-coluna" id="ajudaColuna" role="tooltip" hidden><strong></strong><p></p></div>
                 </div>
             </div>
 
@@ -1010,7 +1015,36 @@ function fecharAjudas(exceto) {
         botao.setAttribute('aria-expanded', 'false');
         $(botao.getAttribute('aria-controls')).hidden = true;
     }
+    fecharColuna();
 }
+
+// Nomes das colunas do mês a mês: tocar no nome mostra o que a coluna é.
+// A caixa fica fixa na tela (a tabela rola de lado e cortaria uma caixa presa nela).
+function fecharColuna() {
+    for (const b of document.querySelectorAll('.coluna-ajuda[aria-expanded="true"]')) b.setAttribute('aria-expanded', 'false');
+    $('ajudaColuna').hidden = true;
+}
+for (const botao of document.querySelectorAll('.coluna-ajuda')) {
+    botao.addEventListener('click', e => {
+        e.stopPropagation();
+        const abrir = botao.getAttribute('aria-expanded') !== 'true';
+        fecharAjudas();
+        if (!abrir) return;
+        const caixa = $('ajudaColuna');
+        caixa.querySelector('strong').textContent = botao.dataset.titulo;
+        caixa.querySelector('p').textContent = botao.dataset.ajuda;
+        caixa.hidden = false;
+        botao.setAttribute('aria-expanded', 'true');
+        const r = botao.getBoundingClientRect();
+        const largura = document.documentElement.clientWidth;
+        const folga = 8;
+        caixa.style.top = `${r.bottom + 6}px`;
+        caixa.style.left = `${Math.max(folga, Math.min(r.left + r.width / 2 - caixa.offsetWidth / 2, largura - folga - caixa.offsetWidth))}px`;
+    });
+}
+// rolar a página ou a tabela tira a caixa do lugar: fecha
+window.addEventListener('scroll', fecharColuna, { passive: true });
+$('corpoMeses').closest('.rolagem').addEventListener('scroll', fecharColuna, { passive: true });
 
 for (const botao of document.querySelectorAll('.ajuda-botao')) {
     botao.addEventListener('click', e => {
@@ -1308,8 +1342,9 @@ $('dataFinal').addEventListener('change', () => {
 for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_META], ['fiiAporteMensal', CHAVE_FII_APORTE], ['fiiRendimentoCota', CHAVE_FII_RENDIMENTO]]) {
     $(id).addEventListener('input', () => {
         const campo = $(id);
-        const v = Number(campo.value);
-        const valido = campo.value !== '' && v >= 0;
+        const vazioEhZero = id === 'fiiAporteMensal' || id === 'aporteMensal'; // aporte mensal em branco = sem aporte
+        const v = campo.value === '' && vazioEhZero ? 0 : Number(campo.value);
+        const valido = (campo.value !== '' || vazioEhZero) && v >= 0;
         campo.classList.toggle('invalido', !valido);
         if (!valido) return;
         try { localStorage.setItem(chave, String(v)); } catch { /* sem storage */ }

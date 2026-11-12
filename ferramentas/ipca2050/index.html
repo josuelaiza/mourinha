@@ -101,6 +101,31 @@
             background: var(--cartao-2); padding: 8px 10px; border-radius: 4px; margin-bottom: 10px;
         }
 
+        /* Manual de impostos e custos (recolhível, fechado por padrão) */
+        .manual { margin-top: 10px; padding: 0; }
+        .manual > summary {
+            list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            padding: 12px; font-size: 0.8rem; font-weight: 600; color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        .manual > summary::-webkit-details-marker { display: none; }
+        .manual > summary::after {
+            content: ""; width: 7px; height: 7px; flex: none; margin-right: 3px;
+            border-right: 2px solid var(--texto-3); border-bottom: 2px solid var(--texto-3); transform: rotate(45deg) translateY(-2px);
+        }
+        .manual[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
+        .manual > summary:hover { color: var(--texto); }
+        .manual > summary:focus-visible { outline: 2px solid var(--destaque); outline-offset: -2px; border-radius: 8px; }
+        .manual-corpo { padding: 0 12px 12px; font-size: 0.85rem; color: var(--texto-2); }
+        .manual-corpo h3 { font-size: 0.85rem; font-weight: 600; color: var(--texto); margin: 14px 0 4px; }
+        .manual-corpo p + p, .manual-corpo p + ul, .manual-corpo ul + p { margin-top: 6px; }
+        .manual-corpo ul { padding-left: 18px; }
+        .manual-corpo li + li { margin-top: 3px; }
+        .manual-corpo strong { color: var(--texto); font-weight: 600; }
+        .manual-corpo .resumo { border-left: 3px solid var(--destaque); background: var(--cartao-2); padding: 8px 10px; border-radius: 4px; color: var(--texto); }
+        .manual-corpo .tabela { margin: 4px 0; max-width: 320px; }
+        .manual-corpo .tabela td { font-size: 0.85rem; padding: 5px 6px; }
+        .manual-corpo .exemplo { margin-top: 6px; }
+
         /* Indicadores */
         .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px; margin-bottom: 10px; }
         .kpi { background: var(--cartao); border: 1px solid var(--borda); border-radius: 8px; padding: 9px 10px; min-width: 0; }
@@ -472,6 +497,53 @@
                     <div class="dica" id="dica" hidden></div>
                 </div>
             </div>
+
+            <details class="cartao manual">
+                <summary>Impostos e custos</summary>
+                <div class="manual-corpo">
+                    <p class="resumo">No seu plano (ficar com o título até 2050), você paga <strong>15% de IR sobre o lucro</strong> e <strong>0,20% ao ano de custódia</strong>. Os dois são descontados automaticamente: você não calcula nem paga nada. O simulador já desconta os dois.</p>
+
+                    <h3>1. Imposto de Renda: regressivo, descontado na fonte</h3>
+                    <p>A alíquota cai conforme o tempo de cada aporte:</p>
+                    <table class="tabela">
+                        <tbody>
+                            <tr><td>até 180 dias</td><td>22,5%</td></tr>
+                            <tr><td>181 a 360 dias</td><td>20%</td></tr>
+                            <tr><td>361 a 720 dias</td><td>17,5%</td></tr>
+                            <tr><td>mais de 720 dias</td><td>15%</td></tr>
+                        </tbody>
+                    </table>
+                    <ul>
+                        <li>O imposto incide sobre o <strong>lucro nominal</strong>, inclusive a parte que só repôs a inflação.</li>
+                        <li>Cada aporte conta o próprio prazo. Os mais recentes ficam nas faixas mais altas até completar 2 anos.</li>
+                        <li>Não tem DARF: a corretora desconta na hora do resgate ou do vencimento.</li>
+                    </ul>
+
+                    <h3>2. IOF</h3>
+                    <p>Só existe se você resgatar em até 30 dias. Depois disso é zero.</p>
+
+                    <h3>3. Custódia da B3: 0,20% ao ano</h3>
+                    <ul>
+                        <li>Calculada sobre o saldo, proporcional ao tempo aplicado.</li>
+                        <li>Desde 2025 só é descontada quando há movimentação: resgate, vencimento ou pagamento de juros.</li>
+                    </ul>
+
+                    <h3>4. Vender antes de 2050</h3>
+                    <ul>
+                        <li>O Tesouro recompra o título pelo <strong>preço de mercado do dia</strong> (marcação a mercado).</li>
+                        <li>Esse preço pode ficar acima ou abaixo do valor que o simulador mostra.</li>
+                        <li>A taxa contratada só é garantida levando o título até o vencimento.</li>
+                    </ul>
+
+                    <h3>5. Declaração anual (abril/maio)</h3>
+                    <ul>
+                        <li><strong>Bens e Direitos:</strong> grupo 04, código 02, pelo <strong>valor que você pagou</strong>.</li>
+                        <li>No ano em que resgatar ou o título vencer, o rendimento vai em <strong>Rendimentos Sujeitos à Tributação Exclusiva</strong>, código 06.</li>
+                    </ul>
+
+                    <p class="exemplo"><strong>Exemplo</strong> (valores fictícios): R$ 1.000 aplicados viram R$ 5.000 no vencimento. O lucro é de R$ 4.000; 15% de IR dá <strong>R$ 600</strong>, descontados na fonte.</p>
+                </div>
+            </details>
         </section>
 
         <!-- FII -->
@@ -543,6 +615,55 @@
                     </div>
                 </div>
             </div>
+
+            <details class="cartao manual">
+                <summary>Impostos e custos</summary>
+                <div class="manual-corpo">
+                    <p class="resumo">No seu plano (comprar, reinvestir e nunca vender), <strong>o imposto na prática é zero</strong>. Só pagaria se um dia vendesse cotas com lucro.</p>
+
+                    <p>No MXRF11 é mais simples que no IPCA+. Tem duas situações: receber o rendimento mensal e vender cotas.</p>
+
+                    <h3>1. Rendimento mensal: isento de IR</h3>
+                    <p>Você não paga nada sobre o que cai todo mês. Nada é descontado, nem no recebimento nem no fim do ano. A isenção vale se o fundo cumprir três condições:</p>
+                    <ul>
+                        <li>as cotas são negociadas na bolsa;</li>
+                        <li>o fundo tem pelo menos 100 cotistas;</li>
+                        <li>você tem menos de 10% das cotas.</li>
+                    </ul>
+                    <p>O MXRF11 tem mais de 1 milhão de cotistas, então está muito dentro disso. Para 2026, as regras de tributação dos rendimentos de FIIs seguem inalteradas.</p>
+                    <p>A MP 1.303 chegou a propor que, para cotas emitidas a partir de 1/1/2026, os rendimentos passassem a ser tributados com 5% de IR. A MP caducou e não virou lei. É um risco a acompanhar.</p>
+
+                    <h3>2. Venda de cotas: 20% sobre o lucro</h3>
+                    <p>Só paga se <strong>vender mais caro do que comprou</strong>. Diferenças para ações:</p>
+                    <ul>
+                        <li><strong>Alíquota de 20%</strong>, maior que os 15% das ações.</li>
+                        <li><strong>Sem a isenção de R$ 20 mil por mês</strong> que as ações têm. Qualquer lucro paga.</li>
+                        <li><strong>Você mesmo calcula e paga</strong>, por DARF (código 6015), até o último dia útil do mês seguinte à venda. A corretora não desconta por você.</li>
+                        <li>DARF abaixo de R$ 10 não se paga: o valor acumula para o mês seguinte.</li>
+                        <li>Na venda, a corretora retém 0,005% (o "dedo-duro"). Esse valor é abatido do DARF.</li>
+                        <li><strong>Prejuízo não paga nada</strong>, e o valor perdido pode ser descontado de lucros futuros com FII.</li>
+                    </ul>
+                    <p class="exemplo"><strong>Exemplo:</strong> você compra 100 cotas a R$ 9,30 (R$ 930).</p>
+                    <ul>
+                        <li>Vende a R$ 10,30 (R$ 1.030) → lucro de R$ 100 → DARF de <strong>R$ 20</strong>.</li>
+                        <li>Vende a R$ 9,00 (R$ 900) → prejuízo de R$ 30 → <strong>nada a pagar</strong>, e os R$ 30 abatem um lucro futuro.</li>
+                    </ul>
+
+                    <h3>3. Custos</h3>
+                    <ul>
+                        <li><strong>Sem custódia</strong> de 0,20% como no Tesouro.</li>
+                        <li>A <strong>taxa de administração</strong> já sai de dentro do fundo antes de distribuir o rendimento. Você não vê essa cobrança.</li>
+                        <li>A B3 cobra uma pequena taxa em cada compra ou venda (centavos no seu volume).</li>
+                    </ul>
+
+                    <h3>4. Declaração anual (abril/maio)</h3>
+                    <p>Mesmo sem imposto, você declara:</p>
+                    <ul>
+                        <li><strong>Bens e Direitos:</strong> grupo 07, código 03, as cotas pelo <strong>preço que pagou</strong>, não pelo valor atual.</li>
+                        <li><strong>Rendimentos Isentos:</strong> o total recebido no ano, no código 26 (Outros). Se o informe da corretora indicar outro código, siga o informe.</li>
+                    </ul>
+                </div>
+            </details>
         </section>
 
         <!-- Token do botão Sincronizar (janela) -->

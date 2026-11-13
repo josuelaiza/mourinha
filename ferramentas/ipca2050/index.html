@@ -125,6 +125,8 @@
         .manual-corpo .tabela { margin: 4px 0; max-width: 320px; }
         .manual-corpo .tabela td { font-size: 0.85rem; padding: 5px 6px; }
         .manual-corpo .exemplo { margin-top: 6px; }
+        .manual-corpo .tabela.tabela-ir { max-width: none; }
+        .manual-corpo .tabela-ir tr.total td { font-weight: 600; color: var(--texto); }
 
         /* Indicadores */
         .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px; margin-bottom: 10px; }
@@ -769,9 +771,13 @@
                             <li>Quantidade de cada ação × a cotação mais recente, somados.</li>
                             <li>A cotação vem da brapi.dev, com atraso de uns 30 minutos. Ela só é buscada ao abrir a página ou ao tocar no botão de atualizar.</li>
                             <li>Embaixo: o lucro ou prejuízo sobre o aportado. Não desconta IR nem custos de uma venda.</li>
+                            <li><strong>Lucro das vendas:</strong> soma do lucro (ou prejuízo) de todas as vendas, pelo preço médio.</li>
+                            <li><strong>Proventos:</strong> soma dos dividendos e JCP recebidos (valor líquido).</li>
                         </ul></span></span></div>
                         <div class="valor" id="acoesAtual">—</div>
                         <div class="detalhe" id="acoesLucro"></div>
+                        <div class="detalhe" id="acoesVendas"></div>
+                        <div class="detalhe" id="acoesProventos"></div>
                     </div>
                 </div>
                 <div class="hora-cotacao" id="linhaCotacao">
@@ -829,6 +835,37 @@
                 </div>
                 <div class="nota" id="rbNota"></div>
             </div>
+
+            <!-- Resultado de cada ação, inclusive as vendidas por inteiro -->
+            <div class="cartao" id="cartaoResultado" hidden>
+                <div class="cabecalho">
+                    <h2>Resultado por ação</h2>
+                    <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaResultado" aria-label="Como é o resultado por ação">?</button><div class="ajuda" id="ajudaResultado" hidden><ul>
+                        <li><strong>Lucro das vendas:</strong> o que cada venda deu acima (ou abaixo) do custo das ações vendidas, pelo preço médio.</li>
+                        <li><strong>Proventos:</strong> dividendos e JCP recebidos (valor líquido).</li>
+                        <li><strong>Resultado total</strong> = lucro das vendas + proventos + (valor atual − aportado). É quanto a ação já te deu, somando o que você realizou e o que ainda está na carteira.</li>
+                        <li>Ações vendidas por inteiro continuam aqui, com o que deram.</li>
+                    </ul></div></div>
+                </div>
+                <div class="rolagem">
+                <table class="tabela tabela-acoes">
+                    <thead>
+                        <tr>
+                            <th scope="col">Ação</th>
+                            <th scope="col">Lucro das vendas</th>
+                            <th scope="col">Proventos</th>
+                            <th scope="col">Resultado total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoResultado"></tbody>
+                </table>
+                </div>
+            </div>
+
+            <details class="cartao manual" id="manualDeclaracao" hidden>
+                <summary>Declaração e DARF</summary>
+                <div class="manual-corpo" id="corpoDeclaracao"></div>
+            </details>
         </section>
 
         <!-- Token da brapi.dev, para as cotações (janela) -->
@@ -899,8 +936,9 @@
 // ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
 import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
-    analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte } from './calculo.js?v=12';
-import * as cripto from './cripto.js?v=12';
+    analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte,
+    resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao } from './calculo.js?v=13';
+import * as cripto from './cripto.js?v=13';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
@@ -923,7 +961,7 @@ const pct = v => (v * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, m
 const dataBr = iso => iso.split('-').reverse().join('/');
 
 let config = null, keys = null, dados = null, precos = null;
-let chavePrivada = null, aportes = [], aportesFii = [], aportesAcoes = [], ultimoResultado = null;
+let chavePrivada = null, aportes = [], aportesFii = [], aportesAcoes = [], proventosAcoes = [], ultimoResultado = null;
 // ações: cotações da última busca (por ticker sem o F) e estado da busca
 let cotacoes = {}, horaCotacao = null;
 let estadoCotacao = 'nada'; // nada | sem-token | buscando | ok | parcial | token-recusado | erro
@@ -987,6 +1025,8 @@ async function abrirComChave(chave, lembrada) {
             if (a.tipo === 'acao') {
                 if (!/^[A-Z]{4}\d{1,2}F?$/.test(a.ticker) || !Number.isInteger(a.quantidade) || !(a.quantidade > 0) || !(a.valor > 0)
                     || ![undefined, 'venda'].includes(a.operacao) || ![undefined, 'rendimento'].includes(a.origem)) throw new Error('payload');
+            } else if (a.tipo === 'provento') {
+                if (!/^[A-Z]{4}\d{1,2}F?$/.test(a.ticker) || !['dividendo', 'jcp'].includes(a.provento) || !(a.valor > 0)) throw new Error('payload');
             } else if (a.tipo === 'fii') {
                 if (!(a.cotas > 0) || !(a.preco > 0) || ![undefined, 'rendimento'].includes(a.origem)) throw new Error('payload');
             } else if (a.tipo !== undefined || !(a.valor > 0) || typeof a.taxa !== 'number') {
@@ -1004,6 +1044,7 @@ async function abrirComChave(chave, lembrada) {
     aportes = lidos.filter(a => a.tipo === undefined);
     aportesFii = lidos.filter(a => a.tipo === 'fii');
     aportesAcoes = lidos.filter(a => a.tipo === 'acao');
+    proventosAcoes = lidos.filter(a => a.tipo === 'provento');
     $('avisoSimulador').hidden = falhas === 0;
     $('avisoSimulador').textContent = falhas ? `${falhas} entrada(s) do data.json não puderam ser decifradas e ficaram fora da conta.` : '';
     abrirSimulador();
@@ -1111,6 +1152,7 @@ $('botaoEsquecer').addEventListener('click', async () => {
     aportes = [];
     aportesFii = [];
     aportesAcoes = [];
+    proventosAcoes = [];
     cotacoes = {};
     modoTeste = null;
     $('modoTeste').hidden = true;
@@ -1584,6 +1626,12 @@ function mostrarAcoes() {
     $('acoesAtual').textContent = c.atual === null ? '—' : brl.format(c.atual);
     if (c.atual === null) $('acoesLucro').replaceChildren();
     else $('acoesLucro').replaceChildren(variacaoEl(c.lucro, c.lucroPct), ' sobre o aportado');
+    const res = resultadoPorAcao(aportesAcoes, proventosAcoes, cotacoes);
+    const temAcoes = aportesAcoes.length > 0 || proventosAcoes.length > 0;
+    $('acoesVendas').textContent = temAcoes ? `Lucro das vendas: ${brl.format(res.lucroVendas)}` : '';
+    $('acoesProventos').textContent = temAcoes ? `Proventos: ${brl.format(res.proventos)}` : '';
+    mostrarResultadoPorAcao(res, temAcoes);
+    mostrarDeclaracao(temAcoes);
 
     // linha da cotação: hora, ou o que falta para ter cotação
     const linha = $('linhaCotacao'), texto = $('textoCotacao');
@@ -1661,6 +1709,113 @@ function mostrarAcoes() {
         return tr;
     }));
     mostrarRebalanceamento(c, rb);
+}
+
+// Valor com sinal e cor (+ ganho, − perda), como a coluna Resultado da tabela
+function valorComSinal(v) {
+    const el = document.createElement('span');
+    el.className = 'variacao ' + (v >= 0 ? 'ganho' : 'perda');
+    el.textContent = `${v >= 0 ? '+' : '−'}${brl.format(Math.abs(v))}`;
+    return el;
+}
+
+function linhaTabela(celulas, classe) {
+    const tr = document.createElement('tr');
+    if (classe) tr.className = classe;
+    for (const [conteudo, cls] of celulas) {
+        const td = document.createElement('td');
+        if (cls) td.className = cls;
+        if (conteudo instanceof Node) td.appendChild(conteudo); else td.textContent = conteudo;
+        tr.appendChild(td);
+    }
+    return tr;
+}
+
+function mostrarResultadoPorAcao(res, temAcoes) {
+    $('cartaoResultado').hidden = !temAcoes;
+    if (!temAcoes) return;
+    $('corpoResultado').replaceChildren(...res.linhas.map(l => linhaTabela([
+        [l.ticker, 'ticker'],
+        [brl.format(l.lucroVendas)],
+        [brl.format(l.proventos)],
+        [l.resultado === null ? '—' : valorComSinal(l.resultado), 'destaque'],
+    ])));
+}
+
+const NOMES_MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const nomeMes = aaaamm => `${NOMES_MES[Number(aaaamm.slice(5, 7)) - 1]}/${aaaamm.slice(0, 4)}`;
+
+function tabelaIr(cabecalho, linhas) {
+    const div = document.createElement('div');
+    div.className = 'rolagem';
+    const tabela = document.createElement('table');
+    tabela.className = 'tabela tabela-ir';
+    const thead = document.createElement('thead'), tr = document.createElement('tr');
+    for (const nome of cabecalho) {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = nome;
+        tr.appendChild(th);
+    }
+    thead.appendChild(tr);
+    const tbody = document.createElement('tbody');
+    tbody.replaceChildren(...linhas);
+    tabela.replaceChildren(thead, tbody);
+    div.appendChild(tabela);
+    return div;
+}
+
+function elTexto(tag, texto) {
+    const e = document.createElement(tag);
+    e.textContent = texto;
+    return e;
+}
+
+function tituloFicha(forte, resto) {
+    const p = document.createElement('p');
+    p.append(elTexto('strong', forte), resto);
+    return p;
+}
+
+// Lista por ação com linha de total (dividendos, JCP)
+function listaComTotal(soma, vazio) {
+    if (!soma.lista.length) return elTexto('p', vazio);
+    return tabelaIr(['Ação', 'Valor'], [
+        ...soma.lista.map(x => linhaTabela([[x.ticker, 'ticker'], [brl.format(x.valor)]])),
+        linhaTabela([['Total'], [brl.format(soma.total)]], 'total'),
+    ]);
+}
+
+function mostrarDeclaracao(temAcoes) {
+    $('manualDeclaracao').hidden = !temAcoes;
+    if (!temAcoes) return;
+    const partes = [elTexto('h3', 'Mês a mês (meses com venda)')];
+    const meses = apuracaoMensal(aportesAcoes);
+    if (!meses.length) partes.push(elTexto('p', 'Nenhuma venda registrada.'));
+    else partes.push(tabelaIr(['Mês', 'Vendas', 'Lucro', 'Situação', 'DARF', 'Prazo', 'Prejuízo acumulado'], meses.map(m => linhaTabela([
+        [nomeMes(m.mes)],
+        [brl.format(m.vendas)],
+        [brl.format(m.lucro)],
+        [m.lucro < 0 ? 'Prejuízo' : m.isento ? 'Isento' : 'Tributável'],
+        [m.darf ? brl.format(m.darf) : m.pendente ? `${brl.format(m.pendente)} fica para o mês seguinte (abaixo de R$ 10)` : '—'],
+        [m.prazo ? dataBr(m.prazo) : '—'],
+        [brl.format(m.prejuizoAcumulado)],
+    ]))));
+
+    for (const ano of anosDeclaracao(aportesAcoes, proventosAcoes)) {
+        const r = resumoAnual(aportesAcoes, proventosAcoes, ano);
+        partes.push(elTexto('h3', `Resumo de ${ano} (declaração de ${ano + 1})`));
+        partes.push(tituloFicha('Bens e Direitos', ' · grupo 03, código 01: custo de cada ação'));
+        partes.push(r.bens.length
+            ? tabelaIr(['Ação', `31/12/${ano - 1}`, `31/12/${ano}`], r.bens.map(b => linhaTabela([[b.ticker, 'ticker'], [brl.format(b.anterior)], [brl.format(b.atual)]])))
+            : elTexto('p', 'Nenhuma ação.'));
+        partes.push(tituloFicha('Rendimentos Isentos', ' · código 09: dividendos'));
+        partes.push(listaComTotal(r.dividendos, 'Nenhum dividendo no ano.'));
+        partes.push(tituloFicha('Rendimentos Isentos', ` · código 20: lucro dos meses com vendas até R$ 20 mil: ${brl.format(r.lucroIsento)}`));
+        partes.push(tituloFicha('Tributação Exclusiva', ' · código 10: JCP'));
+        partes.push(listaComTotal(r.jcp, 'Nenhum JCP no ano.'));
+    }
+    $('corpoDeclaracao').replaceChildren(...partes);
 }
 
 // ------------------------------------------------------------------ //

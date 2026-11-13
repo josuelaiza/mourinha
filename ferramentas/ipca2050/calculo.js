@@ -215,6 +215,161 @@ export function carteiraAcoes(aportes, cotacoes = {}) {
 }
 
 // ------------------------------------------------------------------
+// Ações: vendas, proventos e imposto de renda
+// proventos = [{ data, ticker, provento: 'dividendo' | 'jcp', valor }] (valor líquido recebido)
+// ------------------------------------------------------------------
+const centavos = v => Math.round(v * 100) / 100;
+
+// Percorre compras e vendas em ordem de data (custo médio, como pede a Receita).
+// Só as operações até `ate` (aaaa-mm-dd), se informado.
+// Devolve { porTicker: Map(ticker → { quantidade, investido }), vendas: [{ data, ticker, valor, lucro }] }
+function percorrerAcoes(aportes, ate) {
+    const porTicker = new Map(), vendas = [];
+    const ordenados = [...aportes].filter(a => !ate || a.data <= ate).sort((x, y) => (x.data || '').localeCompare(y.data || ''));
+    for (const a of ordenados) {
+        const p = porTicker.get(a.ticker) || { quantidade: 0, investido: 0 };
+        if (a.operacao === 'venda') {
+            const vendida = Math.min(a.quantidade, p.quantidade);
+            const custoBaixado = p.quantidade > 0 ? p.investido * (vendida / p.quantidade) : 0;
+            vendas.push({ data: a.data, ticker: a.ticker, valor: a.valor, lucro: a.valor - custoBaixado });
+            p.quantidade -= vendida;
+            p.investido = p.quantidade > 0 ? p.investido - custoBaixado : 0;
+        } else {
+            p.quantidade += a.quantidade;
+            p.investido += a.valor;
+        }
+        porTicker.set(a.ticker, p);
+    }
+    return { porTicker, vendas };
+}
+
+// Resultado de cada ação, inclusive as já vendidas por inteiro:
+// resultado = lucro das vendas + proventos + (valor atual − aportado).
+// resultado = null se a ação ainda está na carteira e falta a cotação.
+export function resultadoPorAcao(aportes, proventos, cotacoes = {}) {
+    const { porTicker, vendas } = percorrerAcoes(aportes);
+    const linhas = new Map();
+    const linha = ticker => {
+        if (!linhas.has(ticker)) linhas.set(ticker, { ticker, lucroVendas: 0, proventos: 0 });
+        return linhas.get(ticker);
+    };
+    for (const t of porTicker.keys()) linha(t);
+    for (const v of vendas) linha(v.ticker).lucroVendas += v.lucro;
+    for (const p of proventos) linha(p.ticker).proventos += p.valor;
+    const lista = [...linhas.values()].map(l => {
+        const pos = porTicker.get(l.ticker) || { quantidade: 0, investido: 0 };
+        const cotacao = cotacoes[tickerCotacao(l.ticker)];
+        const latente = pos.quantidade === 0 ? 0 : typeof cotacao === 'number' ? pos.quantidade * cotacao - pos.investido : null;
+        return { ...l, quantidade: pos.quantidade, resultado: latente === null ? null : l.lucroVendas + l.proventos + latente };
+    });
+    return {
+        linhas: lista,
+        lucroVendas: lista.reduce((s, l) => s + l.lucroVendas, 0),
+        proventos: lista.reduce((s, l) => s + l.proventos, 0),
+    };
+}
+
+// Domingo de Páscoa (algoritmo de Meeus), em UTC
+function pascoa(ano) {
+    const a = ano % 19, b = Math.floor(ano / 100), c = ano % 100, d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const mes = Math.floor((h + l - 7 * m + 114) / 31), dia = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(Date.UTC(ano, mes - 1, dia));
+}
+
+// Dias sem expediente bancário: fins de semana, feriados nacionais,
+// Carnaval (segunda e terça), Sexta-feira Santa, Corpus Christi e 31/12.
+function semExpediente(d) {
+    if (d.getUTCDay() === 0 || d.getUTCDay() === 6) return true;
+    const md = `${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    if (['01-01', '04-21', '05-01', '09-07', '10-12', '11-02', '11-15', '11-20', '12-25', '12-31'].includes(md)) return true;
+    const p = pascoa(d.getUTCFullYear()).getTime(), dia = 86400000;
+    return [-48, -47, -2, 60].some(n => d.getTime() === p + n * dia);
+}
+
+// Último dia útil do mês (mes = 1..12), aaaa-mm-dd
+export function ultimoDiaUtil(ano, mes) {
+    const d = new Date(Date.UTC(ano, mes, 0));
+    while (semExpediente(d)) d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+}
+
+export const LIMITE_ISENCAO_ACOES = 20000;
+export const ALIQUOTA_ACOES = 0.15;
+export const DARF_MINIMO = 10;
+
+// Apuração mês a mês (só os meses com venda), operações comuns:
+// - vendas do mês até R$ 20 mil: lucro isento (não usa o prejuízo guardado);
+// - acima disso: 15% sobre o lucro menos o prejuízo acumulado;
+// - prejuízo de qualquer mês fica guardado para abater lucro tributável depois;
+// - DARF abaixo de R$ 10 não se paga: fica para o mês seguinte.
+// Prazo do DARF (código 6015): último dia útil do mês seguinte.
+export function apuracaoMensal(aportes) {
+    const meses = new Map();
+    for (const v of percorrerAcoes(aportes).vendas) {
+        const mes = v.data.slice(0, 7);
+        const m = meses.get(mes) || { mes, vendas: 0, lucro: 0 };
+        m.vendas += v.valor;
+        m.lucro += v.lucro;
+        meses.set(mes, m);
+    }
+    let prejuizo = 0, pendente = 0;
+    return [...meses.values()].sort((x, y) => x.mes.localeCompare(y.mes)).map(m => {
+        const lucro = centavos(m.lucro);
+        const isento = m.vendas <= LIMITE_ISENCAO_ACOES;
+        let compensado = 0, imposto = 0;
+        if (lucro < 0) prejuizo = centavos(prejuizo - lucro);
+        else if (!isento) {
+            compensado = Math.min(prejuizo, lucro);
+            prejuizo = centavos(prejuizo - compensado);
+            imposto = centavos((lucro - compensado) * ALIQUOTA_ACOES);
+        }
+        const total = centavos(pendente + imposto);
+        const darf = total >= DARF_MINIMO ? total : 0;
+        pendente = darf ? 0 : total;
+        const [ano, mes] = m.mes.split('-').map(Number);
+        return {
+            mes: m.mes, vendas: centavos(m.vendas), lucro, isento, compensado, imposto, darf, pendente,
+            prazo: darf ? ultimoDiaUtil(mes === 12 ? ano + 1 : ano, mes === 12 ? 1 : mes + 1) : null,
+            prejuizoAcumulado: prejuizo,
+        };
+    });
+}
+
+// Anos com alguma operação ou provento, do mais recente para o mais antigo
+export function anosDeclaracao(aportes, proventos) {
+    return [...new Set([...aportes, ...proventos].map(a => Number(a.data.slice(0, 4))))].sort((a, b) => b - a);
+}
+
+// O que lançar na declaração de um ano:
+// - Bens e Direitos (03/01): custo de cada ação em 31/12 do ano anterior e do ano;
+// - Rendimentos Isentos 09: dividendos; 20: lucro dos meses isentos;
+// - Tributação Exclusiva 10: JCP.
+export function resumoAnual(aportes, proventos, ano) {
+    const antes = percorrerAcoes(aportes, `${ano - 1}-12-31`).porTicker;
+    const fim = percorrerAcoes(aportes, `${ano}-12-31`).porTicker;
+    const bens = [...fim.keys()].map(ticker => ({
+        ticker,
+        anterior: antes.has(ticker) ? centavos(antes.get(ticker).investido) : 0,
+        atual: centavos(fim.get(ticker).investido),
+    })).filter(b => b.anterior > 0 || b.atual > 0);
+    const somarPorTicker = tipo => {
+        const m = new Map();
+        for (const p of proventos) {
+            if (p.provento !== tipo || !p.data.startsWith(`${ano}-`)) continue;
+            m.set(p.ticker, (m.get(p.ticker) || 0) + p.valor);
+        }
+        const lista = [...m].map(([ticker, valor]) => ({ ticker, valor: centavos(valor) }));
+        return { lista, total: centavos(lista.reduce((s, x) => s + x.valor, 0)) };
+    };
+    const lucroIsento = centavos(apuracaoMensal(aportes)
+        .filter(m => m.mes.startsWith(`${ano}-`) && m.isento && m.lucro > 0)
+        .reduce((s, m) => s + m.lucro, 0));
+    return { ano, bens, dividendos: somarPorTicker('dividendo'), jcp: somarPorTicker('jcp'), lucroIsento };
+}
+
+// ------------------------------------------------------------------
 // Rebalanceador de ações (lógica do rebalanceador do usuário, sem mudança).
 // itens = [{ p: preço, q: quantidade }], na ordem da tabela.
 // Meta de cada ação = partes iguais (1 ÷ número de ações).

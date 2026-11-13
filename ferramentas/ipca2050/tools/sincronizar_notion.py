@@ -12,6 +12,8 @@ Lê os bancos do Notion listados em config.json ("sincronizacao"):
   - Ações:         Data (título, dd/mm/aaaa), Ticker (seleção), Operação
                    ("Compra" ou "Venda"), Quantidade e Valor total (positivos;
                    a Operação dá o sentido) e Origem (só compra; vazio = Aporte)
+  - Proventos:     Data (título, dd/mm/aaaa), Ticker (seleção), Tipo
+                   ("Dividendo" ou "JCP") e Valor líquido (o que caiu na conta)
 e cifra cada linha nova do mesmo jeito que o add_aporte.py (só com a chave
 pública). Para não importar a mesma linha duas vezes, o data.json guarda em
 "importados" o SHA-256 do id de cada página do Notion já trazida: não revela
@@ -156,8 +158,22 @@ def aporte_acao(props: dict) -> dict:
     return aporte
 
 
+def provento_acao(props: dict) -> dict:
+    data = _data(props.get("Data"))
+    ticker = _selecao(props.get("Ticker")).upper()
+    if not re.fullmatch(r"[A-Z]{4}\d{1,2}F?", ticker):
+        raise LinhaInvalida("ticker fora do formato")
+    tipo = _selecao(props.get("Tipo")).lower()
+    if tipo not in ("dividendo", "jcp"):
+        raise LinhaInvalida("tipo deve ser Dividendo ou JCP")
+    valor = _numero(props.get("Valor líquido"))
+    if not valor > 0:
+        raise LinhaInvalida("valor fora do esperado")
+    return {"tipo": "provento", "data": data, "ticker": ticker, "provento": tipo, "valor": valor}
+
+
 # chave = nome do banco em config.json ("sincronizacao" → "notion")
-LEITORES = {"ipca": aporte_ipca, "fii": aporte_fii, "acoes": aporte_acao}
+LEITORES = {"ipca": aporte_ipca, "fii": aporte_fii, "acoes": aporte_acao, "proventos": provento_acao}
 
 
 def sincronizar(paginas_por_tipo: dict, dados: dict, chave) -> tuple[int, int]:

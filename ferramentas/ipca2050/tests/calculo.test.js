@@ -9,6 +9,7 @@ import {
     calcularLote, aportesFuturos, datasDoGrafico, simular, aporteParaMeta,
     simularFii, fiiPorAno, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
     analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte,
+    resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao, ultimoDiaUtil,
 } from '../calculo.js';
 
 const TABELA_IR = [
@@ -443,4 +444,82 @@ test('ações: venda tira custo pelo preço médio; líquido do bolso e lucro re
     perto(c2.investido, 31);
     perto(c2.liquido, 20 + 30 - 36);
     perto(c2.lucroRealizado, 6);
+});
+
+// ------------------------------------------------------------------ IR das ações
+// Carteira fictícia; esperados calculados à mão (custo médio, regra da Receita).
+const OPERACOES_IR = [
+    { data: '2031-01-05', ticker: 'AAAA4F', quantidade: 100, valor: 1000 },
+    { data: '2031-01-06', ticker: 'BBBB3', quantidade: 50, valor: 500 },
+    { data: '2031-01-07', ticker: 'CCCC3', quantidade: 2000, valor: 20000 },
+    { data: '2031-02-10', ticker: 'AAAA4F', quantidade: 20, valor: 160, operacao: 'venda' },   // custo 200: prejuízo 40
+    { data: '2031-03-15', ticker: 'AAAA4F', quantidade: 30, valor: 450, operacao: 'venda' },   // custo 300: lucro 150, isento
+    { data: '2031-04-20', ticker: 'CCCC3', quantidade: 1500, valor: 21000, operacao: 'venda' }, // custo 15000: lucro 6000, tributável
+    { data: '2031-06-01', ticker: 'DDDD3', quantidade: 2100, valor: 21000 },
+    { data: '2031-06-20', ticker: 'DDDD3', quantidade: 2100, valor: 21040, operacao: 'venda' }, // lucro 40: imposto 6, abaixo de R$ 10
+    { data: '2031-07-10', ticker: 'CCCC3', quantidade: 500, valor: 5000, operacao: 'venda' },   // lucro 0
+    { data: '2031-08-01', ticker: 'EEEE3', quantidade: 2100, valor: 21000 },
+    { data: '2031-08-15', ticker: 'EEEE3', quantidade: 2100, valor: 21030, operacao: 'venda' }, // lucro 30: 4,50 + 6 pendentes
+];
+const PROVENTOS_IR = [
+    { data: '2031-03-01', ticker: 'AAAA4F', provento: 'dividendo', valor: 12.34 },
+    { data: '2031-05-01', ticker: 'AAAA4F', provento: 'jcp', valor: 8.5 },
+    { data: '2031-06-01', ticker: 'BBBB3', provento: 'dividendo', valor: 5 },
+    { data: '2032-01-10', ticker: 'BBBB3', provento: 'dividendo', valor: 3 },
+];
+
+test('ações: resultado por ação soma vendas, proventos e o latente; vendidas por inteiro entram', () => {
+    const r = resultadoPorAcao(OPERACOES_IR, PROVENTOS_IR, { AAAA4: 12, BBBB3: 9 });
+    const de = t => r.linhas.find(l => l.ticker === t);
+    perto(de('AAAA4F').lucroVendas, 110);
+    perto(de('AAAA4F').proventos, 20.84);
+    perto(de('AAAA4F').resultado, 110 + 20.84 + (50 * 12 - 500));
+    perto(de('BBBB3').resultado, 8 + (450 - 500));
+    assert.equal(de('CCCC3').quantidade, 0);
+    perto(de('CCCC3').resultado, 6000);
+    perto(r.lucroVendas, 6180);
+    perto(r.proventos, 28.84);
+    assert.deepEqual(r.linhas.map(l => l.ticker), ['AAAA4F', 'BBBB3', 'CCCC3', 'DDDD3', 'EEEE3']);
+
+    // sem a cotação de uma ação ainda na carteira: o resultado dela fica sem valor
+    const sem = resultadoPorAcao(OPERACOES_IR, PROVENTOS_IR, { AAAA4: 12 });
+    assert.equal(sem.linhas.find(l => l.ticker === 'BBBB3').resultado, null);
+    perto(sem.linhas.find(l => l.ticker === 'CCCC3').resultado, 6000);
+});
+
+test('ações: apuração mensal com isenção, prejuízo guardado e DARF mínimo', () => {
+    const m = apuracaoMensal(OPERACOES_IR);
+    assert.deepEqual(m.map(x => x.mes), ['2031-02', '2031-03', '2031-04', '2031-06', '2031-07', '2031-08']);
+    const [fev, mar, abr, jun, jul, ago] = m;
+    assert.deepEqual([fev.lucro, fev.isento, fev.darf, fev.prejuizoAcumulado], [-40, true, 0, 40]);
+    // lucro isento não consome o prejuízo guardado
+    assert.deepEqual([mar.lucro, mar.isento, mar.imposto, mar.prejuizoAcumulado], [150, true, 0, 40]);
+    assert.deepEqual([abr.vendas, abr.isento, abr.compensado, abr.imposto, abr.darf, abr.prazo, abr.prejuizoAcumulado],
+        [21000, false, 40, 894, 894, '2031-05-30', 0]);
+    assert.deepEqual([jun.imposto, jun.darf, jun.pendente, jun.prazo], [6, 0, 6, null]);
+    assert.deepEqual([jul.lucro, jul.isento, jul.darf, jul.pendente], [0, true, 0, 6]);
+    assert.deepEqual([ago.imposto, ago.darf, ago.pendente, ago.prazo], [4.5, 10.5, 0, '2031-09-30']);
+});
+
+test('ações: último dia útil pula fim de semana, feriados móveis e 31/12', () => {
+    assert.equal(ultimoDiaUtil(2031, 5), '2031-05-30');  // 31 é sábado
+    assert.equal(ultimoDiaUtil(2031, 12), '2031-12-30'); // 31/12 sem expediente
+    assert.equal(ultimoDiaUtil(2028, 2), '2028-02-25');  // 28 e 29 são Carnaval
+    assert.equal(ultimoDiaUtil(2029, 3), '2029-03-29');  // 30 é Sexta-feira Santa
+});
+
+test('ações: resumo anual para a declaração', () => {
+    assert.deepEqual(anosDeclaracao(OPERACOES_IR, PROVENTOS_IR), [2032, 2031]);
+    const a = resumoAnual(OPERACOES_IR, PROVENTOS_IR, 2031);
+    assert.deepEqual(a.bens, [
+        { ticker: 'AAAA4F', anterior: 0, atual: 500 },
+        { ticker: 'BBBB3', anterior: 0, atual: 500 },
+    ]);
+    assert.deepEqual(a.dividendos, { lista: [{ ticker: 'AAAA4F', valor: 12.34 }, { ticker: 'BBBB3', valor: 5 }], total: 17.34 });
+    assert.deepEqual(a.jcp, { lista: [{ ticker: 'AAAA4F', valor: 8.5 }], total: 8.5 });
+    assert.equal(a.lucroIsento, 150);
+    const b = resumoAnual(OPERACOES_IR, PROVENTOS_IR, 2032);
+    assert.deepEqual(b.bens.map(x => [x.ticker, x.anterior, x.atual]), [['AAAA4F', 500, 500], ['BBBB3', 500, 500]]);
+    assert.equal(b.dividendos.total, 3);
+    assert.equal(b.lucroIsento, 0);
 });

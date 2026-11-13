@@ -227,6 +227,36 @@ const paginaAcao = (id, data, ticker, operacao, qtd, valor, origem) => ({
     id, properties: { Data: titulo(data), Ticker: sel(ticker), 'Operação': sel(operacao), Quantidade: num(qtd), 'Valor total': num(valor), Origem: sel(origem) },
 });
 
+const paginaProvento = (id, data, ticker, tipo, valor) => ({
+    id, properties: { Data: titulo(data), Ticker: sel(ticker), Tipo: sel(tipo), 'Valor líquido': num(valor) },
+});
+
+test('sincronização de proventos: dividendo e JCP cifrados; linha sem tipo é ignorada', async () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
+    try {
+        const keys = await gerarChaves(SENHA_FICTICIA);
+        const arq = n => join(pasta, n);
+        writeFileSync(arq('keys.json'), JSON.stringify(keys));
+        writeFileSync(arq('config.json'), JSON.stringify({ sincronizacao: { notion: { proventos: 'p' } } }));
+        writeFileSync(arq('data.json'), JSON.stringify({ version: 1, entries: [] }));
+        writeFileSync(arq('paginas.json'), JSON.stringify({ proventos: [
+            paginaProvento('b1111111-1111-4111-8111-111111111111', '20/04/2031', 'abcd4f', 'Dividendo', 12.34),
+            paginaProvento('b2222222-2222-4222-8222-222222222222', '21/04/2031', 'EFGH3', 'JCP', 5.67),
+            paginaProvento('b3333333-3333-4333-8333-333333333333', '22/04/2031', 'EFGH3', '', 1),
+        ] }));
+        const saida = execFileSync(PYTHON, [SINCRONIZAR, '--keys', arq('keys.json'), '--arquivo', arq('data.json'), '--config', arq('config.json'), '--paginas', arq('paginas.json')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+        assert.match(saida, /^2 aporte\(s\) novo\(s\).*1 linha\(s\) ignorada\(s\)/);
+        assert.ok(!/12\.34|5\.67/.test(saida), 'valor na saída');
+        const dados = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
+        assert.ok(!/ABCD|EFGH|provento|dividendo|jcp|12\.34/i.test(JSON.stringify(dados)), 'provento em claro no data.json');
+        const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { tipo: 'provento', data: '2031-04-20', ticker: 'ABCD4F', provento: 'dividendo', valor: 12.34 });
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[1]), { tipo: 'provento', data: '2031-04-21', ticker: 'EFGH3', provento: 'jcp', valor: 5.67 });
+    } finally {
+        rmSync(pasta, { recursive: true, force: true });
+    }
+});
+
 test('sincronização de ações e profunda: compra, venda, origem e reconstrução a partir do Notion', async () => {
     const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
     try {

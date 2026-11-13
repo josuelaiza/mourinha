@@ -114,6 +114,32 @@ test('aporte de FII: tipo vai dentro da parte cifrada e a página decifra', asyn
     }
 });
 
+test('aporte de ação: tipo e ticker vão dentro da parte cifrada e a página decifra', async () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
+    try {
+        const keys = await gerarChaves(SENHA_FICTICIA);
+        const caminhoKeys = join(pasta, 'keys.json');
+        const caminhoData = join(pasta, 'data.json');
+        writeFileSync(caminhoKeys, JSON.stringify(keys));
+        writeFileSync(caminhoData, JSON.stringify({ version: 1, entries: [] }));
+        const saida = rodarScript(['--tipo', 'acao', '--data', '2031-05-20', '--ticker', 'abcd4f', '--quantidade', '7', '--valor', '123.45', '--keys', caminhoKeys, '--arquivo', caminhoData]);
+        assert.ok(!saida.includes('123.45') && !saida.includes('ABCD'), 'o script imprimiu o aporte');
+        const dados = JSON.parse(readFileSync(caminhoData, 'utf8'));
+        const texto = JSON.stringify(dados);
+        assert.ok(!texto.includes('acao') && !texto.includes('ABCD'), 'tipo ou ticker em claro no data.json');
+        const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { tipo: 'acao', data: '2031-05-20', ticker: 'ABCD4F', quantidade: 7, valor: 123.45 });
+
+        const base = ['--tipo', 'acao', '--data', '2031-05-20', '--keys', caminhoKeys, '--arquivo', caminhoData];
+        assert.throws(() => rodarScript([...base, '--ticker', 'ABCD4', '--quantidade', '7'])); // falta o valor
+        assert.throws(() => rodarScript([...base, '--ticker', 'XPTO', '--quantidade', '7', '--valor', '10'])); // ticker inválido
+        assert.throws(() => rodarScript([...base, '--ticker', 'ABCD4', '--quantidade', '7', '--valor', '10', '--taxa', '0.06']));
+        assert.throws(() => rodarScript(['--data', '2031-05-20', '--valor', '10', '--taxa', '0.06', '--ticker', 'ABCD4', '--keys', caminhoKeys, '--arquivo', caminhoData]));
+    } finally {
+        rmSync(pasta, { recursive: true, force: true });
+    }
+});
+
 // Sincronização Notion -> data.json, com páginas FICTÍCIAS no formato da API do Notion
 const SINCRONIZAR = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools', 'sincronizar_notion.py');
 const titulo = t => ({ title: [{ plain_text: t }] });

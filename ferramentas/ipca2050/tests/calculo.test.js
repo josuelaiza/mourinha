@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {
     diasEntre, mediaGeometrica, taxaMediaPonderada, aliquotaIR,
     calcularLote, aportesFuturos, datasDoGrafico, simular, aporteParaMeta,
-    simularFii, fiiPorAno, primeiraData, deflator, mediasMensais,
+    simularFii, fiiPorAno, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
 } from '../calculo.js';
 
 const TABELA_IR = [
@@ -326,4 +326,39 @@ test('médias mensais de aporte: desde o primeiro aporte e último ano', () => {
     perto(longo.ultimoAno, 1200 / 12);
 
     assert.equal(mediasMensais({ aportes: [], aportesFii: [], hoje: '2030-01-01' }), null);
+});
+
+test('ações: ticker fracionário consulta a cotação sem o F', () => {
+    assert.equal(tickerCotacao('ABCD4F'), 'ABCD4');
+    assert.equal(tickerCotacao('ABCD11F'), 'ABCD11');
+    assert.equal(tickerCotacao('ABCD4'), 'ABCD4');
+});
+
+test('ações: carteira agrupa por ticker, com preço médio, lucro e parte do total atual', () => {
+    const aportes = [
+        { ticker: 'AAAA4F', quantidade: 10, valor: 100 },
+        { ticker: 'BBBB3', quantidade: 5, valor: 50 },
+        { ticker: 'AAAA4F', quantidade: 10, valor: 140 }, // segunda compra: preço médio 12
+    ];
+    const c = carteiraAcoes(aportes, { AAAA4: 13, BBBB3: 8 });
+    const a = c.posicoes.find(p => p.ticker === 'AAAA4F');
+    assert.equal(a.quantidade, 20);
+    perto(a.precoMedio, 12);
+    perto(a.atual, 260);
+    perto(a.lucro, 20);
+    perto(a.lucroPct, 20 / 240);
+    const b = c.posicoes.find(p => p.ticker === 'BBBB3');
+    perto(b.lucro, -10);
+    perto(c.investido, 290);
+    perto(c.atual, 300);
+    perto(c.lucro, 10);
+    perto(a.parte + b.parte, 1);
+    perto(a.parte, 260 / 300);
+
+    // sem a cotação de uma ação: ela fica sem atual e o total atual não é somado
+    const parcial = carteiraAcoes(aportes, { AAAA4: 13 });
+    assert.equal(parcial.atual, null);
+    assert.equal(parcial.posicoes.find(p => p.ticker === 'BBBB3').atual, null);
+    assert.equal(parcial.posicoes.find(p => p.ticker === 'AAAA4F').parte, null);
+    perto(parcial.investido, 290);
 });

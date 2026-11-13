@@ -261,6 +261,19 @@
         .ajuda strong { color: var(--texto); font-weight: 600; }
         .medias-aporte span { display: block; }
         .medias-aporte strong { color: var(--texto-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+        /* Ações */
+        .hora-cotacao { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.75rem; color: var(--texto-3); margin-top: 10px; }
+        .hora-cotacao.erro { color: var(--erro); }
+        .botao-atualizar {
+            display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 6px; cursor: pointer;
+            background: var(--cartao-2); border: 1px solid var(--borda); color: var(--texto-2);
+        }
+        .botao-atualizar:hover { color: var(--texto); border-color: var(--texto-3); }
+        .botao-atualizar:disabled { opacity: 0.5; cursor: default; }
+        .botao-atualizar:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+        .tabela-acoes .ticker { font-weight: 600; }
+        .tabela-acoes td .pct-lucro { display: block; font-size: 0.72rem; }
+        .tabela-acoes .vazio { text-align: left; color: var(--texto-3); white-space: normal; }
         /* nome de coluna que explica a coluna ao tocar */
         .coluna-ajuda {
             font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; background: none; border: none; padding: 0; cursor: pointer;
@@ -294,11 +307,11 @@
             background: var(--cartao); color: var(--texto); border: 1px solid var(--borda); border-radius: 10px; padding: 14px;
         }
         dialog#janelaPrecos::backdrop { background: rgba(0, 0, 0, 0.6); }
-        dialog#janelaToken {
+        dialog#janelaToken, dialog#janelaBrapi {
             margin: auto; width: min(480px, calc(100vw - 24px)); max-height: calc(100vh - 48px);
             background: var(--cartao); color: var(--texto); border: 1px solid var(--borda); border-radius: 10px; padding: 14px;
         }
-        dialog#janelaToken::backdrop { background: rgba(0, 0, 0, 0.6); }
+        dialog#janelaToken::backdrop, dialog#janelaBrapi::backdrop { background: rgba(0, 0, 0, 0.6); }
         dialog h2 { font-size: 0.85rem; font-weight: 600; color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.4px; }
         .texto-janela { font-size: 0.8rem; color: var(--texto-2); margin-bottom: 8px; }
         .passos { font-size: 0.8rem; color: var(--texto-2); margin: 0 0 10px 18px; }
@@ -404,6 +417,7 @@
             <button type="button" class="aba" role="tab" id="abaPanorama" aria-controls="painelPanorama" aria-selected="true">Panorama</button>
             <button type="button" class="aba" role="tab" id="abaIpca" aria-controls="painelIpca" aria-selected="false" tabindex="-1">Tesouro IPCA+ 2050</button>
             <button type="button" class="aba" role="tab" id="abaFii" aria-controls="painelFii" aria-selected="false" tabindex="-1">FII</button>
+            <button type="button" class="aba" role="tab" id="abaAcoes" aria-controls="painelAcoes" aria-selected="false" tabindex="-1">Ações</button>
         </nav>
 
         <!-- Panorama -->
@@ -683,6 +697,80 @@
             </details>
         </section>
 
+        <!-- Ações: carteira à parte, não entra no panorama nem no total aportado -->
+        <section id="painelAcoes" role="tabpanel" aria-labelledby="abaAcoes" hidden>
+            <div class="cartao">
+                <div class="hoje">
+                    <div class="metrica">
+                        <div class="rotulo-metrica">Aportado em ações <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaAcoesAportado" aria-label="O que é o aportado em ações">?</button><span class="ajuda" id="ajudaAcoesAportado" hidden><ul>
+                            <li>Soma do que você pagou nas compras de ações (o total de cada compra).</li>
+                            <li>Fica à parte: não entra no Panorama nem no Total aportado.</li>
+                        </ul></span></span></div>
+                        <div class="valor" id="acoesAportado">—</div>
+                    </div>
+                    <div class="metrica">
+                        <div class="rotulo-metrica">Valor atual <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaAcoesAtual" aria-label="O que é o valor atual">?</button><span class="ajuda" id="ajudaAcoesAtual" hidden><ul>
+                            <li>Quantidade de cada ação × a cotação mais recente, somados.</li>
+                            <li>A cotação vem da brapi.dev, com atraso de uns 30 minutos. Ela só é buscada ao abrir a página ou ao tocar no botão de atualizar.</li>
+                            <li>Embaixo: o lucro ou prejuízo sobre o aportado. Não desconta IR nem custos de uma venda.</li>
+                        </ul></span></span></div>
+                        <div class="valor" id="acoesAtual">—</div>
+                        <div class="detalhe" id="acoesLucro"></div>
+                    </div>
+                </div>
+                <div class="hora-cotacao" id="linhaCotacao">
+                    <button type="button" class="botao-atualizar" id="atualizarCotacoes" aria-label="Atualizar cotações" title="Atualizar cotações">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    </button>
+                    <span id="textoCotacao"></span>
+                </div>
+            </div>
+
+            <div class="cartao">
+                <div class="rolagem">
+                <table class="tabela tabela-acoes">
+                    <thead>
+                        <tr>
+                            <th scope="col">Ação</th>
+                            <th scope="col">Qtd.</th>
+                            <th scope="col">Preço médio</th>
+                            <th scope="col">Aportado</th>
+                            <th scope="col">Atual</th>
+                            <th scope="col">Resultado</th>
+                            <th scope="col">% do total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoAcoes"></tbody>
+                </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Token da brapi.dev, para as cotações (janela) -->
+        <dialog id="janelaBrapi" aria-labelledby="tituloBrapi">
+            <form id="formBrapi" method="dialog">
+                <div class="cabecalho">
+                    <h2 id="tituloBrapi">Configurar cotações</h2>
+                </div>
+                <p class="texto-janela">As cotações das ações vêm da brapi.dev. A conta grátis basta: 15 mil consultas por mês, e cada abertura da página gasta uma por ação.</p>
+                <ol class="passos">
+                    <li>Crie uma conta grátis em <strong>brapi.dev</strong>.</li>
+                    <li>No painel da conta, copie o seu token.</li>
+                    <li>Cole aqui.</li>
+                </ol>
+                <div class="campo">
+                    <label for="tokenBrapi">Token da brapi.dev</label>
+                    <input type="password" id="tokenBrapi" autocomplete="off" spellcheck="false" required>
+                </div>
+                <p class="texto-janela">Ele fica guardado só neste aparelho, cifrado: só abre depois que a página é desbloqueada com a sua frase-senha.</p>
+                <div class="mensagem" id="mensagemBrapi" role="status"></div>
+                <div class="botoes-janela">
+                    <button type="button" class="botao secundario" id="cancelarBrapi">Cancelar</button>
+                    <button type="submit" class="botao">Salvar e buscar cotações</button>
+                </div>
+            </form>
+        </dialog>
+
         <!-- Token do botão Sincronizar (janela) -->
         <dialog id="janelaToken" aria-labelledby="tituloToken">
             <form id="formToken" method="dialog">
@@ -725,8 +813,8 @@
 <script type="module">
 // ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
-import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais } from './calculo.js?v=8';
-import * as cripto from './cripto.js?v=8';
+import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes } from './calculo.js?v=9';
+import * as cripto from './cripto.js?v=9';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
@@ -736,6 +824,7 @@ const CHAVE_FII_APORTE = 'patrimonio.fii.aporteMensal';
 const CHAVE_FII_RENDIMENTO = 'patrimonio.fii.rendimentoPorCota'; // R$ por cota por mês
 const CHAVE_ABA = 'patrimonio.aba';
 const CHAVE_TOKEN = 'patrimonio.tokenSincronizar'; // token do GitHub, cifrado com a chave pública
+const CHAVE_BRAPI = 'patrimonio.tokenBrapi'; // token da brapi.dev (cotações), cifrado com a chave pública
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const anosAbertos = new Set(); // anos abertos na tabela mês a mês (sobrevive ao recálculo)
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -747,7 +836,10 @@ const pct = v => (v * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, m
 const dataBr = iso => iso.split('-').reverse().join('/');
 
 let config = null, keys = null, dados = null, precos = null;
-let chavePrivada = null, aportes = [], aportesFii = [], ultimoResultado = null;
+let chavePrivada = null, aportes = [], aportesFii = [], aportesAcoes = [], ultimoResultado = null;
+// ações: cotações da última busca (por ticker sem o F) e estado da busca
+let cotacoes = {}, horaCotacao = null;
+let estadoCotacao = 'nada'; // nada | sem-token | buscando | ok | parcial | token-recusado | erro
 
 // ------------------------------------------------------------------ //
 // Telas
@@ -805,7 +897,9 @@ async function abrirComChave(chave, lembrada) {
         try {
             const a = await cripto.decifrarEntrada(chave, entrada);
             if (!/^\d{4}-\d{2}-\d{2}$/.test(a.data)) throw new Error('payload');
-            if (a.tipo === 'fii') {
+            if (a.tipo === 'acao') {
+                if (!/^[A-Z]{4}\d{1,2}F?$/.test(a.ticker) || !Number.isInteger(a.quantidade) || !(a.quantidade > 0) || !(a.valor > 0)) throw new Error('payload');
+            } else if (a.tipo === 'fii') {
                 if (!(a.cotas > 0) || !(a.preco > 0) || ![undefined, 'rendimento'].includes(a.origem)) throw new Error('payload');
             } else if (a.tipo !== undefined || !(a.valor > 0) || typeof a.taxa !== 'number') {
                 throw new Error('payload');
@@ -821,6 +915,7 @@ async function abrirComChave(chave, lembrada) {
     lidos.sort((x, y) => x.data.localeCompare(y.data));
     aportes = lidos.filter(a => a.tipo === undefined);
     aportesFii = lidos.filter(a => a.tipo === 'fii');
+    aportesAcoes = lidos.filter(a => a.tipo === 'acao');
     $('avisoSimulador').hidden = falhas === 0;
     $('avisoSimulador').textContent = falhas ? `${falhas} entrada(s) do data.json não puderam ser decifradas e ficaram fora da conta.` : '';
     abrirSimulador();
@@ -927,6 +1022,8 @@ $('botaoEsquecer').addEventListener('click', async () => {
     chavePrivada = null;
     aportes = [];
     aportesFii = [];
+    aportesAcoes = [];
+    cotacoes = {};
     ultimoResultado = null;
     $('svgGrafico').replaceChildren();
     $('mensagemSenha').className = 'mensagem';
@@ -979,12 +1076,13 @@ function abrirSimulador() {
     try { aba = localStorage.getItem(CHAVE_ABA) || aba; } catch { /* sem storage */ }
     selecionarAba($(aba) && $(aba).getAttribute('role') === 'tab' ? aba : 'abaPanorama', false);
     recalcular();
+    buscarCotacoes();
 }
 
 // ------------------------------------------------------------------ //
 // Abas, ajuda (?) e janela de preços
 // ------------------------------------------------------------------ //
-const ABAS = ['abaPanorama', 'abaIpca', 'abaFii'];
+const ABAS = ['abaPanorama', 'abaIpca', 'abaFii', 'abaAcoes'];
 
 function selecionarAba(id, focar = true) {
     for (const outra of ABAS) {
@@ -1294,6 +1392,164 @@ $('formToken').addEventListener('submit', async e => {
     $('tokenGithub').value = '';
     $('janelaToken').close();
     dispararSincronizacao(token);
+});
+
+// ------------------------------------------------------------------ //
+// Ações: carteira à parte, com cotação da brapi.dev
+// A cotação só é buscada ao abrir a página e no botão de atualizar.
+// ------------------------------------------------------------------ //
+
+async function tokenBrapiGuardado() {
+    let salvo = null;
+    try { salvo = localStorage.getItem(CHAVE_BRAPI); } catch { /* sem storage */ }
+    if (!salvo || !chavePrivada) return null;
+    try { return (await cripto.decifrarEntrada(chavePrivada, JSON.parse(salvo))).token || null; } catch { return null; }
+}
+
+async function cotacaoDe(ticker, token) {
+    const resposta = await fetch(`https://brapi.dev/api/quote/${encodeURIComponent(ticker)}`, {
+        headers: { Authorization: `Bearer ${token}` }, cache: 'no-store',
+    });
+    if (!resposta.ok) { const e = new Error(`HTTP ${resposta.status}`); e.status = resposta.status; throw e; }
+    const q = ((await resposta.json()).results || [])[0];
+    if (!q || typeof q.regularMarketPrice !== 'number') throw new Error('sem cotação');
+    return q;
+}
+
+async function buscarCotacoes() {
+    if (!aportesAcoes.length) { estadoCotacao = 'nada'; return mostrarAcoes(); }
+    const token = await tokenBrapiGuardado();
+    if (!token) { estadoCotacao = 'sem-token'; return mostrarAcoes(); }
+    estadoCotacao = 'buscando';
+    mostrarAcoes();
+    const tickers = [...new Set(aportesAcoes.map(a => tickerCotacao(a.ticker)))];
+    const respostas = await Promise.allSettled(tickers.map(t => cotacaoDe(t, token)));
+    const novas = {}, horas = [];
+    let recusado = false;
+    respostas.forEach((r, i) => {
+        if (r.status === 'fulfilled') {
+            novas[tickers[i]] = r.value.regularMarketPrice;
+            if (r.value.regularMarketTime) horas.push(new Date(r.value.regularMarketTime));
+        } else if ([401, 403].includes(r.reason && r.reason.status)) {
+            recusado = true;
+        }
+    });
+    cotacoes = novas;
+    horas.sort((a, b) => a - b);
+    horaCotacao = horas.find(h => !isNaN(h)) || null; // a mais antiga: vale para todas
+    const faltam = tickers.length - Object.keys(novas).length;
+    estadoCotacao = recusado ? 'token-recusado' : faltam === tickers.length ? 'erro' : faltam ? 'parcial' : 'ok';
+    mostrarAcoes();
+}
+
+function variacaoEl(lucro, pctLucro) {
+    const el = document.createElement('span');
+    el.className = 'variacao ' + (lucro >= 0 ? 'ganho' : 'perda');
+    el.textContent = `${lucro >= 0 ? '▲ +' : '▼ −'}${brl.format(Math.abs(lucro))} (${lucro >= 0 ? '+' : '−'}${pct(Math.abs(pctLucro))})`;
+    return el;
+}
+
+function botaoTokenBrapi(texto) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'botao secundario';
+    b.textContent = texto;
+    b.addEventListener('click', abrirJanelaBrapi);
+    return b;
+}
+
+function mostrarAcoes() {
+    const c = carteiraAcoes(aportesAcoes, cotacoes);
+    $('acoesAportado').textContent = aportesAcoes.length ? brl.format(c.investido) : '—';
+    $('acoesAtual').textContent = c.atual === null ? '—' : brl.format(c.atual);
+    if (c.atual === null) $('acoesLucro').replaceChildren();
+    else $('acoesLucro').replaceChildren(variacaoEl(c.lucro, c.lucroPct), ' sobre o aportado');
+
+    // linha da cotação: hora, ou o que falta para ter cotação
+    const linha = $('linhaCotacao'), texto = $('textoCotacao');
+    linha.hidden = !aportesAcoes.length;
+    linha.classList.toggle('erro', ['token-recusado', 'erro', 'parcial'].includes(estadoCotacao));
+    $('atualizarCotacoes').disabled = estadoCotacao === 'buscando';
+    const hora = horaCotacao
+        ? `Cotação de ${horaCotacao.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${horaCotacao.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}, atraso de ~30 min`
+        : 'Cotação sem horário informado';
+    const partes = {
+        'nada': [''],
+        'sem-token': ['Para ver o valor atual, configure as cotações. ', botaoTokenBrapi('Configurar cotações')],
+        'buscando': ['Buscando cotações…'],
+        'ok': [hora],
+        'parcial': [`${hora}. Sem cotação para alguma ação: o valor atual fica sem total. `],
+        'token-recusado': ['A brapi.dev recusou o token. ', botaoTokenBrapi('Trocar token')],
+        'erro': ['Não consegui buscar as cotações agora (sem internet ou limite da brapi.dev).'],
+    }[estadoCotacao];
+    texto.replaceChildren(...partes);
+
+    // tabela: uma linha por ação
+    const corpo = $('corpoAcoes');
+    if (!c.posicoes.length) {
+        const tr = document.createElement('tr'), td = document.createElement('td');
+        td.colSpan = 7;
+        td.className = 'vazio';
+        td.textContent = 'Nenhuma compra de ações registrada.';
+        tr.appendChild(td);
+        corpo.replaceChildren(tr);
+        return;
+    }
+    corpo.replaceChildren(...c.posicoes.map(p => {
+        const tr = document.createElement('tr');
+        const celula = (conteudo, classe) => {
+            const td = document.createElement('td');
+            if (classe) td.className = classe;
+            if (conteudo instanceof Node) td.appendChild(conteudo); else td.textContent = conteudo;
+            tr.appendChild(td);
+            return td;
+        };
+        celula(p.ticker, 'ticker');
+        celula(String(p.quantidade));
+        celula(brl.format(p.precoMedio));
+        celula(brl.format(p.investido));
+        celula(p.atual === null ? '—' : brl.format(p.atual), 'destaque');
+        if (p.lucro === null) celula('—');
+        else {
+            const td = celula('');
+            const valor = document.createElement('span');
+            valor.className = 'variacao ' + (p.lucro >= 0 ? 'ganho' : 'perda');
+            valor.textContent = `${p.lucro >= 0 ? '+' : '−'}${brl.format(Math.abs(p.lucro))}`;
+            const pctEl = document.createElement('span');
+            pctEl.className = 'pct-lucro variacao ' + (p.lucro >= 0 ? 'ganho' : 'perda');
+            pctEl.textContent = `${p.lucro >= 0 ? '+' : '−'}${pct(Math.abs(p.lucroPct))}`;
+            td.replaceChildren(valor, pctEl);
+        }
+        celula(p.parte === null ? '—' : pct(p.parte));
+        return tr;
+    }));
+}
+
+$('atualizarCotacoes').addEventListener('click', buscarCotacoes);
+
+function abrirJanelaBrapi() {
+    $('tokenBrapi').value = '';
+    $('mensagemBrapi').textContent = '';
+    $('mensagemBrapi').className = 'mensagem';
+    $('janelaBrapi').showModal();
+    $('tokenBrapi').focus();
+}
+$('cancelarBrapi').addEventListener('click', () => $('janelaBrapi').close());
+$('formBrapi').addEventListener('submit', async e => {
+    e.preventDefault();
+    const token = $('tokenBrapi').value.trim();
+    if (!token) return;
+    try {
+        const cifrado = await cripto.cifrarEntrada(keys.publicKeySpki, { token });
+        localStorage.setItem(CHAVE_BRAPI, JSON.stringify(cifrado));
+    } catch {
+        $('mensagemBrapi').className = 'mensagem erro';
+        $('mensagemBrapi').textContent = 'Não consegui guardar o token neste navegador.';
+        return;
+    }
+    $('tokenBrapi').value = '';
+    $('janelaBrapi').close();
+    buscarCotacoes();
 });
 
 $('botaoPrecos').addEventListener('click', () => $('janelaPrecos').showModal());

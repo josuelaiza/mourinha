@@ -4,6 +4,8 @@
 Uso:
     python add_aporte.py --data AAAA-MM-DD --valor 100.00 --taxa 0.0650      (Tesouro IPCA+ 2050)
     python add_aporte.py --tipo fii --data AAAA-MM-DD --cotas 10 --preco 9.80 (FII)
+    python add_aporte.py --tipo acao --data AAAA-MM-DD --ticker ABCD4F --quantidade 5 --valor 100.00
+                                                      (ação; --valor = total pago)
 
 Só precisa da chave pública (keys.json). O aporte em claro existe apenas na
 memória deste processo: não é gravado em arquivo nem impresso na tela.
@@ -13,6 +15,7 @@ Formato (o mesmo que a página decifra com a Web Crypto API):
       IPCA+: {"data", "valor", "taxa"}   (sem "tipo", como os primeiros aportes)
       FII:   {"tipo": "fii", "data", "cotas", "preco"} (+ "origem": "rendimento"
              quando a compra foi feita com rendimento do fundo)
+      Ação:  {"tipo": "acao", "data", "ticker", "quantidade", "valor"} (valor = total pago)
     o tipo vai dentro da parte cifrada: o repo não mostra qual investimento é;
   - a chave AES vai embrulhada com RSA-OAEP (SHA-256, MGF1-SHA-256, sem rótulo);
   - entrada: {"id", "wrappedKey", "iv", "ciphertext"}, tudo em base64
@@ -25,6 +28,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import secrets
 import sys
 import tempfile
@@ -80,6 +84,14 @@ def ler_cotas(texto: str) -> int:
     if cotas <= 0:
         raise argparse.ArgumentTypeError("as cotas precisam ser mais que zero")
     return cotas
+
+
+def ler_ticker(texto: str) -> str:
+    ticker = texto.strip().upper()
+    # 4 letras + 1 ou 2 dígitos, com F no fim quando é do mercado fracionário
+    if not re.fullmatch(r"[A-Z]{4}\d{1,2}F?", ticker):
+        raise argparse.ArgumentTypeError("ticker no formato da B3, ex.: ABCD4 ou ABCD4F")
+    return ticker
 
 
 def carregar_chave_publica(caminho: Path) -> rsa.RSAPublicKey:
@@ -143,19 +155,31 @@ def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Acrescenta um aporte cifrado ao data.json.")
-    p.add_argument("--tipo", choices=["ipca", "fii"], default="ipca", help="investimento (padrão: ipca)")
+    p.add_argument("--tipo", choices=["ipca", "fii", "acao"], default="ipca", help="investimento (padrão: ipca)")
     p.add_argument("--data", required=True, type=ler_data, help="data do aporte, AAAA-MM-DD")
-    p.add_argument("--valor", type=ler_valor, help="IPCA+: valor em reais, ex.: 100.50")
+    p.add_argument("--valor", type=ler_valor, help="IPCA+: valor em reais; ação: total pago. Ex.: 100.50")
     p.add_argument("--taxa", type=ler_taxa, help="IPCA+: taxa real em decimal, ex.: 0.0650")
     p.add_argument("--cotas", type=ler_cotas, help="FII: quantidade de cotas, ex.: 10")
     p.add_argument("--preco", type=ler_valor, help="FII: preço pago por cota, ex.: 9.80")
+    p.add_argument("--ticker", type=ler_ticker, help="ação: código na B3, ex.: ABCD4F")
+    p.add_argument("--quantidade", type=ler_cotas, help="ação: quantidade comprada, ex.: 5")
     p.add_argument("--origem", choices=["aporte", "rendimento"], default="aporte",
                    help="FII: aporte (seu dinheiro) ou rendimento (compra com rendimento do fundo)")
     p.add_argument("--keys", type=Path, default=PASTA / "keys.json", help="caminho do keys.json")
     p.add_argument("--arquivo", type=Path, default=PASTA / "data.json", help="caminho do data.json")
     p.add_argument("--config", type=Path, default=PASTA / "config.json", help="caminho do config.json (só para o aviso do IPCA)")
     args = p.parse_args()
-    if args.tipo == "ipca":
+    if args.tipo != "acao" and (args.ticker is not None or args.quantidade is not None):
+        p.error("--ticker e --quantidade só valem para ação")
+    if args.tipo == "acao":
+        if args.ticker is None or args.quantidade is None or args.valor is None \
+                or args.taxa is not None or args.cotas is not None or args.preco is not None:
+            p.error("ação usa --ticker, --quantidade e --valor (total pago)")
+        if args.origem != "aporte":
+            p.error("--origem só vale para FII")
+        payload = {"tipo": "acao", "data": args.data, "ticker": args.ticker,
+                   "quantidade": args.quantidade, "valor": args.valor}
+    elif args.tipo == "ipca":
         if args.valor is None or args.taxa is None or args.cotas is not None or args.preco is not None:
             p.error("IPCA+ usa --valor e --taxa (sem --cotas/--preco)")
         if args.origem != "aporte":

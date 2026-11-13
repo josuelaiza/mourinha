@@ -151,6 +151,48 @@ export function mediasMensais({ aportes, aportesFii = [], hoje }) {
     return { real: total / quantos, ultimoAno: totalAno / Math.min(12, quantos), meses: quantos };
 }
 
+// Ticker para consultar a cotação: o "F" do fim (mercado fracionário) é a mesma ação.
+export function tickerCotacao(ticker) {
+    return /^[A-Z]{4}\d{1,2}F$/.test(ticker) ? ticker.slice(0, -1) : ticker;
+}
+
+// Carteira de ações, separada do resto do patrimônio.
+// aportes: [{ ticker, quantidade, valor (total pago) }]; cotacoes: { TICKER_SEM_F: preço }.
+// Ações sem cotação ficam com atual/lucro null, e o total atual também (não dá para somar).
+// Parte de cada ação = atual ÷ total atual (null sem todas as cotações).
+export function carteiraAcoes(aportes, cotacoes = {}) {
+    const porTicker = new Map();
+    for (const a of aportes) {
+        const p = porTicker.get(a.ticker) || { ticker: a.ticker, quantidade: 0, investido: 0 };
+        p.quantidade += a.quantidade;
+        p.investido += a.valor;
+        porTicker.set(a.ticker, p);
+    }
+    const posicoes = [...porTicker.values()].map(p => {
+        const cotacao = cotacoes[tickerCotacao(p.ticker)];
+        const atual = typeof cotacao === 'number' ? p.quantidade * cotacao : null;
+        return {
+            ...p,
+            precoMedio: p.investido / p.quantidade,
+            cotacao: atual === null ? null : cotacao,
+            atual,
+            lucro: atual === null ? null : atual - p.investido,
+            lucroPct: atual === null ? null : (atual - p.investido) / p.investido,
+        };
+    });
+    const investido = posicoes.reduce((s, p) => s + p.investido, 0);
+    const completo = posicoes.length > 0 && posicoes.every(p => p.atual !== null);
+    const atual = completo ? posicoes.reduce((s, p) => s + p.atual, 0) : null;
+    for (const p of posicoes) p.parte = atual ? p.atual / atual : null;
+    return {
+        posicoes,
+        investido,
+        atual,
+        lucro: atual === null ? null : atual - investido,
+        lucroPct: atual === null || !investido ? null : (atual - investido) / investido,
+    };
+}
+
 // Divisor que leva R$ da data `fim` para R$ da data `base`, pela inflação projetada
 export function deflator(inflacao, base, fim) {
     return Math.pow(1 + inflacao, Math.max(0, diasEntre(base, fim)) / DIAS_POR_ANO);

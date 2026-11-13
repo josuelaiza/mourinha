@@ -408,3 +408,39 @@ test('aporte: compra a de menor peso que cabe, uma por vez, até não caber nenh
     assert.deepEqual(comprasComAporte(itens, -5).q, [10, 5, 2]);
     perto(comprasComAporte(itens, 0).sobra, 0);
 });
+
+test('ações: venda tira custo pelo preço médio; líquido do bolso e lucro realizado', () => {
+    // exemplo da conversa: 10 a R$ 10, 10 a R$ 14 (preço médio 12), vende 5 a R$ 15
+    const aportes = [
+        { data: '2031-01-10', ticker: 'AAAA4F', quantidade: 10, valor: 100 },
+        { data: '2031-02-10', ticker: 'AAAA4F', quantidade: 10, valor: 140 },
+        { data: '2031-03-10', ticker: 'AAAA4F', quantidade: 5, valor: 75, operacao: 'venda' },
+    ];
+    const c = carteiraAcoes(aportes, { AAAA4: 16 });
+    const a = c.posicoes[0];
+    assert.equal(a.quantidade, 15);
+    perto(a.precoMedio, 12);
+    perto(c.investido, 180);
+    perto(c.liquido, 165);
+    perto(c.lucroRealizado, 15);
+    perto(c.atual, 240);
+    perto(c.lucro, 60); // não realizado: 240 − 180
+
+    // ordem por data, mesmo vindo embaralhado; venda com prejuízo
+    const prejuizo = carteiraAcoes([aportes[1], { ...aportes[2], valor: 40 }, aportes[0]]);
+    perto(prejuizo.lucroRealizado, -20);
+    perto(prejuizo.liquido, 200);
+    perto(prejuizo.investido, 180);
+
+    // compra com dividendos: entra no custo e na quantidade, não no bolso; venda total sai da lista
+    const c2 = carteiraAcoes([
+        { data: '2031-01-10', ticker: 'BBBB3', quantidade: 2, valor: 20 },
+        { data: '2031-01-20', ticker: 'BBBB3', quantidade: 1, valor: 11, origem: 'rendimento' },
+        { data: '2031-01-10', ticker: 'CCCC3', quantidade: 3, valor: 30 },
+        { data: '2031-02-10', ticker: 'CCCC3', quantidade: 3, valor: 36, operacao: 'venda' },
+    ]);
+    assert.deepEqual(c2.posicoes.map(p => p.ticker), ['BBBB3']);
+    perto(c2.investido, 31);
+    perto(c2.liquido, 20 + 30 - 36);
+    perto(c2.lucroRealizado, 6);
+});

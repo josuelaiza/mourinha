@@ -1,13 +1,19 @@
 # Traz os aportes novos do Notion para ferramentas/ipca2050/data.json, já cifrados.
 # Roda todo dia às 22h de Manaus (02h UTC) e pelo botão "Sincronizar" do site
-# (workflow_dispatch). Os registros desta execução são públicos: o script só
-# imprime contagens, nunca valores.
+# (workflow_dispatch). Com "profunda" = true (item "Sincronização profunda" do
+# site), apaga as entradas e refaz tudo a partir do Notion. Os registros desta
+# execução são públicos: o script só imprime contagens, nunca valores.
 name: Sincronizar aportes do Notion
 
 on:
   schedule:
     - cron: "0 2 * * *"
   workflow_dispatch:
+    inputs:
+      profunda:
+        description: "Refazer tudo a partir do Notion (sincronização profunda)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write   # gravar o data.json
@@ -35,7 +41,8 @@ jobs:
         id: sync
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python ferramentas/ipca2050/tools/sincronizar_notion.py
+          PROFUNDA: ${{ inputs.profunda && '--profunda' || '' }}
+        run: python ferramentas/ipca2050/tools/sincronizar_notion.py $PROFUNDA
 
       - name: Gravar no repositório
         if: steps.sync.outputs.novos != '0'
@@ -43,6 +50,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ferramentas/ipca2050/data.json
+          git diff --cached --quiet && exit 0
           git commit -m "chore: novo aporte patrimonio"
           git push
 

@@ -30,6 +30,6 @@
   "sincronizacao": {
     "repo": "josuelaiza/mourinha",
     "workflow": "sincronizar-aportes.yml",
-    "notion": { "ipca": "71e2e703068840b6ae46d92fa4b038cd", "fii": "aaead848b3bc4b36a62249537f0abee5" }
+    "notion": { "ipca": "71e2e703068840b6ae46d92fa4b038cd", "fii": "aaead848b3bc4b36a62249537f0abee5", "acoes": "ef51931456204238af7984cecae529fc" }
   }
 }

@@ -221,3 +221,68 @@ test('add_aporte: --origem rendimento só para FII', async () => {
         rmSync(pasta, { recursive: true, force: true });
     }
 });
+
+const sel = nome => ({ select: nome ? { name: nome } : null });
+const paginaAcao = (id, data, ticker, operacao, qtd, valor, origem) => ({
+    id, properties: { Data: titulo(data), Ticker: sel(ticker), 'Operação': sel(operacao), Quantidade: num(qtd), 'Valor total': num(valor), Origem: sel(origem) },
+});
+
+test('sincronização de ações e profunda: compra, venda, origem e reconstrução a partir do Notion', async () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
+    try {
+        const keys = await gerarChaves(SENHA_FICTICIA);
+        const arq = n => join(pasta, n);
+        writeFileSync(arq('keys.json'), JSON.stringify(keys));
+        writeFileSync(arq('config.json'), JSON.stringify({ sincronizacao: { notion: { ipca: 'x', fii: 'y', acoes: 'z' } } }));
+        writeFileSync(arq('data.json'), JSON.stringify({ version: 1, entries: [] }));
+        const paginas = {
+            ipca: [paginaIpca('11111111-1111-4111-8111-111111111111', '15/02/2031', 100, 0.06)],
+            fii: [],
+            acoes: [
+                paginaAcao('a1111111-1111-4111-8111-111111111111', '10/03/2031', 'abcd4f', 'Compra', 10, 123.45, null),
+                paginaAcao('a2222222-2222-4222-8222-222222222222', '11/03/2031', 'ABCD4F', 'Venda', 4, 60.5, 'Rendimento'), // origem não vale na venda
+                paginaAcao('a3333333-3333-4333-8333-333333333333', '12/03/2031', 'EFGH3', 'Compra', 2, 50, 'Rendimento'),
+                paginaAcao('a4444444-4444-4444-8444-444444444444', '12/03/2031', 'EFGH3', '', 2, 50, null), // sem operação
+            ],
+        };
+        const gravar = () => writeFileSync(arq('paginas.json'), JSON.stringify(paginas));
+        const rodar = (...extra) => execFileSync(PYTHON, [SINCRONIZAR, '--keys', arq('keys.json'), '--arquivo', arq('data.json'), '--config', arq('config.json'), '--paginas', arq('paginas.json'), ...extra], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+        gravar();
+        assert.match(rodar(), /^4 aporte\(s\) novo\(s\).*1 linha\(s\) ignorada\(s\)/);
+        const dados = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
+        assert.ok(!/ABCD|EFGH|venda|acao|123\.45/i.test(JSON.stringify(dados)), 'ação em claro no data.json');
+        const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[1]), { tipo: 'acao', data: '2031-03-10', ticker: 'ABCD4F', quantidade: 10, valor: 123.45 });
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[2]), { tipo: 'acao', data: '2031-03-11', ticker: 'ABCD4F', quantidade: 4, valor: 60.5, operacao: 'venda' });
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[3]), { tipo: 'acao', data: '2031-03-12', ticker: 'EFGH3', quantidade: 2, valor: 50, origem: 'rendimento' });
+
+        // profunda com linha incompleta: cancela sem gravar
+        assert.throws(() => rodar('--profunda'), /linha\(s\) com dados incompletos/);
+        assert.equal(JSON.parse(readFileSync(arq('data.json'), 'utf8')).entries.length, 4);
+
+        // corrige a linha, apaga a venda e edita a compra no "Notion": a profunda refaz tudo
+        paginas.acoes = [
+            paginaAcao('a1111111-1111-4111-8111-111111111111', '10/03/2031', 'ABCD4F', 'Compra', 8, 100, null),
+            paginaAcao('a4444444-4444-4444-8444-444444444444', '12/03/2031', 'EFGH3', 'Compra', 2, 50, null),
+        ];
+        gravar();
+        assert.match(rodar('--profunda'), /Profunda: 4 entrada\(s\) apagada\(s\) e 3 refeita\(s\)/);
+        const refeito = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
+        assert.equal(refeito.entries.length, 3);
+        assert.equal(refeito.importados.length, 3);
+        assert.deepEqual(await decifrarEntrada(chave, refeito.entries[1]), { tipo: 'acao', data: '2031-03-10', ticker: 'ABCD4F', quantidade: 8, valor: 100 });
+        // e a normal seguinte não duplica nada
+        assert.match(rodar(), /^0 aporte\(s\) novo\(s\)/);
+
+        // banco de ações vazio é válido (apagou as de teste); todos vazios, não
+        paginas.acoes = [];
+        gravar();
+        assert.match(rodar('--profunda'), /3 entrada\(s\) apagada\(s\) e 1 refeita\(s\)/);
+        paginas.ipca = [];
+        gravar();
+        assert.throws(() => rodar('--profunda'), /todos os bancos vieram vazios/);
+        assert.equal(JSON.parse(readFileSync(arq('data.json'), 'utf8')).entries.length, 1);
+    } finally {
+        rmSync(pasta, { recursive: true, force: true });
+    }
+});

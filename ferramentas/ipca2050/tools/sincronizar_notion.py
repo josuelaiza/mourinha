@@ -3,18 +3,26 @@
 
 Roda no GitHub Actions (todo dia e pelo botão "Sincronizar" do site):
     NOTION_TOKEN=... python sincronizar_notion.py
+    NOTION_TOKEN=... python sincronizar_notion.py --profunda   (refaz tudo)
 
-Lê os dois bancos do Notion listados em config.json ("sincronizacao"):
+Lê os bancos do Notion listados em config.json ("sincronizacao"):
   - Tesouro IPCA+: Data (título, dd/mm/aaaa), Valor (R$), Taxa fixa (decimal)
   - FII:           Data (título, dd/mm/aaaa), Cotas, Valor (R$ TOTAL pago) e
                    Origem (seleção: "Aporte" ou "Rendimento"; vazio = Aporte)
+  - Ações:         Data (título, dd/mm/aaaa), Ticker (seleção), Operação
+                   ("Compra" ou "Venda"), Quantidade e Valor total (positivos;
+                   a Operação dá o sentido) e Origem (só compra; vazio = Aporte)
 e cifra cada linha nova do mesmo jeito que o add_aporte.py (só com a chave
 pública). Para não importar a mesma linha duas vezes, o data.json guarda em
 "importados" o SHA-256 do id de cada página do Notion já trazida: não revela
 valor nenhum, e o id do Notion é aleatório, não dá para adivinhar.
 
-Só entram linhas novas: editar ou apagar uma linha no Notion depois de
-sincronizada não muda o data.json.
+Na sincronização normal só entram linhas novas: editar ou apagar uma linha
+no Notion depois de sincronizada não muda o data.json. A sincronização
+PROFUNDA (--profunda) apaga todas as entradas e refaz tudo a partir do que
+está no Notion agora. Por segurança ela não grava nada se algum banco der
+erro, se TODOS os bancos vierem vazios quando antes havia entradas, ou se alguma
+linha estiver incompleta (para um erro de digitação não apagar um aporte).
 
 A saída (que fica nos registros públicos do Actions) só mostra contagens,
 nunca valores. Linhas com dados faltando ou estranhos são puladas e contadas.
@@ -27,6 +35,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -123,7 +132,32 @@ def aporte_fii(props: dict) -> dict:
     return aporte
 
 
-LEITORES = {"ipca": aporte_ipca, "fii": aporte_fii}
+def _selecao(prop) -> str:
+    return (((prop or {}).get("select") or {}).get("name") or "").strip()
+
+
+def aporte_acao(props: dict) -> dict:
+    data = _data(props.get("Data"))
+    ticker = _selecao(props.get("Ticker")).upper()
+    if not re.fullmatch(r"[A-Z]{4}\d{1,2}F?", ticker):
+        raise LinhaInvalida("ticker fora do formato")
+    operacao = _selecao(props.get("Operação")).lower()
+    if operacao not in ("compra", "venda"):
+        raise LinhaInvalida("operação deve ser Compra ou Venda")
+    quantidade = _numero(props.get("Quantidade"))
+    valor = _numero(props.get("Valor total"))
+    if quantidade <= 0 or quantidade != int(quantidade) or not valor > 0:
+        raise LinhaInvalida("quantidade ou valor fora do esperado")
+    aporte = {"tipo": "acao", "data": data, "ticker": ticker, "quantidade": int(quantidade), "valor": valor}
+    if operacao == "venda":
+        aporte["operacao"] = "venda"
+    elif _selecao(props.get("Origem")).lower().startswith("rend"):
+        aporte["origem"] = "rendimento"  # compra com dividendos: conta no custo, não no bolso
+    return aporte
+
+
+# chave = nome do banco em config.json ("sincronizacao" → "notion")
+LEITORES = {"ipca": aporte_ipca, "fii": aporte_fii, "acoes": aporte_acao}
 
 
 def sincronizar(paginas_por_tipo: dict, dados: dict, chave) -> tuple[int, int]:
@@ -159,6 +193,7 @@ def main() -> None:
     p.add_argument("--arquivo", type=Path, default=PASTA / "data.json")
     p.add_argument("--config", type=Path, default=PASTA / "config.json")
     p.add_argument("--paginas", type=Path, help="só para testes: páginas do Notion num JSON local")
+    p.add_argument("--profunda", action="store_true", help="apaga as entradas e refaz tudo a partir do Notion")
     args = p.parse_args()
 
     cfg = json.loads(args.config.read_text(encoding="utf-8")).get("sincronizacao", {})
@@ -176,10 +211,26 @@ def main() -> None:
     if dados.get("version") != 1 or not isinstance(dados.get("entries"), list):
         raise SystemExit("data.json em formato inesperado (esperava version 1 e lista entries).")
 
-    novos, ignoradas = sincronizar(paginas, dados, chave)
-    if novos:
-        gravar_atomico(args.arquivo, dados)
-    print(f"{novos} aporte(s) novo(s) cifrado(s); {ignoradas} linha(s) ignorada(s) por dados incompletos.")
+    if args.profunda:
+        antes = len(dados["entries"])
+        vazios = [tipo for tipo, lista in paginas.items()
+                  if not [x for x in lista if not (x.get("archived") or x.get("in_trash"))]]
+        # banco sem acesso já para acima (HTTP 401/403/404); um banco vazio é válido
+        # (ex.: apagou as linhas de teste), mas todos vazios com entradas no data.json não
+        if antes and len(vazios) == len(paginas):
+            raise SystemExit("Profunda cancelada: todos os bancos vieram vazios e o data.json tem entradas. Nada foi gravado.")
+        refeito = {**dados, "entries": [], "importados": []}
+        novos, ignoradas = sincronizar(paginas, refeito, chave)
+        if ignoradas:
+            raise SystemExit(f"Profunda cancelada: {ignoradas} linha(s) com dados incompletos no Notion. Corrija e rode de novo. Nada foi gravado.")
+        gravar_atomico(args.arquivo, refeito)
+        print(f"Profunda: {antes} entrada(s) apagada(s) e {novos} refeita(s) a partir do Notion.")
+        novos = max(novos, 1)  # grava mesmo se a contagem não mudou (uma linha pode ter sido corrigida)
+    else:
+        novos, ignoradas = sincronizar(paginas, dados, chave)
+        if novos:
+            gravar_atomico(args.arquivo, dados)
+        print(f"{novos} aporte(s) novo(s) cifrado(s); {ignoradas} linha(s) ignorada(s) por dados incompletos.")
 
     saida = os.environ.get("GITHUB_OUTPUT")
     if saida:

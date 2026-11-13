@@ -157,18 +157,37 @@ export function tickerCotacao(ticker) {
 }
 
 // Carteira de ações, separada do resto do patrimônio.
-// aportes: [{ ticker, quantidade, valor (total pago) }]; cotacoes: { TICKER_SEM_F: preço }.
-// Ações sem cotação ficam com atual/lucro null, e o total atual também (não dá para somar).
-// Parte de cada ação = atual ÷ total atual (null sem todas as cotações).
+// aportes: [{ data, ticker, quantidade, valor, operacao?, origem? }], valores sempre
+// positivos; operacao "venda" subtrai. Processado em ordem de data (preço médio).
+// Regra da Receita (custo médio): a compra soma quantidade e custo; a venda tira
+// quantidade × preço médio do custo, sem mudar o preço médio, e o que passar disso
+// é lucro (ou prejuízo) realizado.
+//   investido = custo das ações que sobraram (o da declaração)
+//   liquido   = dinheiro do bolso: compras com origem Aporte − vendas
+// cotacoes: { TICKER_SEM_F: preço }. Sem cotação: atual/lucro null, e o total atual
+// também (não dá para somar). Ações vendidas por inteiro saem da lista.
 export function carteiraAcoes(aportes, cotacoes = {}) {
     const porTicker = new Map();
-    for (const a of aportes) {
-        const p = porTicker.get(a.ticker) || { ticker: a.ticker, quantidade: 0, investido: 0 };
-        p.quantidade += a.quantidade;
-        p.investido += a.valor;
+    let liquido = 0;
+    const ordenados = [...aportes].sort((x, y) => (x.data || '').localeCompare(y.data || ''));
+    for (const a of ordenados) {
+        const p = porTicker.get(a.ticker) || { ticker: a.ticker, quantidade: 0, investido: 0, lucroRealizado: 0 };
+        if (a.operacao === 'venda') {
+            const vendida = Math.min(a.quantidade, p.quantidade);
+            const custoBaixado = p.quantidade > 0 ? p.investido * (vendida / p.quantidade) : 0;
+            p.lucroRealizado += a.valor - custoBaixado;
+            p.quantidade -= vendida;
+            p.investido = p.quantidade > 0 ? p.investido - custoBaixado : 0;
+            liquido -= a.valor;
+        } else {
+            p.quantidade += a.quantidade;
+            p.investido += a.valor;
+            if (a.origem !== 'rendimento') liquido += a.valor;
+        }
         porTicker.set(a.ticker, p);
     }
-    const posicoes = [...porTicker.values()].map(p => {
+    const todas = [...porTicker.values()];
+    const posicoes = todas.filter(p => p.quantidade > 0).map(p => {
         const cotacao = cotacoes[tickerCotacao(p.ticker)];
         const atual = typeof cotacao === 'number' ? p.quantidade * cotacao : null;
         return {
@@ -187,6 +206,8 @@ export function carteiraAcoes(aportes, cotacoes = {}) {
     return {
         posicoes,
         investido,
+        liquido,
+        lucroRealizado: todas.reduce((s, p) => s + p.lucroRealizado, 0),
         atual,
         lucro: atual === null ? null : atual - investido,
         lucroPct: atual === null || !investido ? null : (atual - investido) / investido,

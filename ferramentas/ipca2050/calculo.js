@@ -127,18 +127,21 @@ export function primeiraData(...listas) {
     return menor;
 }
 
-// Média mensal do dinheiro aportado (IPCA+ e compras de FII com origem Aporte;
-// compras com rendimento do fundo não contam, como no total aportado).
+// Média mensal do dinheiro aportado (IPCA+, compras de FII com origem Aporte e
+// ações: compra soma, venda desconta no mês dela; compras com rendimento do fundo
+// ou com dividendos não contam, como no total aportado).
 //   real:      total ÷ meses do mês do primeiro aporte até o mês atual, contando os dois
 //              e também os meses sem aporte
 //   ultimoAno: o mesmo, só com o mês atual e os 11 anteriores (ou menos meses,
 //              se o primeiro aporte foi há menos de 12 meses)
 // Sem aportes: null.
-export function mediasMensais({ aportes, aportesFii = [], hoje }) {
+export function mediasMensais({ aportes, aportesFii = [], aportesAcoes = [], hoje }) {
     const mes = data => { const [a, m] = data.split('-').map(Number); return a * 12 + (m - 1); };
     const lista = [
         ...aportes.map(a => ({ data: a.data, valor: a.valor })),
         ...aportesFii.filter(a => a.origem !== 'rendimento').map(a => ({ data: a.data, valor: a.cotas * a.preco })),
+        ...aportesAcoes.filter(a => a.operacao === 'venda' || a.origem !== 'rendimento')
+            .map(a => ({ data: a.data, valor: a.operacao === 'venda' ? -a.valor : a.valor })),
     ];
     if (!lista.length) return null;
     const meses = lista.map(a => mes(a.data));

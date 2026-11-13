@@ -328,6 +328,19 @@ test('médias mensais de aporte: desde o primeiro aporte e último ano', () => {
     perto(longo.ultimoAno, 1200 / 12);
 
     assert.equal(mediasMensais({ aportes: [], aportesFii: [], hoje: '2030-01-01' }), null);
+
+    // ações: compra soma, venda desconta, compra com dividendos não conta
+    const comAcoes = mediasMensais({
+        aportes: [{ data: '2030-01-05', valor: 1000, taxa: 0.07 }],
+        aportesAcoes: [
+            { data: '2030-02-10', ticker: 'AAAA3', quantidade: 10, valor: 900 },
+            { data: '2030-02-20', ticker: 'AAAA3', quantidade: 1, valor: 95, origem: 'rendimento' },
+            { data: '2030-03-10', ticker: 'AAAA3', quantidade: 2, valor: 300, operacao: 'venda' },
+        ],
+        hoje: '2030-03-25',
+    });
+    perto(comAcoes.real, (1000 + 900 - 300) / 3);
+    assert.equal(comAcoes.meses, 3);
 });
 
 test('ações: ticker fracionário consulta a cotação sem o F', () => {

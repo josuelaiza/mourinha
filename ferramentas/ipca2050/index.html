@@ -220,7 +220,7 @@
         .lista-composicao .sub { grid-column: 2; font-size: 0.72rem; color: var(--texto-3); }
         .lista-composicao .numero { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
         .lista-composicao .parte { grid-column: 3; text-align: right; font-size: 0.72rem; color: var(--texto-3); font-variant-numeric: tabular-nums; }
-        :root { --cor-ipca: #3987e5; --cor-fii: #199e70; }
+        :root { --cor-ipca: #3987e5; --cor-fii: #199e70; --cor-acoes: #d95f02; }
 
         /* Preços de referência */
         .precos-sub { font-size: 0.72rem; color: var(--texto-3); margin: -4px 0 8px; }
@@ -753,24 +753,25 @@
             </details>
         </section>
 
-        <!-- Ações: carteira à parte, não entra no panorama nem no total aportado -->
+        <!-- Ações: entra no Hoje do Panorama (aportado e patrimônio), não na Projeção -->
         <section id="painelAcoes" role="tabpanel" aria-labelledby="abaAcoes" hidden>
             <div class="cartao">
                 <div class="hoje">
                     <div class="metrica">
                         <div class="rotulo-metrica">Aportado em ações <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaAcoesAportado" aria-label="O que é o aportado em ações">?</button><span class="ajuda" id="ajudaAcoesAportado" hidden><ul>
-                            <li><strong>Aportado:</strong> o custo das ações que você tem hoje (quantidade × preço médio). É o valor que vai em Bens e Direitos na declaração. Uma venda tira do custo a quantidade vendida × o preço médio, sem mudar o preço médio.</li>
-                            <li><strong>Dinheiro líquido:</strong> o que saiu do seu bolso e continua em ações: compras − vendas. Compras feitas com dividendos (Origem = Rendimento) não entram. A diferença para o aportado é o lucro ou prejuízo das vendas.</li>
-                            <li>Fica à parte: não entra no Panorama nem no Total aportado.</li>
+                            <li><strong>Aportado:</strong> o que saiu do seu bolso e continua em ações: compras − vendas. Compras feitas com dividendos (Origem = Rendimento) não entram.</li>
+                            <li><strong>Custo na declaração:</strong> o custo das ações que você tem hoje (quantidade × preço médio). É o valor que vai em Bens e Direitos. Uma venda tira do custo a quantidade vendida × o preço médio, sem mudar o preço médio. A diferença para o aportado vem do lucro ou prejuízo das vendas.</li>
+                            <li>No Panorama, o Aportado entra no Total aportado e o Valor atual entra no Patrimônio hoje. As ações não entram na Projeção, porque o site não prevê cotação.</li>
                         </ul></span></span></div>
                         <div class="valor" id="acoesAportado">—</div>
+                        <div class="detalhe" id="acoesParte"></div>
                         <div class="detalhe" id="acoesLiquido"></div>
                     </div>
                     <div class="metrica">
                         <div class="rotulo-metrica">Valor atual <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaAcoesAtual" aria-label="O que é o valor atual">?</button><span class="ajuda" id="ajudaAcoesAtual" hidden><ul>
                             <li>Quantidade de cada ação × a cotação mais recente, somados.</li>
                             <li>A cotação vem da brapi.dev, com atraso de uns 30 minutos. Ela só é buscada ao abrir a página ou ao tocar no botão de atualizar.</li>
-                            <li>Embaixo: o lucro ou prejuízo sobre o aportado. Não desconta IR nem custos de uma venda.</li>
+                            <li>Embaixo: o lucro ou prejuízo das ações que você tem, sobre o custo na declaração. Não desconta IR nem custos de uma venda.</li>
                             <li><strong>Lucro das vendas:</strong> soma do lucro (ou prejuízo) de todas as vendas, pelo preço médio.</li>
                             <li><strong>Proventos:</strong> soma dos dividendos e JCP recebidos (valor líquido).</li>
                         </ul></span></span></div>
@@ -803,7 +804,7 @@
                             <th scope="col">Preço médio</th>
                             <th scope="col">Cotação</th>
                             <th scope="col">Qtd.</th>
-                            <th scope="col">Aportado</th>
+                            <th scope="col">Custo na declaração</th>
                             <th scope="col">Atual</th>
                             <th scope="col">Resultado</th>
                             <th scope="col">% do total</th>
@@ -843,7 +844,7 @@
                     <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaResultado" aria-label="Como é o resultado por ação">?</button><div class="ajuda" id="ajudaResultado" hidden><ul>
                         <li><strong>Lucro das vendas:</strong> o que cada venda deu acima (ou abaixo) do custo das ações vendidas, pelo preço médio.</li>
                         <li><strong>Proventos:</strong> dividendos e JCP recebidos (valor líquido).</li>
-                        <li><strong>Resultado total</strong> = lucro das vendas + proventos + (valor atual − aportado). É quanto a ação já te deu, somando o que você realizou e o que ainda está na carteira.</li>
+                        <li><strong>Resultado total</strong> = lucro das vendas + proventos + (valor atual − custo na declaração). É quanto a ação já te deu, somando o que você realizou e o que ainda está na carteira.</li>
                         <li>Ações vendidas por inteiro continuam aqui, com o que deram.</li>
                     </ul></div></div>
                 </div>
@@ -937,8 +938,8 @@
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
 import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
     analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte,
-    resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao } from './calculo.js?v=13';
-import * as cripto from './cripto.js?v=13';
+    resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao } from './calculo.js?v=14';
+import * as cripto from './cripto.js?v=14';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
@@ -964,6 +965,7 @@ let config = null, keys = null, dados = null, precos = null;
 let chavePrivada = null, aportes = [], aportesFii = [], aportesAcoes = [], proventosAcoes = [], ultimoResultado = null;
 // ações: cotações da última busca (por ticker sem o F) e estado da busca
 let cotacoes = {}, horaCotacao = null;
+let ultimoPanorama = null; // o que o Hoje do Panorama precisa do IPCA+ e do FII
 let estadoCotacao = 'nada'; // nada | sem-token | buscando | ok | parcial | token-recusado | erro
 
 // ------------------------------------------------------------------ //
@@ -1157,6 +1159,7 @@ $('botaoEsquecer').addEventListener('click', async () => {
     modoTeste = null;
     $('modoTeste').hidden = true;
     ultimoResultado = null;
+    ultimoPanorama = null;
     $('svgGrafico').replaceChildren();
     $('mensagemSenha').className = 'mensagem';
     $('mensagemSenha').textContent = 'Chave apagada deste dispositivo.';
@@ -1621,17 +1624,18 @@ function botaoTokenBrapi(texto) {
 
 function mostrarAcoes() {
     const c = carteiraAcoes(aportesAcoes, cotacoes);
-    $('acoesAportado').textContent = aportesAcoes.length ? brl.format(c.investido) : '—';
-    $('acoesLiquido').textContent = aportesAcoes.length ? `Dinheiro líquido: ${brl.format(c.liquido)}` : '';
+    $('acoesAportado').textContent = aportesAcoes.length ? brl.format(c.liquido) : '—';
+    $('acoesLiquido').textContent = aportesAcoes.length ? `Custo na declaração: ${brl.format(c.investido)}` : '';
     $('acoesAtual').textContent = c.atual === null ? '—' : brl.format(c.atual);
     if (c.atual === null) $('acoesLucro').replaceChildren();
-    else $('acoesLucro').replaceChildren(variacaoEl(c.lucro, c.lucroPct), ' sobre o aportado');
+    else $('acoesLucro').replaceChildren(variacaoEl(c.lucro, c.lucroPct), ' sobre o custo');
     const res = resultadoPorAcao(aportesAcoes, proventosAcoes, cotacoes);
     const temAcoes = aportesAcoes.length > 0 || proventosAcoes.length > 0;
     $('acoesVendas').textContent = temAcoes ? `Lucro das vendas: ${brl.format(res.lucroVendas)}` : '';
     $('acoesProventos').textContent = temAcoes ? `Proventos: ${brl.format(res.proventos)}` : '';
     mostrarResultadoPorAcao(res, temAcoes);
     mostrarDeclaracao(temAcoes);
+    mostrarHoje();
 
     // linha da cotação: hora, ou o que falta para ter cotação
     const linha = $('linhaCotacao'), texto = $('textoCotacao');
@@ -2191,6 +2195,55 @@ function mostrarMeses(rf) {
     $('corpoMeses').replaceChildren(...linhas);
 }
 
+// Hoje do Panorama: IPCA+, FII e ações. Roda de novo quando chega a cotação das ações.
+function mostrarHoje() {
+    if (!ultimoPanorama) return;
+    const { ipcaAportado, fiiAportado, ipcaHoje, fiiHoje, nomeFii, hoje } = ultimoPanorama;
+    const ca = carteiraAcoes(aportesAcoes, cotacoes);
+    const acoesAportado = aportesAcoes.length ? ca.liquido : 0;
+    const acoesHoje = ca.posicoes.length ? ca.atual : 0; // null: falta cotação
+    const totalAportado = ipcaAportado + fiiAportado + acoesAportado;
+    $('panAportado').textContent = brl.format(totalAportado);
+    $('acoesParte').textContent = aportesAcoes.length && totalAportado > 0 ? `${pct(acoesAportado / totalAportado)} do total aportado` : '';
+    const medias = mediasMensais({ aportes, aportesFii, aportesAcoes, hoje });
+    $('panMedias').hidden = !medias;
+    if (medias) {
+        $('panMediaReal').textContent = brl.format(medias.real);
+        $('panMediaAno').textContent = brl.format(medias.ultimoAno);
+    }
+    if (acoesHoje === null) {
+        $('panHoje').textContent = '—';
+        $('panHojeDetalhe').replaceChildren();
+    } else {
+        const patrimonioHoje = ipcaHoje + fiiHoje + acoesHoje;
+        $('panHoje').textContent = brl.format(patrimonioHoje);
+        const variacao = patrimonioHoje - totalAportado;
+        const sinal = document.createElement('span');
+        sinal.className = 'variacao ' + (variacao >= 0 ? 'ganho' : 'perda');
+        sinal.textContent = `${variacao >= 0 ? '▲ +' : '▼ −'}${brl.format(Math.abs(variacao))}`
+            + (totalAportado > 0 ? ` (${variacao >= 0 ? '+' : '−'}${pct(Math.abs(variacao) / totalAportado)})` : '');
+        $('panHojeDetalhe').replaceChildren(sinal, ' sobre o aportado');
+    }
+    preencherDivisao('ajudaAportado', [
+        { nome: 'Tesouro IPCA+ 2050', valor: ipcaAportado, cor: 'var(--cor-ipca)' },
+        { nome: nomeFii, valor: fiiAportado, cor: 'var(--cor-fii)' },
+        { nome: 'Ações', valor: acoesAportado, cor: 'var(--cor-acoes)' },
+    ]);
+    preencherAjuda('ajudaAportado', [
+        `Soma do dinheiro que saiu do seu bolso: os aportes do Tesouro IPCA+, as compras de cotas do ${nomeFii} com origem Aporte e o Aportado das ações (compras − vendas).`,
+        `Compras feitas com rendimento do fundo ou com dividendos (Origem = Rendimento no Notion) não entram aqui: elas contam só nas cotas ou nas ações.`,
+        `MM Real (média mensal): o total aportado dividido pelos meses desde o primeiro aporte até este mês${medias ? ` (${medias.meses} ${medias.meses === 1 ? 'mês' : 'meses'})` : ''}. Mês sem aporte também conta, então mostra quanto você aporta de verdade por mês. Venda de ações desconta no mês dela. "Real" aqui é "de verdade", não é corrigido pela inflação.`,
+        `MM Último Ano: a mesma conta, só com este mês e os 11 anteriores. Mostra o seu ritmo recente. Enquanto o primeiro aporte não fizer 12 meses, é igual à MM Real.`,
+    ]);
+    preencherAjuda('ajudaHoje', [
+        `Estimativa do que você receberia resgatando tudo hoje.`,
+        `Tesouro IPCA+: valor pela taxa contratada e pela inflação projetada, já líquido (sem IR e sem custódia).`,
+        `${nomeFii}: cotas na carteira × preço da última compra.`,
+        `Ações: quantidade × cotação mais recente (brapi.dev), sem descontar IR nem custos de venda. Enquanto falta a cotação de alguma ação, o Patrimônio fica em —.`,
+        `O Tesouro e o ${nomeFii} não usam cotação de mercado: o título do Tesouro é marcado a mercado todo dia, e a página não tem esse preço.`,
+    ]);
+}
+
 function recalcular() {
     const aporteMensal = Number($('aporteMensal').value) || 0;
     const hoje = hojeLocal();
@@ -2236,24 +2289,8 @@ function recalcular() {
     const ipcaHoje = r.serie[0].existentesLiquido;
     const fiiHoje = rf ? rf.patrimonioHoje : 0;
     const nomeFii = (config.fii || {}).nome || 'FII';
-    const fiiAportado = rf ? rf.investido : 0;
-    const totalAportado = r.totalAportado + fiiAportado;
-    const patrimonioHoje = ipcaHoje + fiiHoje;
-    // Hoje
-    $('panAportado').textContent = brl.format(totalAportado);
-    const medias = mediasMensais({ aportes, aportesFii, hoje });
-    $('panMedias').hidden = !medias;
-    if (medias) {
-        $('panMediaReal').textContent = brl.format(medias.real);
-        $('panMediaAno').textContent = brl.format(medias.ultimoAno);
-    }
-    $('panHoje').textContent = brl.format(patrimonioHoje);
-    const variacao = patrimonioHoje - totalAportado;
-    const sinal = document.createElement('span');
-    sinal.className = 'variacao ' + (variacao >= 0 ? 'ganho' : 'perda');
-    sinal.textContent = `${variacao >= 0 ? '▲ +' : '▼ −'}${brl.format(Math.abs(variacao))}`
-        + (totalAportado > 0 ? ` (${variacao >= 0 ? '+' : '−'}${pct(Math.abs(variacao) / totalAportado)})` : '');
-    $('panHojeDetalhe').replaceChildren(sinal, ' sobre o aportado');
+    ultimoPanorama = { ipcaAportado: r.totalAportado, fiiAportado: rf ? rf.investido : 0, ipcaHoje, fiiHoje, nomeFii, hoje };
+    mostrarHoje();
     // Projeção
     $('dataUltima').setAttribute('aria-pressed', String(dataFinal === config.vencimento));
     $('rotuloPanNominal').textContent = `Total nominal em ${dataBr(dataFinal)}`;
@@ -2301,30 +2338,15 @@ function recalcular() {
         `Renda gastável = só a parte do ganho real. Gastando só ela, o patrimônio mantém o poder de compra; gastando a renda total, ele encolhe em valor real. Se o rendimento não cobre a inflação, a renda gastável é zero.`,
         `Real = em R$ de ${mesBase}, data do primeiro aporte entre todos os investimentos.`,
     ]);
-    preencherDivisao('ajudaAportado', [
-        { nome: 'Tesouro IPCA+ 2050', valor: r.totalAportado, cor: 'var(--cor-ipca)' },
-        { nome: nomeFii, valor: fiiAportado, cor: 'var(--cor-fii)' },
-    ]);
-    preencherAjuda('ajudaAportado', [
-        `Soma do dinheiro que saiu do seu bolso: os aportes do Tesouro IPCA+ e as compras de cotas do ${nomeFii} com origem Aporte.`,
-        `Compras de cotas feitas com rendimento do fundo (Origem = Rendimento no Notion) não entram aqui: elas contam só nas cotas.`,
-        `MM Real (média mensal): o total aportado dividido pelos meses desde o primeiro aporte até este mês${medias ? ` (${medias.meses} ${medias.meses === 1 ? 'mês' : 'meses'})` : ''}. Mês sem aporte também conta, então mostra quanto você aporta de verdade por mês. "Real" aqui é "de verdade", não é corrigido pela inflação.`,
-        `MM Último Ano: a mesma conta, só com este mês e os 11 anteriores. Mostra o seu ritmo recente. Enquanto o primeiro aporte não fizer 12 meses, é igual à MM Real.`,
-    ]);
-    preencherAjuda('ajudaHoje', [
-        `Estimativa do que você receberia resgatando tudo hoje.`,
-        `Tesouro IPCA+: valor pela taxa contratada e pela inflação projetada, já líquido (sem IR e sem custódia).`,
-        `${nomeFii}: cotas na carteira × preço da última compra.`,
-        `Não é cotação de mercado: o título do Tesouro é marcado a mercado todo dia, e a página não tem esse preço.`,
-    ]);
     preencherAjuda('ajudaNominal', [
         `Soma, na data escolhida, do Tesouro IPCA+ e do ${nomeFii}, em reais daquela data (sem descontar a inflação).`,
         `É líquido: o IPCA+ já sai sem IR e sem custódia; o ${nomeFii} não paga IR sobre o rendimento.`,
         `A data vai de hoje até 15/08/2050, o vencimento do IPCA+. "Última data" pula direto para ela. Essa data também é a data final do ${nomeFii}.`,
+        `As ações não entram na Projeção: o site não prevê cotação.`,
     ]);
     preencherAjuda('ajudaReal', [
         `O total nominal trazido para o poder de compra de ${mesBase} (data do primeiro aporte), pela inflação projetada de ${pct(r.inflacao)} a.a.`,
-        `É o número para comparar com o total aportado: mostra quanto o dinheiro cresceu de verdade, descontada a inflação.`,
+        `Para comparar com o que você aportou no Tesouro IPCA+ e no ${nomeFii}: mostra quanto esse dinheiro cresceu de verdade, descontada a inflação. As ações não entram aqui.`,
     ]);
     preencherAjuda('ajudaCompIpca', [
         `Valor líquido se você resgatasse o título na data: taxa contratada + inflação projetada, menos custódia B3 de ${pct(config.custodiaAnual)} a.a. e IR regressivo (22,5% a 15%, conforme o prazo).`,

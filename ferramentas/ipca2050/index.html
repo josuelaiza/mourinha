@@ -732,8 +732,9 @@
                     <thead>
                         <tr>
                             <th scope="col">Ação</th>
-                            <th scope="col">Qtd.</th>
                             <th scope="col">Preço médio</th>
+                            <th scope="col">Cotação</th>
+                            <th scope="col">Qtd.</th>
                             <th scope="col">Aportado</th>
                             <th scope="col">Atual</th>
                             <th scope="col">Resultado</th>
@@ -1406,10 +1407,17 @@ async function tokenBrapiGuardado() {
     try { return (await cripto.decifrarEntrada(chavePrivada, JSON.parse(salvo))).token || null; } catch { return null; }
 }
 
-async function cotacaoDe(ticker, token) {
+// O plano grátis da brapi aceita UMA consulta por vez (x-brapi-concurrency-limit: 1):
+// as ações são buscadas em fila, e uma consulta barrada (429) espera e tenta de novo.
+async function cotacaoDe(ticker, token, tentativa = 1) {
     const resposta = await fetch(`https://brapi.dev/api/quote/${encodeURIComponent(ticker)}`, {
         headers: { Authorization: `Bearer ${token}` }, cache: 'no-store',
     });
+    if (resposta.status === 429 && tentativa < 3) {
+        const espera = Math.min(5, Number(resposta.headers.get('Retry-After')) || 1) * 1000;
+        await new Promise(r => setTimeout(r, espera));
+        return cotacaoDe(ticker, token, tentativa + 1);
+    }
     if (!resposta.ok) { const e = new Error(`HTTP ${resposta.status}`); e.status = resposta.status; throw e; }
     const q = ((await resposta.json()).results || [])[0];
     if (!q || typeof q.regularMarketPrice !== 'number') throw new Error('sem cotação');
@@ -1423,7 +1431,11 @@ async function buscarCotacoes() {
     estadoCotacao = 'buscando';
     mostrarAcoes();
     const tickers = [...new Set(aportesAcoes.map(a => tickerCotacao(a.ticker)))];
-    const respostas = await Promise.allSettled(tickers.map(t => cotacaoDe(t, token)));
+    const respostas = [];
+    for (const t of tickers) {
+        try { respostas.push({ status: 'fulfilled', value: await cotacaoDe(t, token) }); }
+        catch (motivo) { respostas.push({ status: 'rejected', reason: motivo }); }
+    }
     const novas = {}, horas = [];
     let recusado = false;
     respostas.forEach((r, i) => {
@@ -1488,7 +1500,7 @@ function mostrarAcoes() {
     const corpo = $('corpoAcoes');
     if (!c.posicoes.length) {
         const tr = document.createElement('tr'), td = document.createElement('td');
-        td.colSpan = 7;
+        td.colSpan = 8;
         td.className = 'vazio';
         td.textContent = 'Nenhuma compra de ações registrada.';
         tr.appendChild(td);
@@ -1505,8 +1517,9 @@ function mostrarAcoes() {
             return td;
         };
         celula(p.ticker, 'ticker');
-        celula(String(p.quantidade));
         celula(brl.format(p.precoMedio));
+        celula(p.cotacao === null ? '—' : brl.format(p.cotacao));
+        celula(String(p.quantidade));
         celula(brl.format(p.investido));
         celula(p.atual === null ? '—' : brl.format(p.atual), 'destaque');
         if (p.lucro === null) celula('—');

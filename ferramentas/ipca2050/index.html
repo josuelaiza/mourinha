@@ -274,6 +274,59 @@
         .tabela-acoes .ticker { font-weight: 600; }
         .tabela-acoes td .pct-lucro { display: block; font-size: 0.72rem; }
         .tabela-acoes .vazio { text-align: left; color: var(--texto-3); white-space: normal; }
+        /* Rebalanceador na tabela de ações (visual do site) */
+        .situacao-rebal {
+            font-size: 0.8rem; color: var(--texto-2); background: var(--cartao-2); border-left: 3px solid var(--ok);
+            padding: 8px 10px; border-radius: 4px; margin-bottom: 10px;
+        }
+        .situacao-rebal.perigo { border-left-color: var(--erro); }
+        .situacao-rebal strong { color: var(--texto); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .barra-peso { display: block; position: relative; height: 4px; min-width: 64px; margin-top: 5px; background: var(--borda); border-radius: 2px; }
+        .barra-peso .enchimento { position: absolute; left: 0; top: 0; height: 4px; border-radius: 2px; background: var(--destaque); }
+        .barra-peso .enchimento.fora { background: var(--erro); }
+        .barra-peso .marca-meta { position: absolute; left: 50%; top: -3px; width: 2px; height: 10px; background: var(--texto-3); }
+        .aporte-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .aporte-acoes label { font-size: 0.7rem; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.3px; }
+        .aporte-acoes input {
+            font: inherit; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; width: 120px; padding: 5px 8px; color: var(--texto);
+            background: var(--cartao-2); border: 1px solid var(--borda); border-radius: 6px;
+        }
+        .aporte-acoes input:focus { outline: none; border-color: var(--destaque); }
+        .aporte-acoes input.invalido { border-color: var(--erro); }
+        .passos-rebal { font-size: 0.8rem; color: var(--texto-2); margin-top: 10px; line-height: 1.7; }
+        .passos-rebal .caixa { color: var(--texto-3); margin-top: 2px; }
+        .passos-rebal .aviso { color: var(--aviso); font-size: 0.75rem; }
+        .acoes-rebal { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .msg-rebal { font-size: 0.75rem; color: var(--texto-3); }
+
+        /* Modo teste: o rebalanceador completo, com o visual do arquivo original (tema escuro) */
+        .rebal {
+            --bg: #1f1e1d; --card: #2a2927; --text: #f5f4ef; --text2: #b5b3ab; --muted: #888780;
+            --border: rgba(255, 255, 255, .14); --border2: rgba(255, 255, 255, .3);
+            --accent: #5b9be8; --danger: #e24b4a; --bg-ok: #27500a; --t-ok: #c0dd97; --bg-warn: #633806; --t-warn: #fac775;
+            --bg-dan: #791f1f; --t-dan: #f7c1c1; --bg-acc: #0c447c; --t-acc: #b5d4f4;
+            background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 16px;
+            max-width: 480px; margin: 10px auto 0; padding: 16px; border-radius: 8px; border: 1px solid var(--border);
+        }
+        .rebal h3 { font-size: 20px; font-weight: 500; margin: 0 0 12px; }
+        .rebal button { font: inherit; color: var(--text); background: transparent; border: 1px solid var(--border2); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+        .rebal button:active { transform: scale(.98); }
+        .rebal .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .rebal .mc { background: var(--card); border-radius: 8px; padding: 12px; }
+        .rebal .mc .l { font-size: 13px; color: var(--text2); }
+        .rebal .mc .v { font-size: 20px; font-weight: 500; }
+        .rebal .st { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; }
+        .rebal .act { margin-top: 12px; font-size: 14px; line-height: 1.7; }
+        .rebal .rw { border-bottom: 1px solid var(--border); padding: 12px 0; }
+        .rebal .hd { display: flex; justify-content: space-between; align-items: baseline; }
+        .rebal .ctl { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .rebal .qb { width: 34px; height: 34px; padding: 0; font-size: 18px; }
+        .rebal .bg { font-size: 13px; padding: 3px 8px; border-radius: 8px; font-weight: 500; white-space: nowrap; }
+        .rebal .trk { position: relative; height: 6px; background: var(--card); border-radius: 3px; margin-top: 8px; }
+        .rebal .fl { position: absolute; left: 0; top: 0; height: 6px; border-radius: 3px; }
+        .rebal .mk { position: absolute; left: 50%; top: -3px; width: 2px; height: 12px; background: var(--border2); }
+        .rebal .nota { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
         /* nome de coluna que explica a coluna ao tocar */
         .coluna-ajuda {
             font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; background: none; border: none; padding: 0; cursor: pointer;
@@ -727,6 +780,12 @@
             </div>
 
             <div class="cartao">
+                <div class="aporte-acoes" id="blocoAporteAcoes" hidden>
+                    <label for="aporteAcoes">Aporte (R$)</label>
+                    <input type="number" id="aporteAcoes" min="0" step="10" inputmode="decimal" placeholder="0">
+                    <span class="msg-rebal" id="usoAporteAcoes" role="status"></span>
+                </div>
+                <div class="situacao-rebal" id="situacaoRebal" role="status" hidden></div>
                 <div class="rolagem">
                 <table class="tabela tabela-acoes">
                     <thead>
@@ -739,11 +798,33 @@
                             <th scope="col">Atual</th>
                             <th scope="col">Resultado</th>
                             <th scope="col">% do total</th>
+                            <th scope="col">Sugestão</th>
                         </tr>
                     </thead>
                     <tbody id="corpoAcoes"></tbody>
                 </table>
                 </div>
+                <div class="passos-rebal" id="passosRebal" hidden></div>
+                <div class="acoes-rebal" id="acoesRebal" hidden>
+                    <button type="button" class="botao secundario" id="botaoModoTeste">Modo teste</button>
+                    <span class="msg-rebal" id="msgModoTeste" role="status"></span>
+                </div>
+            </div>
+
+            <!-- Modo teste: simula as vendas e compras sugeridas; nada é gravado -->
+            <div class="rebal" id="modoTeste" hidden>
+                <h3>Rebalanceador de ações</h3>
+                <div class="grid">
+                    <div class="mc"><div class="l">Total em ações</div><div id="rbTotal" class="v">—</div></div>
+                    <div class="mc"><div class="l">Maior − menor</div><div id="rbSpread" class="v">—</div></div>
+                </div>
+                <div class="st" id="rbSituacao"></div>
+                <div class="act" id="rbPassos"></div>
+                <div id="rbLinhas"></div>
+                <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap">
+                    <button type="button" id="rbSair">Sair do modo teste</button>
+                </div>
+                <div class="nota" id="rbNota"></div>
             </div>
         </section>
 
@@ -814,8 +895,9 @@
 <script type="module">
 // ?v=: troque a cada mudança em calculo.js ou cripto.js, senão o navegador pode
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
-import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes } from './calculo.js?v=9';
-import * as cripto from './cripto.js?v=9';
+import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
+    analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte } from './calculo.js?v=11';
+import * as cripto from './cripto.js?v=11';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
@@ -825,6 +907,7 @@ const CHAVE_FII_APORTE = 'patrimonio.fii.aporteMensal';
 const CHAVE_FII_RENDIMENTO = 'patrimonio.fii.rendimentoPorCota'; // R$ por cota por mês
 const CHAVE_ABA = 'patrimonio.aba';
 const CHAVE_TOKEN = 'patrimonio.tokenSincronizar'; // token do GitHub, cifrado com a chave pública
+const CHAVE_APORTE_ACOES = 'patrimonio.acoes.aporte'; // último aporte digitado na aba Ações
 const CHAVE_BRAPI = 'patrimonio.tokenBrapi'; // token da brapi.dev (cotações), cifrado com a chave pública
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const anosAbertos = new Set(); // anos abertos na tabela mês a mês (sobrevive ao recálculo)
@@ -1025,6 +1108,8 @@ $('botaoEsquecer').addEventListener('click', async () => {
     aportesFii = [];
     aportesAcoes = [];
     cotacoes = {};
+    modoTeste = null;
+    $('modoTeste').hidden = true;
     ultimoResultado = null;
     $('svgGrafico').replaceChildren();
     $('mensagemSenha').className = 'mensagem';
@@ -1064,6 +1149,9 @@ function abrirSimulador() {
     const fii = config.fii || {};
     $('fiiAporteMensal').value = lerSalvo(CHAVE_FII_APORTE, fii.aporteMensalPadrao ?? 0);
     $('fiiRendimentoCota').value = lerSalvo(CHAVE_FII_RENDIMENTO, fii.rendimentoPorCotaPadrao ?? 0.10);
+    let aporteSalvo = null;
+    try { aporteSalvo = localStorage.getItem(CHAVE_APORTE_ACOES); } catch { /* sem storage */ }
+    $('aporteAcoes').value = aporteSalvo !== null && Number(aporteSalvo) > 0 ? aporteSalvo : '';
     $('abaFii').textContent = fii.nome || 'FII';
     $('rotuloPanFii').textContent = fii.nome || 'FII';
     $('dataFinal').min = hojeLocal();
@@ -1496,18 +1584,20 @@ function mostrarAcoes() {
     }[estadoCotacao];
     texto.replaceChildren(...partes);
 
-    // tabela: uma linha por ação
+    // tabela: uma linha por ação (com o rebalanceador, se todas tiverem cotação)
+    const rb = dadosRebalanceamento(c);
     const corpo = $('corpoAcoes');
     if (!c.posicoes.length) {
         const tr = document.createElement('tr'), td = document.createElement('td');
-        td.colSpan = 8;
+        td.colSpan = 9;
         td.className = 'vazio';
         td.textContent = 'Nenhuma compra de ações registrada.';
         tr.appendChild(td);
         corpo.replaceChildren(tr);
+        mostrarRebalanceamento(c, null);
         return;
     }
-    corpo.replaceChildren(...c.posicoes.map(p => {
+    corpo.replaceChildren(...c.posicoes.map((p, i) => {
         const tr = document.createElement('tr');
         const celula = (conteudo, classe) => {
             const td = document.createElement('td');
@@ -1533,12 +1623,222 @@ function mostrarAcoes() {
             pctEl.textContent = `${p.lucro >= 0 ? '+' : '−'}${pct(Math.abs(p.lucroPct))}`;
             td.replaceChildren(valor, pctEl);
         }
-        celula(p.parte === null ? '—' : pct(p.parte));
+        const peso = celula(rb ? pct(rb.analise.pesos[i] / 100) : p.parte === null ? '—' : pct(p.parte));
+        if (rb) {
+            const barra = document.createElement('span');
+            barra.className = 'barra-peso';
+            const enchimento = document.createElement('span');
+            const w = rb.analise.pesos[i];
+            enchimento.className = 'enchimento' + (rb.analise.disparou && (w === rb.analise.maior || w === rb.analise.menor) ? ' fora' : '');
+            enchimento.style.width = `${Math.min(w / (rb.meta * 200), 1) * 100}%`;
+            const marca = document.createElement('span');
+            marca.className = 'marca-meta';
+            barra.replaceChildren(enchimento, marca);
+            peso.appendChild(barra);
+        }
+        const d = rb ? rb.final[i] - p.quantidade : 0;
+        celula(d < 0 ? `Vender ${-d}` : d > 0 ? `Comprar ${d}` : '');
         return tr;
     }));
+    mostrarRebalanceamento(c, rb);
+}
+
+// ------------------------------------------------------------------ //
+// Rebalanceador: meta = partes iguais; gatilho = maior − menor chegar a N pontos
+// ------------------------------------------------------------------ //
+const gatilhoRebal = () => (config.acoes && config.acoes.gatilhoRebalanceamento) || 8;
+const pontos = v => v.toFixed(1).replace('.', ',') + ' pts';
+
+// Só com a cotação de todas as ações. itens na ordem da tabela.
+// Aporte digitado (vazio, inválido ou negativo = 0)
+function aporteAcoes() {
+    const v = Number($('aporteAcoes').value);
+    return $('aporteAcoes').value !== '' && v > 0 ? v : 0;
+}
+
+// 1) o aporte compra o que deixa a carteira mais distribuída (sem vender);
+// 2) se mesmo assim a diferença ficar no gatilho, entra a sugestão normal de
+//    venda/compra, calculada sobre a carteira já com as compras do aporte.
+// final = quantidades de chegada; a coluna Sugestão e os passos são final − hoje.
+function dadosRebalanceamento(c) {
+    if (!c.posicoes.length || c.posicoes.some(p => p.cotacao === null)) return null;
+    const hoje = c.posicoes.map(p => ({ p: p.cotacao, q: p.quantidade }));
+    const meta = 1 / hoje.length;
+    const aporte = aporteAcoes();
+    const compra = comprasComAporte(hoje, aporte);
+    const itens = hoje.map((s, i) => ({ p: s.p, q: compra.q[i] }));
+    const analise = analiseRebalanceamento(itens, gatilhoRebal());
+    const alvo = analise.disparou ? sugerirRebalanceamento(itens, meta) : null;
+    return { hoje, itens, meta, aporte, compra, analise, alvo, final: alvo || compra.q };
+}
+
+function mostrarRebalanceamento(c, rb) {
+    const situacao = $('situacaoRebal'), passos = $('passosRebal');
+    const lista = rb ? passosRebalanceamento(rb.final, rb.hoje.map(s => s.q)) : [];
+    $('blocoAporteAcoes').hidden = !rb;
+    situacao.hidden = !rb;
+    passos.hidden = !lista.length;
+    $('acoesRebal').hidden = !rb || modoTeste !== null;
+    if (!rb) return;
+    $('usoAporteAcoes').textContent = rb.aporte > 0
+        ? `Usa ${brl.format(rb.compra.usado)} do aporte · sobra ${brl.format(rb.compra.sobra)}`
+        : '';
+    const g = gatilhoRebal();
+    const forte = document.createElement('strong');
+    forte.textContent = `Maior − menor: ${pontos(rb.analise.spread)}`;
+    situacao.classList.toggle('perigo', rb.analise.disparou);
+    situacao.replaceChildren(rb.analise.disparou
+        ? `Rebalancear: a diferença chegou a ${g} pontos. `
+        : `Tudo certo: diferença abaixo de ${g} pontos. Os aportes cuidam do ajuste. `, forte);
+    if (!lista.length) return;
+    const linhas = lista.map((x, n) => {
+        const div = document.createElement('div');
+        div.textContent = `• ${n + 1}. ${x.tipo === 'vender' ? 'Vender' : 'Comprar'} ${x.quantidade} ${c.posicoes[x.i].ticker}`;
+        return div;
+    });
+    if (rb.alvo) {
+        const caixa = caixaRebalanceamento(rb.itens, rb.alvo);
+        const caixaEl = document.createElement('div');
+        caixaEl.className = 'caixa';
+        caixaEl.textContent = `Caixa das vendas: ${brl.format(caixa.vendas)} · sobra no fim: ${brl.format(caixa.sobra)}`;
+        linhas.push(caixaEl);
+    }
+    if (rb.alvo && lista.some(x => x.tipo === 'comprar')) {
+        const aviso = document.createElement('div');
+        aviso.className = 'aviso';
+        aviso.textContent = 'Antes de comprar a que caiu, confira se a queda é só de preço.';
+        linhas.push(aviso);
+    }
+    passos.replaceChildren(...linhas);
+}
+
+// Modo teste: congela preços e quantidades de agora e a sugestão; o − e o +
+// mexem só numa cópia. Nada é gravado (as quantidades vêm das compras registradas).
+let modoTeste = null; // { tickers, itens (cópia simulada), snap, alvo, base, meta }
+
+$('botaoModoTeste').addEventListener('click', () => {
+    const rb = dadosRebalanceamento(carteiraAcoes(aportesAcoes, cotacoes));
+    if (!rb) return;
+    if (!rb.analise.disparou) {
+        $('msgModoTeste').textContent = `Nada a ajustar: a diferença está abaixo de ${gatilhoRebal()} pontos.`;
+        return;
+    }
+    $('msgModoTeste').textContent = '';
+    const c = carteiraAcoes(aportesAcoes, cotacoes);
+    modoTeste = {
+        tickers: c.posicoes.map(p => p.ticker),
+        itens: rb.hoje.map(s => ({ ...s })),
+        snap: rb.hoje.map(s => s.q),
+        alvo: rb.final,
+        base: rb.hoje.reduce((a, s) => a + s.p * s.q, 0) + rb.aporte,
+        meta: rb.meta,
+    };
+    montarModoTeste();
+    $('acoesRebal').hidden = true;
+    $('modoTeste').hidden = false;
+    $('modoTeste').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+function sairModoTeste() {
+    modoTeste = null;
+    $('modoTeste').hidden = true;
+    $('rbLinhas').replaceChildren();
+    mostrarAcoes();
+}
+$('rbSair').addEventListener('click', sairModoTeste);
+
+function montarModoTeste() {
+    const t = modoTeste;
+    $('rbLinhas').replaceChildren(...t.itens.map((s, i) => {
+        const d = document.createElement('div');
+        d.className = 'rw';
+        d.innerHTML = `<div class="hd"><span style="font-weight:500;font-size:16px" class="tk"></span><span><span class="pc" style="font-size:18px;font-weight:500"></span><span class="vl" style="font-size:13px;color:var(--text2);margin-left:8px"></span></span></div>
+<div class="trk"><div class="fl"></div><div class="mk"></div></div>
+<div class="ctl"><span style="font-size:13px;color:var(--text2)" class="pr"></span>
+<span style="flex:1"></span><button type="button" class="qb mi">−</button><span class="qt" style="min-width:26px;text-align:center;font-size:16px;font-weight:500"></span><button type="button" class="qb pl">+</button><span class="bg sg"></span></div>`;
+        d.querySelector('.tk').textContent = t.tickers[i];
+        d.querySelector('.pr').textContent = `Preço ${brl.format(s.p)}`;
+        d.querySelector('.mi').setAttribute('aria-label', `Diminuir ${t.tickers[i]}`);
+        d.querySelector('.pl').setAttribute('aria-label', `Aumentar ${t.tickers[i]}`);
+        d.querySelector('.mi').addEventListener('click', () => { if (s.q > 0) { s.q--; desenharModoTeste(); } });
+        d.querySelector('.pl').addEventListener('click', () => { s.q++; desenharModoTeste(); });
+        return d;
+    }));
+    $('rbNota').textContent = `A linha vertical em cada barra marca a meta de ${pct(t.meta).replace(',00', '')} (partes iguais). O gatilho é a diferença entre a maior e a menor chegar a ${gatilhoRebal()} pontos. Nada do modo teste é gravado.`;
+    desenharModoTeste();
+}
+
+function desenharModoTeste() {
+    const t = modoTeste;
+    const an = analiseRebalanceamento(t.itens, gatilhoRebal());
+    const linhas = $('rbLinhas').children;
+    $('rbTotal').textContent = brl.format(an.total);
+    $('rbSpread').textContent = pontos(an.spread);
+    $('rbSpread').style.color = an.disparou ? 'var(--danger)' : 'var(--text)';
+    t.itens.forEach((s, i) => {
+        const e = linhas[i];
+        e.querySelector('.pc').textContent = an.pesos[i].toFixed(1).replace('.', ',') + '%';
+        e.querySelector('.vl').textContent = brl.format(s.p * s.q);
+        e.querySelector('.qt').textContent = s.q;
+        const fl = e.querySelector('.fl');
+        fl.style.width = Math.min(an.pesos[i] / (t.meta * 200), 1) * 100 + '%';
+        fl.style.background = an.disparou && (an.pesos[i] === an.maior || an.pesos[i] === an.menor) ? 'var(--danger)' : 'var(--accent)';
+        const sg = e.querySelector('.sg');
+        if (t.alvo[i] !== t.snap[i]) {
+            const ok = s.q === t.alvo[i];
+            sg.textContent = (ok ? '✓ ' : '→ ') + t.alvo[i];
+            sg.style.background = ok ? 'var(--bg-ok)' : 'var(--bg-warn)';
+            sg.style.color = ok ? 'var(--t-ok)' : 'var(--t-warn)';
+        } else {
+            sg.textContent = '';
+            sg.style.background = 'none';
+        }
+    });
+    const pronto = t.itens.every((s, i) => s.q === t.alvo[i]);
+    const st = $('rbSituacao');
+    const tom = pronto ? 'ok' : 'acc';
+    st.textContent = pronto ? 'Tudo nas quantidades sugeridas.' : 'Modo teste: siga os passos com − e +.';
+    st.style.background = `var(--bg-${tom})`;
+    st.style.color = `var(--t-${tom})`;
+    const caixa = t.base - an.total;
+    const partes = passosRebalanceamento(t.alvo, t.snap).map((x, n) => {
+        const ok = t.itens[x.i].q === t.alvo[x.i];
+        const div = document.createElement('div');
+        div.style.color = ok ? 'var(--t-ok)' : 'var(--text)';
+        div.textContent = `${ok ? '✓ ' : '• '}${n + 1}. ${x.tipo === 'vender' ? 'Vender' : 'Comprar'} ${x.quantidade} ${t.tickers[x.i]}`;
+        return div;
+    });
+    const linhaCaixa = document.createElement('div');
+    linhaCaixa.style.marginTop = '4px';
+    const rotulo = document.createElement('span');
+    rotulo.style.color = 'var(--text2)';
+    rotulo.textContent = 'Caixa agora: ';
+    const valor = document.createElement('span');
+    valor.style.fontWeight = '500';
+    valor.style.color = caixa < -0.005 ? 'var(--danger)' : 'var(--text)';
+    valor.textContent = brl.format(caixa);
+    linhaCaixa.replaceChildren(rotulo, valor);
+    partes.push(linhaCaixa);
+    if (caixa < -0.005) {
+        const alerta = document.createElement('div');
+        alerta.style.fontSize = '13px';
+        alerta.style.color = 'var(--danger)';
+        alerta.textContent = 'Você comprou mais do que vendeu.';
+        partes.push(alerta);
+    }
+    $('rbPassos').replaceChildren(...partes);
 }
 
 $('atualizarCotacoes').addEventListener('click', buscarCotacoes);
+
+$('aporteAcoes').addEventListener('input', () => {
+    const campo = $('aporteAcoes');
+    const valido = campo.value === '' || Number(campo.value) >= 0;
+    campo.classList.toggle('invalido', !valido);
+    if (!valido) return;
+    try { localStorage.setItem(CHAVE_APORTE_ACOES, campo.value); } catch { /* sem storage */ }
+    mostrarAcoes();
+});
 
 function abrirJanelaBrapi() {
     $('tokenBrapi').value = '';

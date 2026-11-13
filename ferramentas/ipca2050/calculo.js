@@ -193,6 +193,90 @@ export function carteiraAcoes(aportes, cotacoes = {}) {
     };
 }
 
+// ------------------------------------------------------------------
+// Rebalanceador de ações (lógica do rebalanceador do usuário, sem mudança).
+// itens = [{ p: preço, q: quantidade }], na ordem da tabela.
+// Meta de cada ação = partes iguais (1 ÷ número de ações).
+// Gatilho: a diferença entre o maior e o menor peso chegar a `gatilho` pontos.
+// ------------------------------------------------------------------
+export function analiseRebalanceamento(itens, gatilho) {
+    const total = itens.reduce((a, s) => a + s.p * s.q, 0);
+    const pesos = itens.map(s => (total > 0 ? (s.p * s.q / total) * 100 : 0));
+    const maior = Math.max(...pesos), menor = Math.min(...pesos);
+    const spread = maior - menor;
+    return { total, pesos, maior, menor, spread, disparou: total > 0 && spread >= gatilho - 0.005 };
+}
+
+// Quantidades sugeridas: vende o que passou da meta (até voltar a ela; se nada
+// passar o bastante para vender uma ação inteira, vende 1 da maior) e, com o
+// caixa, compra uma a uma a de menor peso que couber, sem recomprar a vendida.
+export function sugerirRebalanceamento(itens, meta) {
+    const T = itens.reduce((a, s) => a + s.p * s.q, 0);
+    const q = itens.map(s => s.q);
+    let caixa = 0;
+    const vendidas = new Set();
+    itens.forEach((s, i) => {
+        if (s.p * s.q / T > meta) {
+            const alvo = Math.round(meta * T / s.p);
+            if (alvo < s.q) { caixa += (s.q - alvo) * s.p; q[i] = alvo; vendidas.add(i); }
+        }
+    });
+    if (!vendidas.size) {
+        let k = 0;
+        itens.forEach((s, i) => { if (s.p * s.q > itens[k].p * itens[k].q) k = i; });
+        if (q[k] > 0) { q[k]--; caixa += itens[k].p; vendidas.add(k); }
+    }
+    for (;;) {
+        let b = -1, bw = 1e9;
+        itens.forEach((s, i) => {
+            if (vendidas.has(i) || s.p > caixa + 0.005) return;
+            const w = s.p * q[i] / T;
+            if (w < bw) { bw = w; b = i; }
+        });
+        if (b < 0) break;
+        q[b]++;
+        caixa -= itens[b].p;
+    }
+    return q;
+}
+
+// Compras com um aporte, sem vender nada: uma ação por vez, sempre a de menor
+// peso (menor valor na carteira) que ainda cabe no que resta, até não caber
+// nenhuma. A sobra fica menor que o preço da ação mais barata.
+export function comprasComAporte(itens, aporte) {
+    const q = itens.map(s => s.q);
+    let caixa = aporte > 0 ? aporte : 0;
+    for (;;) {
+        let b = -1, menor = Infinity;
+        itens.forEach((s, i) => {
+            if (s.p > caixa + 0.005) return;
+            const valor = s.p * q[i];
+            if (valor < menor) { menor = valor; b = i; }
+        });
+        if (b < 0) break;
+        q[b]++;
+        caixa -= itens[b].p;
+    }
+    const sobra = Math.max(0, caixa);
+    return { q, usado: (aporte > 0 ? aporte : 0) - sobra, sobra };
+}
+
+// Passos para ir de `ref` até `alvo`: primeiro as vendas, depois as compras.
+export function passosRebalanceamento(alvo, ref) {
+    const passos = [];
+    alvo.forEach((t, i) => { if (t < ref[i]) passos.push({ i, tipo: 'vender', quantidade: ref[i] - t }); });
+    alvo.forEach((t, i) => { if (t > ref[i]) passos.push({ i, tipo: 'comprar', quantidade: t - ref[i] }); });
+    return passos;
+}
+
+// Caixa que as vendas geram e quanto sobra depois de todas as compras.
+export function caixaRebalanceamento(itens, alvo) {
+    const total = itens.reduce((a, s) => a + s.p * s.q, 0);
+    const vendas = itens.reduce((a, s, i) => a + Math.max(0, s.q - alvo[i]) * s.p, 0);
+    const sobra = total - itens.reduce((a, s, i) => a + s.p * alvo[i], 0);
+    return { vendas, sobra };
+}
+
 // Divisor que leva R$ da data `fim` para R$ da data `base`, pela inflação projetada
 export function deflator(inflacao, base, fim) {
     return Math.pow(1 + inflacao, Math.max(0, diasEntre(base, fim)) / DIAS_POR_ANO);

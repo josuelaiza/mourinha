@@ -8,6 +8,7 @@ import {
     diasEntre, mediaGeometrica, taxaMediaPonderada, aliquotaIR,
     calcularLote, aportesFuturos, datasDoGrafico, simular, aporteParaMeta,
     simularFii, fiiPorAno, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
+    analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte,
 } from '../calculo.js';
 
 const TABELA_IR = [
@@ -361,4 +362,49 @@ test('ações: carteira agrupa por ticker, com preço médio, lucro e parte do t
     assert.equal(parcial.posicoes.find(p => p.ticker === 'BBBB3').atual, null);
     assert.equal(parcial.posicoes.find(p => p.ticker === 'AAAA4F').parte, null);
     perto(parcial.investido, 290);
+});
+
+test('rebalanceador: gatilho pela diferença entre o maior e o menor peso', () => {
+    const r = analiseRebalanceamento([{ p: 10, q: 10 }, { p: 10, q: 5 }, { p: 10, q: 5 }], 8);
+    perto(r.total, 200);
+    perto(r.pesos[0], 50);
+    perto(r.spread, 25);
+    assert.equal(r.disparou, true);
+    assert.equal(analiseRebalanceamento([{ p: 10, q: 10 }, { p: 10.7, q: 10 }], 8).disparou, false);
+    assert.equal(analiseRebalanceamento([{ p: 10, q: 0 }, { p: 10, q: 0 }], 8).disparou, false);
+});
+
+test('rebalanceador: vende o excesso e compra a de menor peso com o caixa', () => {
+    // calculado à mão: A vai a 7 (round(1/3 × 200 ÷ 10)), caixa 30 compra B, C, B
+    const itens = [{ p: 10, q: 10 }, { p: 10, q: 5 }, { p: 10, q: 5 }];
+    const alvo = sugerirRebalanceamento(itens, 1 / 3);
+    assert.deepEqual(alvo, [7, 7, 6]);
+    assert.deepEqual(passosRebalanceamento(alvo, [10, 5, 5]), [
+        { i: 0, tipo: 'vender', quantidade: 3 },
+        { i: 1, tipo: 'comprar', quantidade: 2 },
+        { i: 2, tipo: 'comprar', quantidade: 1 },
+    ]);
+    const caixa = caixaRebalanceamento(itens, alvo);
+    perto(caixa.vendas, 30);
+    perto(caixa.sobra, 0);
+});
+
+test('rebalanceador: sem venda inteira possível, vende 1 da maior', () => {
+    // A pesa 58,8%, mas round(0,5 × 170 ÷ 100) = 1 = o que já tem: vende 1 de A
+    const itens = [{ p: 100, q: 1 }, { p: 1, q: 70 }];
+    assert.deepEqual(sugerirRebalanceamento(itens, 0.5), [0, 170]);
+});
+
+test('aporte: compra a de menor peso que cabe, uma por vez, até não caber nenhuma', () => {
+    // valores na carteira 100, 50, 50 (preços 10, 10, 25) e aporte de R$ 60; o critério é o menor valor
+    const itens = [{ p: 10, q: 10 }, { p: 10, q: 5 }, { p: 25, q: 2 }];
+    // passo a passo à mão: B(50)→60 [50 sobra]; C(50)→75 [25]; B(60)→70 [15]; B(70)→80 [5]; nada cabe
+    const r = comprasComAporte(itens, 60);
+    assert.deepEqual(r.q, [10, 8, 3]);
+    perto(r.usado, 55);
+    perto(r.sobra, 5);
+    // aporte vazio, zero ou negativo: não compra nada
+    assert.deepEqual(comprasComAporte(itens, 0).q, [10, 5, 2]);
+    assert.deepEqual(comprasComAporte(itens, -5).q, [10, 5, 2]);
+    perto(comprasComAporte(itens, 0).sobra, 0);
 });

@@ -592,6 +592,33 @@ export function simularFii({ aportes, hoje, dataFinal, inflacao, rendimentoPorCo
     };
 }
 
+// Vários FIIs: as compras agrupadas por ticker, na ordem da primeira compra.
+// Entrada antiga sem ticker vira "FII".
+export function fiisPorTicker(aportes) {
+    const grupos = new Map();
+    for (const a of [...aportes].sort((x, y) => x.data.localeCompare(y.data))) {
+        const t = a.ticker || 'FII';
+        if (!grupos.has(t)) grupos.set(t, []);
+        grupos.get(t).push(a);
+    }
+    return grupos;
+}
+
+// Preço médio de um FII: tudo o que foi pago (inclusive com rendimento) ÷ cotas
+export function precoMedioFii(aportes) {
+    const cotas = aportes.reduce((s, a) => s + a.cotas, 0);
+    return cotas ? aportes.reduce((s, a) => s + a.cotas * a.preco, 0) / cotas : 0;
+}
+
+// Soma dos resultados de simularFii de cada FII (os que não são nulos)
+export function somarFiis(resultados) {
+    const lista = resultados.filter(Boolean);
+    if (!lista.length) return null;
+    const soma = campo => lista.reduce((s, r) => s + r[campo], 0);
+    return Object.fromEntries(['investido', 'reinvestido', 'patrimonioHoje', 'patrimonio', 'real',
+        'rendaMensal', 'rendaMensalReal', 'rendaGastavel', 'rendaGastavelReal'].map(c => [c, soma(c)]));
+}
+
 // Linhas do mês a mês agrupadas por ano: totais do ano e a posição no fim dele
 export function fiiPorAno(meses) {
     const anos = [];

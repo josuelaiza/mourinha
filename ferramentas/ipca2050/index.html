@@ -220,6 +220,16 @@
         .lista-composicao .sub { grid-column: 2; font-size: 0.72rem; color: var(--texto-3); }
         .lista-composicao .numero { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
         .lista-composicao .parte { grid-column: 3; text-align: right; font-size: 0.72rem; color: var(--texto-3); font-variant-numeric: tabular-nums; }
+        .abre-lista { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .abre-lista::before { content: "▸"; color: var(--texto-3); font-size: 0.75rem; }
+        .abre-lista[aria-expanded="true"]::before { content: "▾"; }
+        .lista-composicao .sublista { grid-column: 1 / -1; list-style: none; margin: 2px 0 0 20px; }
+        .lista-composicao .sublista li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 4px 0; border-top: 0; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+        .lista-composicao .sublista .parte { grid-column: auto; min-width: 7em; }
+        .tabela-fiis tbody tr { cursor: pointer; }
+        .tabela-fiis tr.selecionada td { background: rgba(57, 135, 229, 0.12); }
+        .tabela-fiis .ticker button { background: none; border: 0; padding: 0; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+        .detalhe-fii { margin: 18px 0 8px; }
         :root { --cor-ipca: #3987e5; --cor-fii: #199e70; --cor-acoes: #d95f02; }
 
         /* Preços de referência */
@@ -525,10 +535,11 @@
                     </li>
                     <li>
                         <span class="marca" style="background: var(--cor-fii)"></span>
-                        <span class="nome"><span id="rotuloPanFii">FII</span> <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaCompFii" aria-label="Como o FII entra no total">?</button><span class="ajuda" id="ajudaCompFii" hidden><ul></ul></span></span></span>
+                        <span class="nome"><button type="button" class="abre-lista" id="abrirFiis" aria-expanded="false" aria-controls="listaPanFiis">FIIs</button> <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaCompFii" aria-label="Como os FIIs entram no total">?</button><span class="ajuda" id="ajudaCompFii" hidden><ul></ul></span></span></span>
                         <span class="numero" id="panFii">—</span>
                         <span class="sub" id="panFiiDetalhe"></span>
                         <span class="parte" id="panFiiParte"></span>
+                        <ul class="sublista" id="listaPanFiis" hidden></ul>
                     </li>
                 </ul>
             </div>
@@ -640,6 +651,33 @@
         <section id="painelFii" role="tabpanel" aria-labelledby="abaFii" hidden>
             <div class="alerta" id="avisoFii" hidden></div>
             <div id="blocoFii">
+                <div class="cartao">
+                    <div class="cabecalho">
+                        <h2>Seus FIIs</h2>
+                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaFiis" aria-label="Como ler a tabela de FIIs">?</button><div class="ajuda" id="ajudaFiis" hidden><ul>
+                            <li>Toque num FII para ver os detalhes dele logo abaixo.</li>
+                            <li><strong>Preço médio:</strong> tudo o que você pagou pelas cotas (inclusive com rendimento) ÷ cotas.</li>
+                            <li><strong>Investido:</strong> só o dinheiro do seu bolso. Compras com rendimento (Origem = Rendimento) não entram.</li>
+                            <li><strong>Renda mensal:</strong> cotas × o rendimento por cota que você digitou para esse FII.</li>
+                        </ul></div></div>
+                    </div>
+                    <div class="rolagem">
+                    <table class="tabela tabela-acoes tabela-fiis">
+                        <thead>
+                            <tr>
+                                <th scope="col">FII</th>
+                                <th scope="col">Cotas</th>
+                                <th scope="col">Preço médio</th>
+                                <th scope="col">Investido</th>
+                                <th scope="col">Renda mensal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoFiis"></tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div class="cabecalho detalhe-fii"><h2 id="tituloFiiDetalhe">—</h2></div>
                 <div class="kpis">
                     <div class="kpi"><div class="rotulo">Cotas</div><div class="valor" id="fiiCotas">—</div><div class="detalhe" id="fiiPreco"></div></div>
                     <div class="kpi"><div class="rotulo">Investido</div><div class="valor" id="fiiInvestido">—</div><div class="detalhe" id="fiiNumero"></div></div>
@@ -659,7 +697,7 @@
                 <div class="cartao">
                     <div class="cabecalho">
                         <h2 id="tituloFiiTabela">Na data final</h2>
-                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaFii" aria-label="Como o FII é calculado">?</button><div class="ajuda" id="ajudaFii" hidden><ul></ul></div></div>
+                        <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaFii" aria-label="Como este FII é calculado">?</button><div class="ajuda" id="ajudaFii" hidden><ul></ul></div></div>
                     </div>
                     <div class="rolagem">
                     <table class="tabela">
@@ -938,15 +976,19 @@
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
 import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
     analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte,
-    resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao } from './calculo.js?v=14';
-import * as cripto from './cripto.js?v=14';
+    resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao, fiisPorTicker, precoMedioFii, somarFiis } from './calculo.js?v=15';
+import * as cripto from './cripto.js?v=15';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
 const CHAVE_META = 'ipca2050.metaReal';
 const CHAVE_DATA_FINAL = 'patrimonio.dataFinal';
+// Campos de cada FII: patrimonio.fii.<TICKER>.aporteMensal e .rendimentoPorCota (R$ por cota por mês).
+// As chaves antigas (de quando havia um FII só) passam para o primeiro FII e somem.
 const CHAVE_FII_APORTE = 'patrimonio.fii.aporteMensal';
-const CHAVE_FII_RENDIMENTO = 'patrimonio.fii.rendimentoPorCota'; // R$ por cota por mês
+const CHAVE_FII_RENDIMENTO = 'patrimonio.fii.rendimentoPorCota';
+const CHAVE_FII_SELECIONADO = 'patrimonio.fii.selecionado';
+const chaveFii = (ticker, campo) => `patrimonio.fii.${ticker}.${campo}`;
 const CHAVE_ABA = 'patrimonio.aba';
 const CHAVE_TOKEN = 'patrimonio.tokenSincronizar'; // token do GitHub, cifrado com a chave pública
 const CHAVE_APORTE_ACOES = 'patrimonio.acoes.aporte'; // último aporte digitado na aba Ações
@@ -966,6 +1008,7 @@ let chavePrivada = null, aportes = [], aportesFii = [], aportesAcoes = [], prove
 // ações: cotações da última busca (por ticker sem o F) e estado da busca
 let cotacoes = {}, horaCotacao = null;
 let ultimoPanorama = null; // o que o Hoje do Panorama precisa do IPCA+ e do FII
+let fiiSelecionado = null; // FII cujos detalhes aparecem na aba FII
 let estadoCotacao = 'nada'; // nada | sem-token | buscando | ok | parcial | token-recusado | erro
 
 // ------------------------------------------------------------------ //
@@ -1030,7 +1073,8 @@ async function abrirComChave(chave, lembrada) {
             } else if (a.tipo === 'provento') {
                 if (!/^[A-Z]{4}\d{1,2}F?$/.test(a.ticker) || !['dividendo', 'jcp'].includes(a.provento) || !(a.valor > 0)) throw new Error('payload');
             } else if (a.tipo === 'fii') {
-                if (!(a.cotas > 0) || !(a.preco > 0) || ![undefined, 'rendimento'].includes(a.origem)) throw new Error('payload');
+                if (!(a.cotas > 0) || !(a.preco > 0) || ![undefined, 'rendimento'].includes(a.origem)
+                    || (a.ticker !== undefined && !/^[A-Z]{4}\d{2}$/.test(a.ticker))) throw new Error('payload');
             } else if (a.tipo !== undefined || !(a.valor > 0) || typeof a.taxa !== 'number') {
                 throw new Error('payload');
             }
@@ -1195,14 +1239,11 @@ function abrirSimulador() {
     }
     $('aporteMensal').value = lerSalvo(CHAVE_APORTE, config.aportePadrao);
     $('metaReal').value = lerSalvo(CHAVE_META, config.metaReal);
-    const fii = config.fii || {};
-    $('fiiAporteMensal').value = lerSalvo(CHAVE_FII_APORTE, fii.aporteMensalPadrao ?? 0);
-    $('fiiRendimentoCota').value = lerSalvo(CHAVE_FII_RENDIMENTO, fii.rendimentoPorCotaPadrao ?? 0.10);
+    migrarCamposFii();
+    try { fiiSelecionado = localStorage.getItem(CHAVE_FII_SELECIONADO); } catch { /* sem storage */ }
     let aporteSalvo = null;
     try { aporteSalvo = localStorage.getItem(CHAVE_APORTE_ACOES); } catch { /* sem storage */ }
     $('aporteAcoes').value = aporteSalvo !== null && Number(aporteSalvo) > 0 ? aporteSalvo : '';
-    $('abaFii').textContent = fii.nome || 'FII';
-    $('rotuloPanFii').textContent = fii.nome || 'FII';
     $('dataFinal').min = hojeLocal();
     $('dataFinal').max = config.vencimento;
     $('dataFinal').value = lerDataFinal();
@@ -1222,6 +1263,12 @@ function abrirSimulador() {
 // Abas, ajuda (?) e janela de preços
 // ------------------------------------------------------------------ //
 const ABAS = ['abaPanorama', 'abaIpca', 'abaFii', 'abaAcoes'];
+
+$('abrirFiis').addEventListener('click', () => {
+    const abrir = $('abrirFiis').getAttribute('aria-expanded') !== 'true';
+    $('abrirFiis').setAttribute('aria-expanded', String(abrir));
+    $('listaPanFiis').hidden = !abrir;
+});
 
 function selecionarAba(id, focar = true) {
     for (const outra of ABAS) {
@@ -1515,7 +1562,7 @@ function acompanharSync(token, desde) {
 
 let pedidoProfunda = false; // a janela do token foi aberta pela sincronização profunda
 $('botaoProfunda').addEventListener('click', async () => {
-    const ok = confirm('Sincronização profunda: apaga as entradas do site e refaz tudo a partir do Notion (IPCA+, MXRF11 e ações). Use quando corrigir ou apagar algo no Notion. Continuar?');
+    const ok = confirm('Sincronização profunda: apaga as entradas do site e refaz tudo a partir do Notion (IPCA+, FIIs e ações). Use quando corrigir ou apagar algo no Notion. Continuar?');
     if (!ok) return;
     const token = await tokenGuardado();
     if (token) dispararSincronizacao(token, true);
@@ -2087,7 +2134,7 @@ $('dataFinal').addEventListener('change', () => {
     recalcular();
 });
 
-for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_META], ['fiiAporteMensal', CHAVE_FII_APORTE], ['fiiRendimentoCota', CHAVE_FII_RENDIMENTO]]) {
+for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_META], ['fiiAporteMensal', 'aporteMensal'], ['fiiRendimentoCota', 'rendimentoPorCota']]) {
     $(id).addEventListener('input', () => {
         const campo = $(id);
         const vazioEhZero = id === 'fiiAporteMensal' || id === 'aporteMensal'; // aporte mensal em branco = sem aporte
@@ -2095,7 +2142,9 @@ for (const [id, chave] of [['aporteMensal', CHAVE_APORTE], ['metaReal', CHAVE_ME
         const valido = (campo.value !== '' || vazioEhZero) && v >= 0;
         campo.classList.toggle('invalido', !valido);
         if (!valido) return;
-        try { localStorage.setItem(chave, String(v)); } catch { /* sem storage */ }
+        const onde = id.startsWith('fii') ? chaveFii(fiiSelecionado, chave) : chave;
+        if (id.startsWith('fii') && !fiiSelecionado) return;
+        try { localStorage.setItem(onde, String(v)); } catch { /* sem storage */ }
         recalcular();
     });
 }
@@ -2125,16 +2174,71 @@ function mostrarMeta(r) {
         : `com ${aporteAtual}: falta ${brlCompacto.format(-diferenca)}`;
 }
 
-function mostrarFii(rf, dataFinal, fmt) {
-    $('blocoFii').hidden = !rf;
-    $('avisoFii').hidden = !!rf;
-    $('avisoFii').textContent = rf ? '' : 'Sem aportes de FII registrados ainda.';
-    if (!rf) return;
-    const n = aportesFii.length;
+// Valor salvo de um campo de um FII (aporteMensal ou rendimentoPorCota)
+function lerFii(ticker, campo) {
+    try {
+        const texto = localStorage.getItem(chaveFii(ticker, campo));
+        if (texto !== null && Number(texto) >= 0) return Number(texto);
+    } catch { /* sem storage */ }
+    return campo === 'aporteMensal' ? ((config.fii || {}).aporteMensalPadrao ?? 0) : 0;
+}
+
+// Os campos de quando havia um FII só passam para o primeiro FII
+function migrarCamposFii() {
+    const primeiro = [...fiisPorTicker(aportesFii).keys()][0];
+    if (!primeiro) return;
+    try {
+        for (const [velha, campo] of [[CHAVE_FII_APORTE, 'aporteMensal'], [CHAVE_FII_RENDIMENTO, 'rendimentoPorCota']]) {
+            const valor = localStorage.getItem(velha);
+            if (valor === null) continue;
+            if (localStorage.getItem(chaveFii(primeiro, campo)) === null) localStorage.setItem(chaveFii(primeiro, campo), valor);
+            localStorage.removeItem(velha);
+        }
+    } catch { /* sem storage */ }
+}
+
+function selecionarFii(ticker) {
+    fiiSelecionado = ticker;
+    try { localStorage.setItem(CHAVE_FII_SELECIONADO, ticker); } catch { /* sem storage */ }
+    recalcular();
+}
+
+// Tabela com todos os FIIs; tocar numa linha mostra os detalhes dela
+function mostrarTabelaFiis(fiis) {
+    $('corpoFiis').replaceChildren(...fiis.map(f => {
+        const tr = document.createElement('tr');
+        if (f.ticker === fiiSelecionado) tr.className = 'selecionada';
+        const td = document.createElement('td');
+        td.className = 'ticker';
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.textContent = f.ticker;
+        botao.setAttribute('aria-pressed', String(f.ticker === fiiSelecionado));
+        td.appendChild(botao);
+        tr.appendChild(td);
+        for (const v of [f.r.cotasHoje.toLocaleString('pt-BR'), brl.format(precoMedioFii(f.aportes)), brl.format(f.r.investido),
+            brl.format(f.r.cotasHoje * lerFii(f.ticker, 'rendimentoPorCota'))]) {
+            const c = document.createElement('td');
+            c.textContent = v;
+            tr.appendChild(c);
+        }
+        tr.addEventListener('click', () => { if (f.ticker !== fiiSelecionado) selecionarFii(f.ticker); });
+        return tr;
+    }));
+}
+
+function mostrarFii(fiis, fsel, dataFinal, fmt) {
+    $('blocoFii').hidden = !fsel;
+    $('avisoFii').hidden = !!fsel;
+    $('avisoFii').textContent = fsel ? '' : 'Sem aportes de FII registrados ainda.';
+    if (!fsel) return;
+    mostrarTabelaFiis(fiis);
+    $('tituloFiiDetalhe').textContent = fsel.ticker;
+    const rf = fsel.r;
     $('fiiCotas').textContent = rf.cotasHoje.toLocaleString('pt-BR');
     $('fiiPreco').textContent = `a ${brl.format(rf.preco)} (última compra)`;
     $('fiiInvestido').textContent = brl.format(rf.investido);
-    const compras = aportesFii.filter(a => a.origem !== 'rendimento').length;
+    const compras = fsel.aportes.filter(a => a.origem !== 'rendimento').length;
     $('fiiNumero').textContent = `${compras} aporte${compras === 1 ? '' : 's'}`
         + (rf.reinvestido > 0 ? ` · + ${brl.format(rf.reinvestido)} de rendimentos reinvestidos` : '');
     $('fiiFuturos').textContent = rf.numeroAportesFuturos ? `${rf.numeroAportesFuturos} aportes até a data` : 'sem aportes mensais';
@@ -2230,7 +2334,7 @@ function mostrarHoje() {
         { nome: 'Ações', valor: acoesAportado, cor: 'var(--cor-acoes)' },
     ]);
     preencherAjuda('ajudaAportado', [
-        `Soma do dinheiro que saiu do seu bolso: os aportes do Tesouro IPCA+, as compras de cotas do ${nomeFii} com origem Aporte e o Aportado das ações (compras − vendas).`,
+        `Soma do dinheiro que saiu do seu bolso: os aportes do Tesouro IPCA+, as compras de cotas dos ${nomeFii} com origem Aporte e o Aportado das ações (compras − vendas).`,
         `Compras feitas com rendimento do fundo ou com dividendos (Origem = Rendimento no Notion) não entram aqui: elas contam só nas cotas ou nas ações.`,
         `MM Real (média mensal): o total aportado dividido pelos meses desde o primeiro aporte até este mês${medias ? ` (${medias.meses} ${medias.meses === 1 ? 'mês' : 'meses'})` : ''}. Mês sem aporte também conta, então mostra quanto você aporta de verdade por mês. Venda de ações desconta no mês dela. "Real" aqui é "de verdade", não é corrigido pela inflação.`,
         `MM Último Ano: a mesma conta, só com este mês e os 11 anteriores. Mostra o seu ritmo recente. Enquanto o primeiro aporte não fizer 12 meses, é igual à MM Real.`,
@@ -2238,9 +2342,9 @@ function mostrarHoje() {
     preencherAjuda('ajudaHoje', [
         `Estimativa do que você receberia resgatando tudo hoje.`,
         `Tesouro IPCA+: valor pela taxa contratada e pela inflação projetada, já líquido (sem IR e sem custódia).`,
-        `${nomeFii}: cotas na carteira × preço da última compra.`,
+        `${nomeFii}: cotas na carteira × preço da última compra de cada um.`,
         `Ações: quantidade × cotação mais recente (brapi.dev), sem descontar IR nem custos de venda. Enquanto falta a cotação de alguma ação, o Patrimônio fica em —.`,
-        `O Tesouro e o ${nomeFii} não usam cotação de mercado: o título do Tesouro é marcado a mercado todo dia, e a página não tem esse preço.`,
+        `O Tesouro e os ${nomeFii} não usam cotação de mercado: o título do Tesouro é marcado a mercado todo dia, e a página não tem esse preço.`,
     ]);
 }
 
@@ -2255,12 +2359,26 @@ function recalcular() {
     const r = simular({ aportes, hoje, config, aporteMensal, dataBaseReal, dataAlvo: dataFinal });
     ultimoResultado = r;
     const fiiCfg = config.fii || {};
-    const rf = simularFii({
-        aportes: aportesFii, hoje, dataFinal, inflacao: r.inflacao,
-        rendimentoPorCota: Number($('fiiRendimentoCota').value) || 0,
-        aporteMensal: Number($('fiiAporteMensal').value) || 0,
-        dia: fiiCfg.diaAporteFuturo || 15, dataBaseReal,
-    });
+    const fiis = [...fiisPorTicker(aportesFii)].map(([ticker, lista]) => ({
+        ticker, aportes: lista,
+        r: simularFii({
+            aportes: lista, hoje, dataFinal, inflacao: r.inflacao,
+            rendimentoPorCota: lerFii(ticker, 'rendimentoPorCota'),
+            aporteMensal: lerFii(ticker, 'aporteMensal'),
+            dia: fiiCfg.diaAporteFuturo || 15, dataBaseReal,
+        }),
+    }));
+    if (!fiis.some(f => f.ticker === fiiSelecionado)) fiiSelecionado = fiis.length ? fiis[0].ticker : null;
+    const fsel = fiis.find(f => f.ticker === fiiSelecionado) || null;
+    // campos do FII: mostram os valores do FII selecionado (sem atrapalhar quem está digitando)
+    if (fsel && $('fiiAporteMensal').dataset.ticker !== fsel.ticker) {
+        $('fiiAporteMensal').value = lerFii(fsel.ticker, 'aporteMensal');
+        $('fiiRendimentoCota').value = lerFii(fsel.ticker, 'rendimentoPorCota');
+        $('fiiAporteMensal').dataset.ticker = fsel.ticker;
+        $('fiiAporteMensal').classList.remove('invalido');
+        $('fiiRendimentoCota').classList.remove('invalido');
+    }
+    const rf = somarFiis(fiis.map(f => f.r));
 
     const anos = config.ipcaAnual.map(x => x.ano);
     $('kpiTotal').textContent = brl.format(r.totalAportado);
@@ -2288,7 +2406,7 @@ function recalcular() {
     const totalNaData = ipcaNaData + fiiNaData;
     const ipcaHoje = r.serie[0].existentesLiquido;
     const fiiHoje = rf ? rf.patrimonioHoje : 0;
-    const nomeFii = (config.fii || {}).nome || 'FII';
+    const nomeFii = 'FIIs';
     ultimoPanorama = { ipcaAportado: r.totalAportado, fiiAportado: rf ? rf.investido : 0, ipcaHoje, fiiHoje, nomeFii, hoje };
     mostrarHoje();
     // Projeção
@@ -2303,11 +2421,21 @@ function recalcular() {
     const parte = v => (totalNaData > 0 ? v / totalNaData : 0);
     $('panIpcaParte').textContent = `${pct(parte(ipcaNaData))} do total`;
     $('panFiiParte').textContent = `${pct(parte(fiiNaData))} do total`;
+    $('listaPanFiis').replaceChildren(...fiis.map(f => {
+        const li = document.createElement('li');
+        for (const [classe, texto] of [['nome', f.ticker], ['numero', brl.format(f.r.patrimonio)], ['parte', `${pct(parte(f.r.patrimonio))} do total`]]) {
+            const el = document.createElement('span');
+            el.className = classe;
+            el.textContent = texto;
+            li.appendChild(el);
+        }
+        return li;
+    }));
     $('barraComposicao').replaceChildren(...[[ipcaNaData, 'var(--cor-ipca)'], [fiiNaData, 'var(--cor-fii)']]
         .filter(([v]) => v > 0)
         .map(([v, cor]) => { const seg = document.createElement('span'); seg.style.flex = String(parte(v)); seg.style.background = cor; return seg; }));
 
-    mostrarFii(rf, dataFinal, fmt);
+    mostrarFii(fiis, fsel, dataFinal, fmt);
 
     $('exBruto').textContent = fmt(r.existentes.bruto);
     $('exLiquido').textContent = fmt(r.existentes.liquido);
@@ -2330,23 +2458,24 @@ function recalcular() {
         `Real = líquido em R$ de ${mesBase} (data do primeiro aporte entre todos os investimentos, ${dataBr(r.dataBaseReal)}); a base não muda com o passar dos anos.`,
     ]);
     preencherAjuda('ajudaFii', [
-        `A cota fica parada no preço da última compra (${rf ? brl.format(rf.preco) : '—'}): a página é estática e não tem cotação ao vivo.`,
-        `Rendimento mensal = rendimento por cota ÷ preço da cota${rf ? ` (${brl.format(rf.preco)})` : ''}, mantido igual até a data final. O valor de hoje vem de uma Selic alta: se ela cair, o fundo tende a pagar menos. Baixe o valor para simular um cenário mais conservador.`,
+        `A cota fica parada no preço da última compra deste FII (${fsel ? brl.format(fsel.r.preco) : '—'}): a página é estática e não tem cotação ao vivo.`,
+        `Rendimento mensal = rendimento por cota ÷ preço da cota${fsel ? ` (${brl.format(fsel.r.preco)})` : ''}, mantido igual até a data final. Digite quanto o fundo paga hoje; se ele tende a pagar menos no futuro, baixe o valor para simular um cenário mais conservador.`,
         `Ganho real equivalente = quanto essa taxa rende por ano acima da inflação projetada de ${pct(r.inflacao)}. Num FII de recebíveis a correção pela inflação vem dentro do rendimento.`,
+        `Cada FII tem o seu aporte mensal e o seu rendimento por cota.`,
         `Todo dia ${(config.fii || {}).diaAporteFuturo || 15}, rendimento + aporte compram cotas inteiras; o troco fica guardado para o mês seguinte.`,
         `Sem IR: rendimento de FII é isento para pessoa física, e a ideia é não vender.`,
         `Renda gastável = só a parte do ganho real. Gastando só ela, o patrimônio mantém o poder de compra; gastando a renda total, ele encolhe em valor real. Se o rendimento não cobre a inflação, a renda gastável é zero.`,
         `Real = em R$ de ${mesBase}, data do primeiro aporte entre todos os investimentos.`,
     ]);
     preencherAjuda('ajudaNominal', [
-        `Soma, na data escolhida, do Tesouro IPCA+ e do ${nomeFii}, em reais daquela data (sem descontar a inflação).`,
-        `É líquido: o IPCA+ já sai sem IR e sem custódia; o ${nomeFii} não paga IR sobre o rendimento.`,
-        `A data vai de hoje até 15/08/2050, o vencimento do IPCA+. "Última data" pula direto para ela. Essa data também é a data final do ${nomeFii}.`,
+        `Soma, na data escolhida, do Tesouro IPCA+ e dos ${nomeFii}, em reais daquela data (sem descontar a inflação).`,
+        `É líquido: o IPCA+ já sai sem IR e sem custódia; os ${nomeFii} não pagam IR sobre o rendimento.`,
+        `A data vai de hoje até 15/08/2050, o vencimento do IPCA+. "Última data" pula direto para ela. Essa data também é a data final dos ${nomeFii}.`,
         `As ações não entram na Projeção: o site não prevê cotação.`,
     ]);
     preencherAjuda('ajudaReal', [
         `O total nominal trazido para o poder de compra de ${mesBase} (data do primeiro aporte), pela inflação projetada de ${pct(r.inflacao)} a.a.`,
-        `Para comparar com o que você aportou no Tesouro IPCA+ e no ${nomeFii}: mostra quanto esse dinheiro cresceu de verdade, descontada a inflação. As ações não entram aqui.`,
+        `Para comparar com o que você aportou no Tesouro IPCA+ e nos ${nomeFii}: mostra quanto esse dinheiro cresceu de verdade, descontada a inflação. As ações não entram aqui.`,
     ]);
     preencherAjuda('ajudaCompIpca', [
         `Valor líquido se você resgatasse o título na data: taxa contratada + inflação projetada, menos custódia B3 de ${pct(config.custodiaAnual)} a.a. e IR regressivo (22,5% a 15%, conforme o prazo).`,
@@ -2354,8 +2483,8 @@ function recalcular() {
         `Sem marcação a mercado: um resgate antes do vencimento pode valer mais ou menos que isso.`,
     ]);
     preencherAjuda('ajudaCompFii', [
-        `Cotas na carteira × preço da última compra, mais a sobra guardada que ainda não completou uma cota.`,
-        `Projeção com o rendimento por cota e os aportes mensais da aba do ${nomeFii}, com os rendimentos reinvestidos em cotas inteiras.`,
+        `Soma de todos os FIIs: cotas na carteira × preço da última compra, mais a sobra guardada que ainda não completou uma cota. Toque em FIIs para ver cada um.`,
+        `Projeção com o rendimento por cota e os aportes mensais de cada FII na aba FII, com os rendimentos reinvestidos em cotas inteiras.`,
         `Sem IR: rendimento de FII é isento para pessoa física, e a ideia é não vender.`,
     ]);
 

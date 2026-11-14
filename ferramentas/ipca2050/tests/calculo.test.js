@@ -10,6 +10,7 @@ import {
     simularFii, fiiPorAno, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
     analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte,
     resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao, ultimoDiaUtil,
+    fiisPorTicker, precoMedioFii, somarFiis,
 } from '../calculo.js';
 
 const TABELA_IR = [
@@ -535,4 +536,23 @@ test('ações: resumo anual para a declaração', () => {
     assert.deepEqual(b.bens.map(x => [x.ticker, x.anterior, x.atual]), [['AAAA4F', 500, 500], ['BBBB3', 500, 500]]);
     assert.equal(b.dividendos.total, 3);
     assert.equal(b.lucroIsento, 0);
+});
+
+test('vários FIIs: agrupa por ticker, preço médio e soma dos resultados', () => {
+    const compras = [
+        { tipo: 'fii', data: '2031-03-10', ticker: 'QRST11', cotas: 2, preco: 100 },
+        { tipo: 'fii', data: '2031-01-10', ticker: 'WXYZ11', cotas: 10, preco: 10 },
+        { tipo: 'fii', data: '2031-02-10', ticker: 'WXYZ11', cotas: 10, preco: 11, origem: 'rendimento' },
+        { tipo: 'fii', data: '2030-12-10', cotas: 1, preco: 9 }, // entrada antiga, sem ticker
+    ];
+    const grupos = fiisPorTicker(compras);
+    assert.deepEqual([...grupos.keys()], ['FII', 'WXYZ11', 'QRST11']); // ordem da primeira compra
+    assert.equal(grupos.get('WXYZ11').length, 2);
+    perto(precoMedioFii(grupos.get('WXYZ11')), 10.5); // (100 + 110) / 20
+    assert.equal(precoMedioFii([]), 0);
+
+    const a = { investido: 100, reinvestido: 10, patrimonioHoje: 120, patrimonio: 500, real: 300, rendaMensal: 5, rendaMensalReal: 3, rendaGastavel: 2, rendaGastavelReal: 1 };
+    const b = { investido: 200, reinvestido: 0, patrimonioHoje: 210, patrimonio: 700, real: 400, rendaMensal: 6, rendaMensalReal: 4, rendaGastavel: 3, rendaGastavelReal: 2 };
+    assert.deepEqual(somarFiis([a, null, b]), { investido: 300, reinvestido: 10, patrimonioHoje: 330, patrimonio: 1200, real: 700, rendaMensal: 11, rendaMensalReal: 7, rendaGastavel: 5, rendaGastavelReal: 3 });
+    assert.equal(somarFiis([null]), null);
 });

@@ -16,6 +16,16 @@ const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools', 'add
 const PYTHON = process.env.PYTHON || 'python';
 const SENHA_FICTICIA = 'frase ficticia so para o teste automatico';
 
+// O data.json sem a parte cifrada: cada entrada só pode ter id, wrappedKey, iv e
+// ciphertext, e "importados" só marcas SHA-256. Procurar texto em claro no resto
+// (e não no base64 ou no hex, que por acaso podem formar letras como "fii" ou
+// "abcd") evita falso alarme.
+function foraDaCifra(dados) {
+    for (const e of dados.entries) assert.deepEqual(Object.keys(e).sort(), ['ciphertext', 'id', 'iv', 'wrappedKey']);
+    for (const m of dados.importados || []) assert.match(m, /^[0-9a-f]{64}$/); // marcas = SHA-256
+    return JSON.stringify({ ...dados, entries: dados.entries.map(() => 'cifrada'), importados: (dados.importados || []).map(() => 'marca') });
+}
+
 function rodarScript(args) {
     return execFileSync(PYTHON, [SCRIPT, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 }
@@ -101,7 +111,7 @@ test('aporte de FII: tipo vai dentro da parte cifrada e a página decifra', asyn
         const saida = rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--ticker', 'wxyz11', '--cotas', '37', '--preco', '9.87', '--keys', caminhoKeys, '--arquivo', caminhoData]);
         assert.ok(!saida.includes('9.87') && !saida.includes('37 '), 'o script imprimiu o aporte');
         const dados = JSON.parse(readFileSync(caminhoData, 'utf8'));
-        assert.ok(!/fii|WXYZ/i.test(JSON.stringify(dados)), 'tipo ou ticker em claro no data.json');
+        assert.ok(!/fii|WXYZ/i.test(foraDaCifra(dados)), 'tipo ou ticker em claro no data.json');
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
         assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { tipo: 'fii', data: '2031-04-15', ticker: 'WXYZ11', cotas: 37, preco: 9.87 });
 
@@ -198,7 +208,7 @@ test('sincronização: importa só linhas novas, cifradas, sem repetir e sem mos
         const d = dados();
         assert.equal(d.entries.length, 2);
         assert.equal(d.importados.length, 2);
-        assert.ok(!/1234|29\.61|fii|2031|WXYZ/i.test(JSON.stringify(d)), 'valor em claro no data.json');
+        assert.ok(!/1234|29\.61|fii|2031|WXYZ/i.test(foraDaCifra(d)), 'valor em claro no data.json');
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
         assert.deepEqual(await decifrarEntrada(chave, d.entries[0]), { data: '2031-02-15', valor: 1234.56, taxa: 0.0612 });
         assert.deepEqual(await decifrarEntrada(chave, d.entries[1]), { tipo: 'fii', data: '2031-02-16', ticker: 'WXYZ11', cotas: 3, preco: 9.87 });
@@ -211,7 +221,7 @@ test('sincronização: importa só linhas novas, cifradas, sem repetir e sem mos
         assert.match(rodar(), /^0 aporte\(s\) novo\(s\)/);
         const depois = dados();
         assert.equal(depois.entries.length, 4);
-        assert.ok(!/rendimento|QRST/i.test(JSON.stringify(depois)), 'origem ou ticker em claro no data.json');
+        assert.ok(!/rendimento|QRST/i.test(foraDaCifra(depois)), 'origem ou ticker em claro no data.json');
         assert.deepEqual(await decifrarEntrada(chave, depois.entries[2]), { tipo: 'fii', data: '2031-04-15', ticker: 'WXYZ11', cotas: 1, preco: 9.9, origem: 'rendimento' });
         assert.deepEqual(await decifrarEntrada(chave, depois.entries[3]), { tipo: 'fii', data: '2031-04-16', ticker: 'QRST11', cotas: 1, preco: 99 });
     } finally {
@@ -261,7 +271,7 @@ test('sincronização de proventos: dividendo e JCP cifrados com o ticker da pá
         assert.match(saida, /^2 aporte\(s\) novo\(s\).*1 linha\(s\) ignorada\(s\)/);
         assert.ok(!/12\.34|5\.67|ABCD|EFGH/i.test(saida), 'valor ou ticker na saída');
         const d = dados();
-        assert.ok(!/ABCD|EFGH|provento|dividendo|jcp|12\.34/i.test(JSON.stringify(d)), 'provento em claro no data.json');
+        assert.ok(!/ABCD|EFGH|provento|dividendo|jcp|12\.34/i.test(foraDaCifra(d)), 'provento em claro no data.json');
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
         assert.deepEqual(await decifrarEntrada(chave, d.entries[0]), { tipo: 'provento', data: '2031-04-20', ticker: 'ABCD4F', provento: 'dividendo', valor: 12.34 });
         assert.deepEqual(await decifrarEntrada(chave, d.entries[1]), { tipo: 'provento', data: '2031-04-21', ticker: 'EFGH3F', provento: 'jcp', valor: 5.67 });
@@ -313,7 +323,7 @@ test('sincronização de ações e profunda: compra, venda, origem e reconstruç
         gravar(estrutura);
         assert.match(rodar(), /^4 aporte\(s\) novo\(s\).*1 linha\(s\) ignorada\(s\)/);
         const d = dados();
-        assert.ok(!/ABCD|EFGH|venda|acao|123\.45/i.test(JSON.stringify(d)), 'ação em claro no data.json');
+        assert.ok(!/ABCD|EFGH|venda|acao|123\.45/i.test(foraDaCifra(d)), 'ação em claro no data.json');
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
         assert.deepEqual(await decifrarEntrada(chave, d.entries[1]), { tipo: 'acao', data: '2031-03-10', ticker: 'ABCD4F', quantidade: 10, valor: 123.45 });
         assert.deepEqual(await decifrarEntrada(chave, d.entries[2]), { tipo: 'acao', data: '2031-03-11', ticker: 'ABCD4F', quantidade: 4, valor: 60.5, operacao: 'venda' });

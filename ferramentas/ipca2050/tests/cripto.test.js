@@ -98,17 +98,19 @@ test('aporte de FII: tipo vai dentro da parte cifrada e a página decifra', asyn
         const caminhoData = join(pasta, 'data.json');
         writeFileSync(caminhoKeys, JSON.stringify(keys));
         writeFileSync(caminhoData, JSON.stringify({ version: 1, entries: [] }));
-        const saida = rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--cotas', '37', '--preco', '9.87', '--keys', caminhoKeys, '--arquivo', caminhoData]);
+        const saida = rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--ticker', 'wxyz11', '--cotas', '37', '--preco', '9.87', '--keys', caminhoKeys, '--arquivo', caminhoData]);
         assert.ok(!saida.includes('9.87') && !saida.includes('37 '), 'o script imprimiu o aporte');
         const dados = JSON.parse(readFileSync(caminhoData, 'utf8'));
-        assert.ok(!JSON.stringify(dados).includes('fii'), 'tipo em claro no data.json');
+        assert.ok(!/fii|WXYZ/i.test(JSON.stringify(dados)), 'tipo ou ticker em claro no data.json');
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
-        assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { tipo: 'fii', data: '2031-04-15', cotas: 37, preco: 9.87 });
+        assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { tipo: 'fii', data: '2031-04-15', ticker: 'WXYZ11', cotas: 37, preco: 9.87 });
 
-        // misturar campos dos dois tipos é recusado
-        assert.throws(() => rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--cotas', '3', '--preco', '9', '--taxa', '0.06', '--keys', caminhoKeys, '--arquivo', caminhoData]));
+        // misturar campos dos dois tipos é recusado; FII sem ticker ou com ticker de ação também
+        assert.throws(() => rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--cotas', '3', '--preco', '9', '--keys', caminhoKeys, '--arquivo', caminhoData]));
+        assert.throws(() => rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--ticker', 'WXYZ4F', '--cotas', '3', '--preco', '9', '--keys', caminhoKeys, '--arquivo', caminhoData]));
+        assert.throws(() => rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--ticker', 'WXYZ11', '--cotas', '3', '--preco', '9', '--taxa', '0.06', '--keys', caminhoKeys, '--arquivo', caminhoData]));
         assert.throws(() => rodarScript(['--data', '2031-04-15', '--valor', '10', '--keys', caminhoKeys, '--arquivo', caminhoData]));
-        assert.throws(() => rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--cotas', '2.5', '--preco', '9', '--keys', caminhoKeys, '--arquivo', caminhoData]));
+        assert.throws(() => rodarScript(['--tipo', 'fii', '--data', '2031-04-15', '--ticker', 'WXYZ11', '--cotas', '2.5', '--preco', '9', '--keys', caminhoKeys, '--arquivo', caminhoData]));
     } finally {
         rmSync(pasta, { recursive: true, force: true });
     }
@@ -140,57 +142,78 @@ test('aporte de ação: tipo e ticker vão dentro da parte cifrada e a página d
     }
 });
 
-// Sincronização Notion -> data.json, com páginas FICTÍCIAS no formato da API do Notion
+// Sincronização Notion -> data.json, com estrutura e páginas FICTÍCIAS no formato da API do Notion
 const SINCRONIZAR = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools', 'sincronizar_notion.py');
 const titulo = t => ({ title: [{ plain_text: t }] });
 const num = n => ({ number: n });
+const sel = nome => ({ select: nome ? { name: nome } : null });
 const paginaIpca = (id, data, valor, taxa) => ({ id, properties: { Data: titulo(data), Valor: num(valor), 'Taxa fixa': num(taxa) } });
-const paginaFii = (id, data, cotas, valor, origem) => ({ id, properties: { Data: titulo(data), Cotas: num(cotas), Valor: num(valor), Origem: { select: origem ? { name: origem } : null } } });
+const paginaFii = (id, data, cotas, valor, origem) => ({ id, properties: { Data: titulo(data), Cotas: num(cotas), Valor: num(valor), Origem: sel(origem) } });
+const paginaAcao = (id, data, operacao, qtd, valor, origem) => ({
+    id, properties: { Data: titulo(data), 'Operação': sel(operacao), Quantidade: num(qtd), 'Valor total': num(valor), Origem: sel(origem) },
+});
+const paginaProvento = (id, data, tipo, valor) => ({ id, properties: { Data: titulo(data), Tipo: sel(tipo), 'Valor líquido': num(valor) } });
+const COLUNAS_OPERACOES = ['Data', 'Operação', 'Quantidade', 'Valor total', 'Origem', 'Preço por ação', 'Qtd (±)', 'Valor (±)'];
+const COLUNAS_PROVENTOS = ['Data', 'Tipo', 'Valor líquido'];
+// uma ação = uma página com o banco de operações e o de proventos (reconhecidos pelas colunas)
+const acao = (ticker, operacoes, proventos = []) => ({ titulo: ticker, bancos: [
+    { titulo: ticker, colunas: COLUNAS_OPERACOES, paginas: operacoes },
+    { titulo: `${ticker} proventos`, colunas: COLUNAS_PROVENTOS, paginas: proventos },
+] });
+const CONFIG_NOTION = JSON.stringify({ sincronizacao: { notion: { ipca: 'x', paginaFii: 'y', paginaAcoes: 'z' } } });
+
+function ambienteSync(pasta, keys) {
+    const arq = n => join(pasta, n);
+    writeFileSync(arq('keys.json'), JSON.stringify(keys));
+    writeFileSync(arq('config.json'), CONFIG_NOTION);
+    writeFileSync(arq('data.json'), JSON.stringify({ version: 1, entries: [] }));
+    return {
+        gravar: estrutura => writeFileSync(arq('paginas.json'), JSON.stringify(estrutura)),
+        rodar: (...extra) => execFileSync(PYTHON, [SINCRONIZAR, '--keys', arq('keys.json'), '--arquivo', arq('data.json'), '--config', arq('config.json'), '--paginas', arq('paginas.json'), ...extra], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }),
+        dados: () => JSON.parse(readFileSync(arq('data.json'), 'utf8')),
+    };
+}
 
 test('sincronização: importa só linhas novas, cifradas, sem repetir e sem mostrar valores', async () => {
     const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
     try {
         const keys = await gerarChaves(SENHA_FICTICIA);
-        const arq = n => join(pasta, n);
-        writeFileSync(arq('keys.json'), JSON.stringify(keys));
-        writeFileSync(arq('config.json'), JSON.stringify({ sincronizacao: { notion: { ipca: 'x', fii: 'y' } } }));
-        writeFileSync(arq('data.json'), JSON.stringify({ version: 1, entries: [] }));
-        const paginas = {
+        const { gravar, rodar, dados } = ambienteSync(pasta, keys);
+        const estrutura = {
             ipca: [
                 paginaIpca('11111111-1111-4111-8111-111111111111', '15/02/2031', 1234.56, 0.0612),
                 paginaIpca('22222222-2222-4222-8222-222222222222', '2031-02-15', 10, 0.06), // data fora do formato
                 { ...paginaIpca('33333333-3333-4333-8333-333333333333', '15/03/2031', 10, 0.06), archived: true },
             ],
-            fii: [
+            fii: [{ titulo: 'wxyz11', paginas: [
                 paginaFii('44444444-4444-4444-8444-444444444444', '16/02/2031', 3, 29.61),
                 paginaFii('55555555-5555-4555-8555-555555555555', '16/02/2031', 2.5, 20), // cota fracionada
-            ],
+            ] }],
+            acoes: [acao('ABCD4F', [])],
         };
-        writeFileSync(arq('paginas.json'), JSON.stringify(paginas));
-        const rodar = () => execFileSync(PYTHON, [SINCRONIZAR, '--keys', arq('keys.json'), '--arquivo', arq('data.json'), '--config', arq('config.json'), '--paginas', arq('paginas.json')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-
+        gravar(estrutura);
         const saida = rodar();
         assert.match(saida, /2 aporte\(s\) novo\(s\).*2 linha\(s\) ignorada\(s\)/);
-        assert.ok(!/1234|29[.,]61|2031/.test(saida), 'a saída mostrou valores');
-        const dados = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
-        assert.equal(dados.entries.length, 2);
-        assert.equal(dados.importados.length, 2);
-        assert.ok(!/1234|29\.61|fii|2031/.test(JSON.stringify(dados)), 'valor em claro no data.json');
+        assert.ok(!/1234|29[.,]61|2031|WXYZ/i.test(saida), 'a saída mostrou valores ou ticker');
+        const d = dados();
+        assert.equal(d.entries.length, 2);
+        assert.equal(d.importados.length, 2);
+        assert.ok(!/1234|29\.61|fii|2031|WXYZ/i.test(JSON.stringify(d)), 'valor em claro no data.json');
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
-        assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { data: '2031-02-15', valor: 1234.56, taxa: 0.0612 });
-        assert.deepEqual(await decifrarEntrada(chave, dados.entries[1]), { tipo: 'fii', data: '2031-02-16', cotas: 3, preco: 9.87 });
+        assert.deepEqual(await decifrarEntrada(chave, d.entries[0]), { data: '2031-02-15', valor: 1234.56, taxa: 0.0612 });
+        assert.deepEqual(await decifrarEntrada(chave, d.entries[1]), { tipo: 'fii', data: '2031-02-16', ticker: 'WXYZ11', cotas: 3, preco: 9.87 });
 
-        // rodar de novo não duplica; uma linha nova entra
-        paginas.fii.push(paginaFii('66666666-6666-4666-8666-666666666666', '15/04/2031', 1, 9.9, 'Rendimento'));
-        paginas.fii.push(paginaFii('77777777-7777-4777-8777-777777777777', '16/04/2031', 1, 9.9, 'Aporte'));
-        writeFileSync(arq('paginas.json'), JSON.stringify(paginas));
+        // rodar de novo não duplica; linhas novas entram, inclusive de um segundo FII
+        estrutura.fii[0].paginas.push(paginaFii('66666666-6666-4666-8666-666666666666', '15/04/2031', 1, 9.9, 'Rendimento'));
+        estrutura.fii.push({ titulo: 'QRST11', paginas: [paginaFii('77777777-7777-4777-8777-777777777777', '16/04/2031', 1, 99, 'Aporte')] });
+        gravar(estrutura);
         assert.match(rodar(), /^2 aporte\(s\) novo\(s\)/);
         assert.match(rodar(), /^0 aporte\(s\) novo\(s\)/);
-        const depois = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
+        const depois = dados();
         assert.equal(depois.entries.length, 4);
-        assert.ok(!/rendimento/i.test(JSON.stringify(depois)), 'origem em claro no data.json');
-        assert.deepEqual(await decifrarEntrada(chave, depois.entries[2]), { tipo: 'fii', data: '2031-04-15', cotas: 1, preco: 9.9, origem: 'rendimento' });
-        assert.deepEqual(await decifrarEntrada(chave, depois.entries[3]), { tipo: 'fii', data: '2031-04-16', cotas: 1, preco: 9.9 });
+        assert.ok(!/rendimento|QRST/i.test(JSON.stringify(depois)), 'origem ou ticker em claro no data.json');
+        assert.deepEqual(await decifrarEntrada(chave, depois.entries[2]), { tipo: 'fii', data: '2031-04-15', ticker: 'WXYZ11', cotas: 1, preco: 9.9, origem: 'rendimento' });
+        assert.deepEqual(await decifrarEntrada(chave, depois.entries[3]), { tipo: 'fii', data: '2031-04-16', ticker: 'QRST11', cotas: 1, preco: 99 });
     } finally {
         rmSync(pasta, { recursive: true, force: true });
     }
@@ -212,46 +235,57 @@ test('add_aporte: --origem rendimento só para FII', async () => {
         const k = join(pasta, 'keys.json'), d = join(pasta, 'data.json');
         writeFileSync(k, JSON.stringify(keys));
         writeFileSync(d, JSON.stringify({ version: 1, entries: [] }));
-        rodarScript(['--tipo', 'fii', '--data', '2031-05-15', '--cotas', '2', '--preco', '9.5', '--origem', 'rendimento', '--keys', k, '--arquivo', d]);
+        rodarScript(['--tipo', 'fii', '--data', '2031-05-15', '--ticker', 'WXYZ11', '--cotas', '2', '--preco', '9.5', '--origem', 'rendimento', '--keys', k, '--arquivo', d]);
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
         const e = JSON.parse(readFileSync(d, 'utf8')).entries[0];
-        assert.deepEqual(await decifrarEntrada(chave, e), { tipo: 'fii', data: '2031-05-15', cotas: 2, preco: 9.5, origem: 'rendimento' });
+        assert.deepEqual(await decifrarEntrada(chave, e), { tipo: 'fii', data: '2031-05-15', ticker: 'WXYZ11', cotas: 2, preco: 9.5, origem: 'rendimento' });
         assert.throws(() => rodarScript(['--data', '2031-05-15', '--valor', '10', '--taxa', '0.06', '--origem', 'rendimento', '--keys', k, '--arquivo', d]));
     } finally {
         rmSync(pasta, { recursive: true, force: true });
     }
 });
 
-const sel = nome => ({ select: nome ? { name: nome } : null });
-const paginaAcao = (id, data, ticker, operacao, qtd, valor, origem) => ({
-    id, properties: { Data: titulo(data), Ticker: sel(ticker), 'Operação': sel(operacao), Quantidade: num(qtd), 'Valor total': num(valor), Origem: sel(origem) },
-});
-
-const paginaProvento = (id, data, ticker, tipo, valor) => ({
-    id, properties: { Data: titulo(data), Ticker: sel(ticker), Tipo: sel(tipo), 'Valor líquido': num(valor) },
-});
-
-test('sincronização de proventos: dividendo e JCP cifrados; linha sem tipo é ignorada', async () => {
+test('sincronização de proventos: dividendo e JCP cifrados com o ticker da página; linha sem tipo é ignorada', async () => {
     const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
     try {
         const keys = await gerarChaves(SENHA_FICTICIA);
-        const arq = n => join(pasta, n);
-        writeFileSync(arq('keys.json'), JSON.stringify(keys));
-        writeFileSync(arq('config.json'), JSON.stringify({ sincronizacao: { notion: { proventos: 'p' } } }));
-        writeFileSync(arq('data.json'), JSON.stringify({ version: 1, entries: [] }));
-        writeFileSync(arq('paginas.json'), JSON.stringify({ proventos: [
-            paginaProvento('b1111111-1111-4111-8111-111111111111', '20/04/2031', 'abcd4f', 'Dividendo', 12.34),
-            paginaProvento('b2222222-2222-4222-8222-222222222222', '21/04/2031', 'EFGH3', 'JCP', 5.67),
-            paginaProvento('b3333333-3333-4333-8333-333333333333', '22/04/2031', 'EFGH3', '', 1),
-        ] }));
-        const saida = execFileSync(PYTHON, [SINCRONIZAR, '--keys', arq('keys.json'), '--arquivo', arq('data.json'), '--config', arq('config.json'), '--paginas', arq('paginas.json')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+        const { gravar, rodar, dados } = ambienteSync(pasta, keys);
+        gravar({ ipca: [], fii: [{ titulo: 'WXYZ11', paginas: [] }], acoes: [
+            acao('abcd4f', [], [paginaProvento('b1111111-1111-4111-8111-111111111111', '20/04/2031', 'Dividendo', 12.34)]),
+            acao('EFGH3F', [], [
+                paginaProvento('b2222222-2222-4222-8222-222222222222', '21/04/2031', 'JCP', 5.67),
+                paginaProvento('b3333333-3333-4333-8333-333333333333', '22/04/2031', '', 1),
+            ]),
+        ] });
+        const saida = rodar();
         assert.match(saida, /^2 aporte\(s\) novo\(s\).*1 linha\(s\) ignorada\(s\)/);
-        assert.ok(!/12\.34|5\.67/.test(saida), 'valor na saída');
-        const dados = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
-        assert.ok(!/ABCD|EFGH|provento|dividendo|jcp|12\.34/i.test(JSON.stringify(dados)), 'provento em claro no data.json');
+        assert.ok(!/12\.34|5\.67|ABCD|EFGH/i.test(saida), 'valor ou ticker na saída');
+        const d = dados();
+        assert.ok(!/ABCD|EFGH|provento|dividendo|jcp|12\.34/i.test(JSON.stringify(d)), 'provento em claro no data.json');
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
-        assert.deepEqual(await decifrarEntrada(chave, dados.entries[0]), { tipo: 'provento', data: '2031-04-20', ticker: 'ABCD4F', provento: 'dividendo', valor: 12.34 });
-        assert.deepEqual(await decifrarEntrada(chave, dados.entries[1]), { tipo: 'provento', data: '2031-04-21', ticker: 'EFGH3', provento: 'jcp', valor: 5.67 });
+        assert.deepEqual(await decifrarEntrada(chave, d.entries[0]), { tipo: 'provento', data: '2031-04-20', ticker: 'ABCD4F', provento: 'dividendo', valor: 12.34 });
+        assert.deepEqual(await decifrarEntrada(chave, d.entries[1]), { tipo: 'provento', data: '2031-04-21', ticker: 'EFGH3F', provento: 'jcp', valor: 5.67 });
+    } finally {
+        rmSync(pasta, { recursive: true, force: true });
+    }
+});
+
+test('sincronização: nome fora do padrão é ignorado e banco desconhecido é contado', async () => {
+    const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
+    try {
+        const keys = await gerarChaves(SENHA_FICTICIA);
+        const { gravar, rodar, dados } = ambienteSync(pasta, keys);
+        gravar({ ipca: [], fii: [
+            { titulo: 'WXYZ11', paginas: [paginaFii('c1111111-1111-4111-8111-111111111111', '16/02/2031', 1, 10)] },
+            { titulo: 'Fundo novo', paginas: [paginaFii('c2222222-2222-4222-8222-222222222222', '16/02/2031', 1, 10)] },
+        ], acoes: [
+            acao('ABCD4', [paginaAcao('c3333333-3333-4333-8333-333333333333', '10/03/2031', 'Compra', 1, 10, null)]), // sem F
+            { titulo: 'EFGH3F', bancos: [{ titulo: 'Notas', colunas: ['Data', 'Texto'], paginas: [] }] },
+        ] });
+        assert.match(rodar(), /^1 aporte\(s\) novo\(s\).*3 página\(s\) ou banco\(s\) com nome fora do padrão/);
+        assert.equal(dados().entries.length, 1);
+        assert.throws(() => rodar('--profunda'), /nome fora do padrão/);
+        assert.equal(dados().entries.length, 1);
     } finally {
         rmSync(pasta, { recursive: true, force: true });
     }
@@ -261,57 +295,61 @@ test('sincronização de ações e profunda: compra, venda, origem e reconstruç
     const pasta = mkdtempSync(join(tmpdir(), 'ipca2050-teste-'));
     try {
         const keys = await gerarChaves(SENHA_FICTICIA);
-        const arq = n => join(pasta, n);
-        writeFileSync(arq('keys.json'), JSON.stringify(keys));
-        writeFileSync(arq('config.json'), JSON.stringify({ sincronizacao: { notion: { ipca: 'x', fii: 'y', acoes: 'z' } } }));
-        writeFileSync(arq('data.json'), JSON.stringify({ version: 1, entries: [] }));
-        const paginas = {
+        const { gravar, rodar, dados } = ambienteSync(pasta, keys);
+        const estrutura = {
             ipca: [paginaIpca('11111111-1111-4111-8111-111111111111', '15/02/2031', 100, 0.06)],
-            fii: [],
+            fii: [{ titulo: 'WXYZ11', paginas: [] }],
             acoes: [
-                paginaAcao('a1111111-1111-4111-8111-111111111111', '10/03/2031', 'abcd4f', 'Compra', 10, 123.45, null),
-                paginaAcao('a2222222-2222-4222-8222-222222222222', '11/03/2031', 'ABCD4F', 'Venda', 4, 60.5, 'Rendimento'), // origem não vale na venda
-                paginaAcao('a3333333-3333-4333-8333-333333333333', '12/03/2031', 'EFGH3', 'Compra', 2, 50, 'Rendimento'),
-                paginaAcao('a4444444-4444-4444-8444-444444444444', '12/03/2031', 'EFGH3', '', 2, 50, null), // sem operação
+                acao('abcd4f', [
+                    paginaAcao('a1111111-1111-4111-8111-111111111111', '10/03/2031', 'Compra', 10, 123.45, null),
+                    paginaAcao('a2222222-2222-4222-8222-222222222222', '11/03/2031', 'Venda', 4, 60.5, 'Rendimento'), // origem não vale na venda
+                ]),
+                acao('EFGH3F', [
+                    paginaAcao('a3333333-3333-4333-8333-333333333333', '12/03/2031', 'Compra', 2, 50, 'Rendimento'),
+                    paginaAcao('a4444444-4444-4444-8444-444444444444', '12/03/2031', '', 2, 50, null), // sem operação
+                ]),
             ],
         };
-        const gravar = () => writeFileSync(arq('paginas.json'), JSON.stringify(paginas));
-        const rodar = (...extra) => execFileSync(PYTHON, [SINCRONIZAR, '--keys', arq('keys.json'), '--arquivo', arq('data.json'), '--config', arq('config.json'), '--paginas', arq('paginas.json'), ...extra], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-        gravar();
+        gravar(estrutura);
         assert.match(rodar(), /^4 aporte\(s\) novo\(s\).*1 linha\(s\) ignorada\(s\)/);
-        const dados = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
-        assert.ok(!/ABCD|EFGH|venda|acao|123\.45/i.test(JSON.stringify(dados)), 'ação em claro no data.json');
+        const d = dados();
+        assert.ok(!/ABCD|EFGH|venda|acao|123\.45/i.test(JSON.stringify(d)), 'ação em claro no data.json');
         const chave = await abrirChavePrivada(keys, SENHA_FICTICIA);
-        assert.deepEqual(await decifrarEntrada(chave, dados.entries[1]), { tipo: 'acao', data: '2031-03-10', ticker: 'ABCD4F', quantidade: 10, valor: 123.45 });
-        assert.deepEqual(await decifrarEntrada(chave, dados.entries[2]), { tipo: 'acao', data: '2031-03-11', ticker: 'ABCD4F', quantidade: 4, valor: 60.5, operacao: 'venda' });
-        assert.deepEqual(await decifrarEntrada(chave, dados.entries[3]), { tipo: 'acao', data: '2031-03-12', ticker: 'EFGH3', quantidade: 2, valor: 50, origem: 'rendimento' });
+        assert.deepEqual(await decifrarEntrada(chave, d.entries[1]), { tipo: 'acao', data: '2031-03-10', ticker: 'ABCD4F', quantidade: 10, valor: 123.45 });
+        assert.deepEqual(await decifrarEntrada(chave, d.entries[2]), { tipo: 'acao', data: '2031-03-11', ticker: 'ABCD4F', quantidade: 4, valor: 60.5, operacao: 'venda' });
+        assert.deepEqual(await decifrarEntrada(chave, d.entries[3]), { tipo: 'acao', data: '2031-03-12', ticker: 'EFGH3F', quantidade: 2, valor: 50, origem: 'rendimento' });
 
         // profunda com linha incompleta: cancela sem gravar
         assert.throws(() => rodar('--profunda'), /linha\(s\) com dados incompletos/);
-        assert.equal(JSON.parse(readFileSync(arq('data.json'), 'utf8')).entries.length, 4);
+        assert.equal(dados().entries.length, 4);
 
         // corrige a linha, apaga a venda e edita a compra no "Notion": a profunda refaz tudo
-        paginas.acoes = [
-            paginaAcao('a1111111-1111-4111-8111-111111111111', '10/03/2031', 'ABCD4F', 'Compra', 8, 100, null),
-            paginaAcao('a4444444-4444-4444-8444-444444444444', '12/03/2031', 'EFGH3', 'Compra', 2, 50, null),
+        estrutura.acoes = [
+            acao('ABCD4F', [paginaAcao('a1111111-1111-4111-8111-111111111111', '10/03/2031', 'Compra', 8, 100, null)]),
+            acao('EFGH3F', [paginaAcao('a4444444-4444-4444-8444-444444444444', '12/03/2031', 'Compra', 2, 50, null)]),
         ];
-        gravar();
+        gravar(estrutura);
         assert.match(rodar('--profunda'), /Profunda: 4 entrada\(s\) apagada\(s\) e 3 refeita\(s\)/);
-        const refeito = JSON.parse(readFileSync(arq('data.json'), 'utf8'));
+        const refeito = dados();
         assert.equal(refeito.entries.length, 3);
         assert.equal(refeito.importados.length, 3);
         assert.deepEqual(await decifrarEntrada(chave, refeito.entries[1]), { tipo: 'acao', data: '2031-03-10', ticker: 'ABCD4F', quantidade: 8, valor: 100 });
         // e a normal seguinte não duplica nada
         assert.match(rodar(), /^0 aporte\(s\) novo\(s\)/);
 
-        // banco de ações vazio é válido (apagou as de teste); todos vazios, não
-        paginas.acoes = [];
-        gravar();
+        // banco de ação vazio é válido (apagou as de teste); página Ações sem nada dentro, não
+        estrutura.acoes = [acao('ABCD4F', [])];
+        gravar(estrutura);
         assert.match(rodar('--profunda'), /3 entrada\(s\) apagada\(s\) e 1 refeita\(s\)/);
-        paginas.ipca = [];
-        gravar();
+        estrutura.acoes = [];
+        gravar(estrutura);
+        assert.throws(() => rodar('--profunda'), /página Ações veio sem nada dentro/);
+        // todos os bancos vazios, também não
+        estrutura.acoes = [acao('ABCD4F', [])];
+        estrutura.ipca = [];
+        gravar(estrutura);
         assert.throws(() => rodar('--profunda'), /todos os bancos vieram vazios/);
-        assert.equal(JSON.parse(readFileSync(arq('data.json'), 'utf8')).entries.length, 1);
+        assert.equal(dados().entries.length, 1);
     } finally {
         rmSync(pasta, { recursive: true, force: true });
     }

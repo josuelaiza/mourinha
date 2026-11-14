@@ -3,7 +3,7 @@
 
 Uso:
     python add_aporte.py --data AAAA-MM-DD --valor 100.00 --taxa 0.0650      (Tesouro IPCA+ 2050)
-    python add_aporte.py --tipo fii --data AAAA-MM-DD --cotas 10 --preco 9.80 (FII)
+    python add_aporte.py --tipo fii --data AAAA-MM-DD --ticker ABCD11 --cotas 10 --preco 9.80 (FII)
     python add_aporte.py --tipo acao --data AAAA-MM-DD --ticker ABCD4F --quantidade 5 --valor 100.00
                                                       (ação; --valor = total pago)
 
@@ -13,7 +13,7 @@ memória deste processo: não é gravado em arquivo nem impresso na tela.
 Formato (o mesmo que a página decifra com a Web Crypto API):
   - chave AES-256-GCM aleatória cifra o JSON do aporte:
       IPCA+: {"data", "valor", "taxa"}   (sem "tipo", como os primeiros aportes)
-      FII:   {"tipo": "fii", "data", "cotas", "preco"} (+ "origem": "rendimento"
+      FII:   {"tipo": "fii", "data", "ticker", "cotas", "preco"} (+ "origem": "rendimento"
              quando a compra foi feita com rendimento do fundo)
       Ação:  {"tipo": "acao", "data", "ticker", "quantidade", "valor"} (valor = total pago)
     o tipo vai dentro da parte cifrada: o repo não mostra qual investimento é;
@@ -161,7 +161,7 @@ def main() -> None:
     p.add_argument("--taxa", type=ler_taxa, help="IPCA+: taxa real em decimal, ex.: 0.0650")
     p.add_argument("--cotas", type=ler_cotas, help="FII: quantidade de cotas, ex.: 10")
     p.add_argument("--preco", type=ler_valor, help="FII: preço pago por cota, ex.: 9.80")
-    p.add_argument("--ticker", type=ler_ticker, help="ação: código na B3, ex.: ABCD4F")
+    p.add_argument("--ticker", type=ler_ticker, help="FII ou ação: código na B3, ex.: ABCD11 ou ABCD4F")
     p.add_argument("--quantidade", type=ler_cotas, help="ação: quantidade comprada, ex.: 5")
     p.add_argument("--origem", choices=["aporte", "rendimento"], default="aporte",
                    help="FII: aporte (seu dinheiro) ou rendimento (compra com rendimento do fundo)")
@@ -169,8 +169,10 @@ def main() -> None:
     p.add_argument("--arquivo", type=Path, default=PASTA / "data.json", help="caminho do data.json")
     p.add_argument("--config", type=Path, default=PASTA / "config.json", help="caminho do config.json (só para o aviso do IPCA)")
     args = p.parse_args()
-    if args.tipo != "acao" and (args.ticker is not None or args.quantidade is not None):
-        p.error("--ticker e --quantidade só valem para ação")
+    if args.tipo == "ipca" and args.ticker is not None:
+        p.error("--ticker só vale para FII e ação")
+    if args.tipo != "acao" and args.quantidade is not None:
+        p.error("--quantidade só vale para ação")
     if args.tipo == "acao":
         if args.ticker is None or args.quantidade is None or args.valor is None \
                 or args.taxa is not None or args.cotas is not None or args.preco is not None:
@@ -187,8 +189,10 @@ def main() -> None:
         payload = {"data": args.data, "valor": args.valor, "taxa": args.taxa}
     else:
         if args.cotas is None or args.preco is None or args.valor is not None or args.taxa is not None:
-            p.error("FII usa --cotas e --preco (sem --valor/--taxa)")
-        payload = {"tipo": "fii", "data": args.data, "cotas": args.cotas, "preco": args.preco}
+            p.error("FII usa --ticker, --cotas e --preco (sem --valor/--taxa)")
+        if args.ticker is None or not re.fullmatch(r"[A-Z]{4}\d{2}", args.ticker):
+            p.error("FII usa --ticker no formato da B3, ex.: ABCD11")
+        payload = {"tipo": "fii", "data": args.data, "ticker": args.ticker, "cotas": args.cotas, "preco": args.preco}
         if args.origem == "rendimento":
             payload["origem"] = "rendimento"
 

@@ -127,6 +127,23 @@
         .manual-corpo .exemplo { margin-top: 6px; }
         .manual-corpo .tabela.tabela-ir { max-width: none; }
         .manual-corpo .tabela-ir tr.total td { font-weight: 600; color: var(--texto); }
+        /* Assuntos dentro de "Impostos, custos e declaração" (cada um abre e fecha) */
+        .assunto { border-top: 1px solid var(--borda); }
+        .assunto:first-of-type { margin-top: 12px; }
+        .assunto > summary {
+            list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            padding: 11px 0; font-size: 0.88rem; font-weight: 600; color: var(--texto);
+        }
+        .assunto > summary::-webkit-details-marker { display: none; }
+        .assunto > summary::after {
+            content: ""; width: 6px; height: 6px; flex: none; margin-right: 3px;
+            border-right: 2px solid var(--texto-3); border-bottom: 2px solid var(--texto-3); transform: rotate(45deg) translateY(-2px);
+        }
+        .assunto[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
+        .assunto > summary:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; border-radius: 4px; }
+        .assunto-corpo { padding-bottom: 12px; }
+        .manual-corpo h4 { font-size: 0.72rem; font-weight: 600; color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.4px; margin: 14px 0 6px; }
+        .assunto-corpo > h4:first-child { margin-top: 2px; }
 
         /* Indicadores */
         .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px; margin-bottom: 10px; }
@@ -543,6 +560,129 @@
                     </li>
                 </ul>
             </div>
+
+            <!-- Impostos, custos e declaração: tudo junto, separado por assunto -->
+            <details class="cartao manual" id="manualImpostos">
+                <summary>Impostos, custos e declaração</summary>
+                <div class="manual-corpo">
+                    <p class="resumo"><strong>Tesouro IPCA+</strong> (ficar com o título até 2050): 15% de IR sobre o lucro e 0,20% ao ano de custódia, descontados automaticamente. Você não calcula nem paga nada, e o simulador já desconta os dois.<br>
+                    <strong>FIIs</strong> (comprar, reinvestir e nunca vender): o imposto na prática é zero. Só pagaria se um dia vendesse cotas com lucro.<br>
+                    <strong>Ações:</strong> venda de até R$ 20 mil no mês é isenta de IR.</p>
+
+                    <details class="assunto">
+                        <summary>Imposto de renda</summary>
+                        <div class="assunto-corpo">
+                            <h4>Tesouro IPCA+</h4>
+                            <p><strong>Regressivo, descontado na fonte.</strong> A alíquota cai conforme o tempo de cada aporte:</p>
+                            <table class="tabela">
+                                <tbody>
+                                    <tr><td>até 180 dias</td><td>22,5%</td></tr>
+                                    <tr><td>181 a 360 dias</td><td>20%</td></tr>
+                                    <tr><td>361 a 720 dias</td><td>17,5%</td></tr>
+                                    <tr><td>mais de 720 dias</td><td>15%</td></tr>
+                                </tbody>
+                            </table>
+                            <ul>
+                                <li>O imposto incide sobre o <strong>lucro nominal</strong>, inclusive a parte que só repôs a inflação.</li>
+                                <li>Cada aporte conta o próprio prazo. Os mais recentes ficam nas faixas mais altas até completar 2 anos.</li>
+                            </ul>
+                            <p class="exemplo"><strong>Exemplo</strong> (valores fictícios): R$ 1.000 aplicados viram R$ 5.000 no vencimento. O lucro é de R$ 4.000; 15% de IR dá <strong>R$ 600</strong>, descontados na fonte.</p>
+
+                            <h4>FIIs</h4>
+                            <p>Nos FIIs é mais simples que no IPCA+. Tem duas situações: receber o rendimento mensal e vender cotas.</p>
+                            <p><strong>Rendimento mensal: isento de IR.</strong> Você não paga nada sobre o que cai todo mês. Nada é descontado, nem no recebimento nem no fim do ano. A isenção vale se o fundo cumprir três condições:</p>
+                            <ul>
+                                <li>as cotas são negociadas na bolsa;</li>
+                                <li>o fundo tem pelo menos 100 cotistas;</li>
+                                <li>você tem menos de 10% das cotas.</li>
+                            </ul>
+                            <p>Os fundos grandes têm milhares de cotistas, então ficam muito dentro disso. Para 2026, as regras de tributação dos rendimentos de FIIs seguem inalteradas.</p>
+                            <p>A MP 1.303 chegou a propor que, para cotas emitidas a partir de 1/1/2026, os rendimentos passassem a ser tributados com 5% de IR. A MP caducou e não virou lei. É um risco a acompanhar.</p>
+                            <p><strong>Venda de cotas: 20% sobre o lucro.</strong> Só paga se <strong>vender mais caro do que comprou</strong>. Diferenças para ações:</p>
+                            <ul>
+                                <li><strong>Alíquota de 20%</strong>, maior que os 15% das ações.</li>
+                                <li><strong>Sem a isenção de R$ 20 mil por mês</strong> que as ações têm. Qualquer lucro paga.</li>
+                            </ul>
+
+                            <h4>Ações</h4>
+                            <ul>
+                                <li><strong>Venda:</strong> se o total vendido no mês for até R$ 20 mil, o lucro é isento. Acima disso, paga 15% sobre o lucro, descontado o prejuízo guardado de meses anteriores.</li>
+                                <li><strong>Dividendos:</strong> isentos.</li>
+                                <li><strong>JCP:</strong> 15% de IR descontado na fonte. O valor que cai na conta já vem líquido.</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="assunto">
+                        <summary>Custos</summary>
+                        <div class="assunto-corpo">
+                            <h4>Tesouro IPCA+</h4>
+                            <ul>
+                                <li><strong>IOF:</strong> só existe se você resgatar em até 30 dias. Depois disso é zero.</li>
+                                <li><strong>Custódia da B3: 0,20% ao ano</strong>, calculada sobre o saldo, proporcional ao tempo aplicado.</li>
+                                <li>Desde 2025 a custódia só é descontada quando há movimentação: resgate, vencimento ou pagamento de juros.</li>
+                            </ul>
+
+                            <h4>FIIs</h4>
+                            <ul>
+                                <li><strong>Sem custódia</strong> de 0,20% como no Tesouro.</li>
+                                <li>A <strong>taxa de administração</strong> já sai de dentro do fundo antes de distribuir o rendimento. Você não vê essa cobrança.</li>
+                                <li>A B3 cobra uma pequena taxa em cada compra ou venda (centavos no seu volume).</li>
+                            </ul>
+
+                            <h4>Ações</h4>
+                            <ul>
+                                <li>As taxas da B3 vêm na nota de corretagem e já entram no Valor total que você lança.</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="assunto">
+                        <summary>DARF</summary>
+                        <div class="assunto-corpo">
+                            <h4>Tesouro IPCA+</h4>
+                            <p>Não tem DARF: a corretora desconta o IR na hora do resgate ou do vencimento.</p>
+
+                            <h4>FIIs</h4>
+                            <ul>
+                                <li><strong>Você mesmo calcula e paga</strong>, por DARF (código 6015), até o último dia útil do mês seguinte à venda. A corretora não desconta por você.</li>
+                                <li>DARF abaixo de R$ 10 não se paga: o valor acumula para o mês seguinte.</li>
+                                <li>Na venda, a corretora retém 0,005% (o "dedo-duro"). Esse valor é abatido do DARF.</li>
+                                <li><strong>Prejuízo não paga nada</strong>, e o valor perdido pode ser descontado de lucros futuros com FII.</li>
+                            </ul>
+                            <p class="exemplo"><strong>Exemplo:</strong> você compra 100 cotas a R$ 9,30 (R$ 930).</p>
+                            <ul>
+                                <li>Vende a R$ 10,30 (R$ 1.030) → lucro de R$ 100 → DARF de <strong>R$ 20</strong>.</li>
+                                <li>Vende a R$ 9,00 (R$ 900) → prejuízo de R$ 30 → <strong>nada a pagar</strong>, e os R$ 30 abatem um lucro futuro.</li>
+                            </ul>
+
+                            <h4>Ações</h4>
+                            <div id="darfAcoes"></div>
+                        </div>
+                    </details>
+
+                    <details class="assunto">
+                        <summary>Declaração anual (abril/maio)</summary>
+                        <div class="assunto-corpo">
+                            <h4>Tesouro IPCA+</h4>
+                            <ul>
+                                <li><strong>Bens e Direitos:</strong> grupo 04, código 02, pelo <strong>valor que você pagou</strong>.</li>
+                                <li>No ano em que resgatar ou o título vencer, o rendimento vai em <strong>Rendimentos Sujeitos à Tributação Exclusiva</strong>, código 06.</li>
+                            </ul>
+
+                            <h4>FIIs</h4>
+                            <p>Mesmo sem imposto, você declara:</p>
+                            <ul>
+                                <li><strong>Bens e Direitos:</strong> grupo 07, código 03, as cotas pelo <strong>preço que pagou</strong>, não pelo valor atual.</li>
+                                <li><strong>Rendimentos Isentos:</strong> o total recebido no ano, no código 26 (Outros). Se o informe da corretora indicar outro código, siga o informe.</li>
+                            </ul>
+
+                            <h4>Ações</h4>
+                            <div id="declaracaoAcoes"></div>
+                        </div>
+                    </details>
+                </div>
+            </details>
         </section>
 
         <!-- Tesouro IPCA+ 2050 -->
@@ -600,49 +740,13 @@
             </div>
 
             <details class="cartao manual">
-                <summary>Impostos e custos</summary>
+                <summary>Vender antes de 2050</summary>
                 <div class="manual-corpo">
-                    <p class="resumo">No seu plano (ficar com o título até 2050), você paga <strong>15% de IR sobre o lucro</strong> e <strong>0,20% ao ano de custódia</strong>. Os dois são descontados automaticamente: você não calcula nem paga nada. O simulador já desconta os dois.</p>
-
-                    <h3>1. Imposto de Renda: regressivo, descontado na fonte</h3>
-                    <p>A alíquota cai conforme o tempo de cada aporte:</p>
-                    <table class="tabela">
-                        <tbody>
-                            <tr><td>até 180 dias</td><td>22,5%</td></tr>
-                            <tr><td>181 a 360 dias</td><td>20%</td></tr>
-                            <tr><td>361 a 720 dias</td><td>17,5%</td></tr>
-                            <tr><td>mais de 720 dias</td><td>15%</td></tr>
-                        </tbody>
-                    </table>
-                    <ul>
-                        <li>O imposto incide sobre o <strong>lucro nominal</strong>, inclusive a parte que só repôs a inflação.</li>
-                        <li>Cada aporte conta o próprio prazo. Os mais recentes ficam nas faixas mais altas até completar 2 anos.</li>
-                        <li>Não tem DARF: a corretora desconta na hora do resgate ou do vencimento.</li>
-                    </ul>
-
-                    <h3>2. IOF</h3>
-                    <p>Só existe se você resgatar em até 30 dias. Depois disso é zero.</p>
-
-                    <h3>3. Custódia da B3: 0,20% ao ano</h3>
-                    <ul>
-                        <li>Calculada sobre o saldo, proporcional ao tempo aplicado.</li>
-                        <li>Desde 2025 só é descontada quando há movimentação: resgate, vencimento ou pagamento de juros.</li>
-                    </ul>
-
-                    <h3>4. Vender antes de 2050</h3>
                     <ul>
                         <li>O Tesouro recompra o título pelo <strong>preço de mercado do dia</strong> (marcação a mercado).</li>
                         <li>Esse preço pode ficar acima ou abaixo do valor que o simulador mostra.</li>
                         <li>A taxa contratada só é garantida levando o título até o vencimento.</li>
                     </ul>
-
-                    <h3>5. Declaração anual (abril/maio)</h3>
-                    <ul>
-                        <li><strong>Bens e Direitos:</strong> grupo 04, código 02, pelo <strong>valor que você pagou</strong>.</li>
-                        <li>No ano em que resgatar ou o título vencer, o rendimento vai em <strong>Rendimentos Sujeitos à Tributação Exclusiva</strong>, código 06.</li>
-                    </ul>
-
-                    <p class="exemplo"><strong>Exemplo</strong> (valores fictícios): R$ 1.000 aplicados viram R$ 5.000 no vencimento. O lucro é de R$ 4.000; 15% de IR dá <strong>R$ 600</strong>, descontados na fonte.</p>
                 </div>
             </details>
         </section>
@@ -741,54 +845,6 @@
                 </div>
             </div>
 
-            <details class="cartao manual">
-                <summary>Impostos e custos</summary>
-                <div class="manual-corpo">
-                    <p class="resumo">No seu plano (comprar, reinvestir e nunca vender), <strong>o imposto na prática é zero</strong>. Só pagaria se um dia vendesse cotas com lucro.</p>
-
-                    <p>No MXRF11 é mais simples que no IPCA+. Tem duas situações: receber o rendimento mensal e vender cotas.</p>
-
-                    <h3>1. Rendimento mensal: isento de IR</h3>
-                    <p>Você não paga nada sobre o que cai todo mês. Nada é descontado, nem no recebimento nem no fim do ano. A isenção vale se o fundo cumprir três condições:</p>
-                    <ul>
-                        <li>as cotas são negociadas na bolsa;</li>
-                        <li>o fundo tem pelo menos 100 cotistas;</li>
-                        <li>você tem menos de 10% das cotas.</li>
-                    </ul>
-                    <p>O MXRF11 tem mais de 1 milhão de cotistas, então está muito dentro disso. Para 2026, as regras de tributação dos rendimentos de FIIs seguem inalteradas.</p>
-                    <p>A MP 1.303 chegou a propor que, para cotas emitidas a partir de 1/1/2026, os rendimentos passassem a ser tributados com 5% de IR. A MP caducou e não virou lei. É um risco a acompanhar.</p>
-
-                    <h3>2. Venda de cotas: 20% sobre o lucro</h3>
-                    <p>Só paga se <strong>vender mais caro do que comprou</strong>. Diferenças para ações:</p>
-                    <ul>
-                        <li><strong>Alíquota de 20%</strong>, maior que os 15% das ações.</li>
-                        <li><strong>Sem a isenção de R$ 20 mil por mês</strong> que as ações têm. Qualquer lucro paga.</li>
-                        <li><strong>Você mesmo calcula e paga</strong>, por DARF (código 6015), até o último dia útil do mês seguinte à venda. A corretora não desconta por você.</li>
-                        <li>DARF abaixo de R$ 10 não se paga: o valor acumula para o mês seguinte.</li>
-                        <li>Na venda, a corretora retém 0,005% (o "dedo-duro"). Esse valor é abatido do DARF.</li>
-                        <li><strong>Prejuízo não paga nada</strong>, e o valor perdido pode ser descontado de lucros futuros com FII.</li>
-                    </ul>
-                    <p class="exemplo"><strong>Exemplo:</strong> você compra 100 cotas a R$ 9,30 (R$ 930).</p>
-                    <ul>
-                        <li>Vende a R$ 10,30 (R$ 1.030) → lucro de R$ 100 → DARF de <strong>R$ 20</strong>.</li>
-                        <li>Vende a R$ 9,00 (R$ 900) → prejuízo de R$ 30 → <strong>nada a pagar</strong>, e os R$ 30 abatem um lucro futuro.</li>
-                    </ul>
-
-                    <h3>3. Custos</h3>
-                    <ul>
-                        <li><strong>Sem custódia</strong> de 0,20% como no Tesouro.</li>
-                        <li>A <strong>taxa de administração</strong> já sai de dentro do fundo antes de distribuir o rendimento. Você não vê essa cobrança.</li>
-                        <li>A B3 cobra uma pequena taxa em cada compra ou venda (centavos no seu volume).</li>
-                    </ul>
-
-                    <h3>4. Declaração anual (abril/maio)</h3>
-                    <p>Mesmo sem imposto, você declara:</p>
-                    <ul>
-                        <li><strong>Bens e Direitos:</strong> grupo 07, código 03, as cotas pelo <strong>preço que pagou</strong>, não pelo valor atual.</li>
-                        <li><strong>Rendimentos Isentos:</strong> o total recebido no ano, no código 26 (Outros). Se o informe da corretora indicar outro código, siga o informe.</li>
-                    </ul>
-                </div>
-            </details>
         </section>
 
         <!-- Ações: entra no Hoje do Panorama (aportado e patrimônio), não na Projeção -->
@@ -901,10 +957,6 @@
                 </div>
             </div>
 
-            <details class="cartao manual" id="manualDeclaracao" hidden>
-                <summary>Declaração e DARF</summary>
-                <div class="manual-corpo" id="corpoDeclaracao"></div>
-            </details>
         </section>
 
         <!-- Token da brapi.dev, para as cotações (janela) -->
@@ -1838,9 +1890,12 @@ function listaComTotal(soma, vazio) {
 }
 
 function mostrarDeclaracao(temAcoes) {
-    $('manualDeclaracao').hidden = !temAcoes;
-    if (!temAcoes) return;
-    const partes = [elTexto('h3', 'Mês a mês (meses com venda)')];
+    if (!temAcoes) {
+        $('darfAcoes').replaceChildren(elTexto('p', 'Sem ações registradas.'));
+        $('declaracaoAcoes').replaceChildren(elTexto('p', 'Sem ações registradas.'));
+        return;
+    }
+    const partes = [tituloFicha('Mês a mês', ' (só os meses com venda)')];
     const meses = apuracaoMensal(aportesAcoes);
     if (!meses.length) partes.push(elTexto('p', 'Nenhuma venda registrada.'));
     else partes.push(tabelaIr(['Mês', 'Vendas', 'Lucro', 'Situação', 'DARF', 'Prazo', 'Prejuízo acumulado'], meses.map(m => linhaTabela([
@@ -1853,9 +1908,12 @@ function mostrarDeclaracao(temAcoes) {
         [brl.format(m.prejuizoAcumulado)],
     ]))));
 
+    $('darfAcoes').replaceChildren(...partes);
+    partes.length = 0;
+
     for (const ano of anosDeclaracao(aportesAcoes, proventosAcoes)) {
         const r = resumoAnual(aportesAcoes, proventosAcoes, ano);
-        partes.push(elTexto('h3', `Resumo de ${ano} (declaração de ${ano + 1})`));
+        partes.push(tituloFicha(`Resumo de ${ano}`, ` (declaração de ${ano + 1})`));
         partes.push(tituloFicha('Bens e Direitos', ' · grupo 03, código 01: custo de cada ação'));
         partes.push(r.bens.length
             ? tabelaIr(['Ação', `31/12/${ano - 1}`, `31/12/${ano}`], r.bens.map(b => linhaTabela([[b.ticker, 'ticker'], [brl.format(b.anterior)], [brl.format(b.atual)]])))
@@ -1866,7 +1924,7 @@ function mostrarDeclaracao(temAcoes) {
         partes.push(tituloFicha('Tributação Exclusiva', ' · código 10: JCP'));
         partes.push(listaComTotal(r.jcp, 'Nenhum JCP no ano.'));
     }
-    $('corpoDeclaracao').replaceChildren(...partes);
+    $('declaracaoAcoes').replaceChildren(...partes);
 }
 
 // ------------------------------------------------------------------ //

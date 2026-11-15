@@ -1676,12 +1676,15 @@ async function cotacaoDe(ticker, token, tentativa = 1) {
 }
 
 async function buscarCotacoes() {
-    if (!aportesAcoes.length) { estadoCotacao = 'nada'; return mostrarAcoes(); }
+    // FIIs também: a cotação deles entra só no Patrimônio hoje do Panorama
+    const tickersFii = [...fiisPorTicker(aportesFii).keys()].filter(t => /^[A-Z]{4}\d{2}$/.test(t));
+    if (!aportesAcoes.length && !tickersFii.length) { estadoCotacao = 'nada'; return mostrarAcoes(); }
     const token = await tokenBrapiGuardado();
-    if (!token) { estadoCotacao = 'sem-token'; return mostrarAcoes(); }
-    estadoCotacao = 'buscando';
+    if (!token) { estadoCotacao = aportesAcoes.length ? 'sem-token' : 'nada'; return mostrarAcoes(); }
+    if (aportesAcoes.length) estadoCotacao = 'buscando';
     mostrarAcoes();
-    const tickers = [...new Set(aportesAcoes.map(a => tickerCotacao(a.ticker)))];
+    const tickersAcoes = [...new Set(aportesAcoes.map(a => tickerCotacao(a.ticker)))];
+    const tickers = [...tickersAcoes, ...tickersFii.filter(t => !tickersAcoes.includes(t))];
     const respostas = [];
     for (const t of tickers) {
         try { respostas.push({ status: 'fulfilled', value: await cotacaoDe(t, token) }); }
@@ -1700,8 +1703,9 @@ async function buscarCotacoes() {
     cotacoes = novas;
     horas.sort((a, b) => a - b);
     horaCotacao = horas.find(h => !isNaN(h)) || null; // a mais antiga: vale para todas
-    const faltam = tickers.length - Object.keys(novas).length;
-    estadoCotacao = recusado ? 'token-recusado' : faltam === tickers.length ? 'erro' : faltam ? 'parcial' : 'ok';
+    const faltam = tickersAcoes.filter(t => typeof novas[t] !== 'number').length;
+    estadoCotacao = !tickersAcoes.length ? 'nada'
+        : recusado ? 'token-recusado' : faltam === tickersAcoes.length ? 'erro' : faltam ? 'parcial' : 'ok';
     mostrarAcoes();
 }
 
@@ -2360,7 +2364,10 @@ function mostrarMeses(rf) {
 // Hoje do Panorama: IPCA+, FII e ações. Roda de novo quando chega a cotação das ações.
 function mostrarHoje() {
     if (!ultimoPanorama) return;
-    const { ipcaAportado, fiiAportado, ipcaHoje, fiiHoje, nomeFii, hoje } = ultimoPanorama;
+    const { ipcaAportado, fiiAportado, ipcaHoje, fiis, nomeFii, hoje } = ultimoPanorama;
+    const cotacaoFii = f => (typeof cotacoes[f.ticker] === 'number' ? cotacoes[f.ticker] : null);
+    const fiiHoje = fiis.reduce((s, f) => s + f.cotas * (cotacaoFii(f) ?? f.preco), 0);
+    const fiisSemCotacao = fiis.filter(f => cotacaoFii(f) === null).map(f => f.ticker);
     const ca = carteiraAcoes(aportesAcoes, cotacoes);
     const acoesAportado = aportesAcoes.length ? ca.liquido : 0;
     const acoesHoje = ca.posicoes.length ? ca.atual : 0; // null: falta cotação
@@ -2400,9 +2407,11 @@ function mostrarHoje() {
     preencherAjuda('ajudaHoje', [
         `Estimativa do que você receberia resgatando tudo hoje.`,
         `Tesouro IPCA+: valor pela taxa contratada e pela inflação projetada, já líquido (sem IR e sem custódia).`,
-        `${nomeFii}: cotas na carteira × preço da última compra de cada um.`,
+        `${nomeFii}: cotas na carteira × cotação mais recente (brapi.dev). Se faltar a cotação de um FII, entra o preço da última compra dele.`
+            + (fiisSemCotacao.length ? ` Agora sem cotação: ${fiisSemCotacao.join(', ')}.` : ''),
         `Ações: quantidade × cotação mais recente (brapi.dev), sem descontar IR nem custos de venda. Enquanto falta a cotação de alguma ação, o Patrimônio fica em —.`,
-        `O Tesouro e os ${nomeFii} não usam cotação de mercado: o título do Tesouro é marcado a mercado todo dia, e a página não tem esse preço.`,
+        `Reinvestimento: rendimentos e dividendos usados para comprar cotas ou ações (Origem = Rendimento) entram aqui de forma indireta, pelas cotas e ações que eles compraram. Como essas compras não entram no Total aportado, o valor delas aparece como ganho na linha de baixo. Provento recebido e ainda não reinvestido (parado na corretora) não entra.`,
+        `O Tesouro não usa cotação de mercado: o título é marcado a mercado todo dia, e a página não tem esse preço.`,
     ]);
 }
 
@@ -2463,9 +2472,11 @@ function recalcular() {
     const fiiNaData = rf ? rf.patrimonio : 0;
     const totalNaData = ipcaNaData + fiiNaData;
     const ipcaHoje = r.serie[0].existentesLiquido;
-    const fiiHoje = rf ? rf.patrimonioHoje : 0;
     const nomeFii = 'FIIs';
-    ultimoPanorama = { ipcaAportado: r.totalAportado, fiiAportado: rf ? rf.investido : 0, ipcaHoje, fiiHoje, nomeFii, hoje };
+    ultimoPanorama = {
+        ipcaAportado: r.totalAportado, fiiAportado: rf ? rf.investido : 0, ipcaHoje, nomeFii, hoje,
+        fiis: fiis.map(f => ({ ticker: f.ticker, cotas: f.r.cotasHoje, preco: f.r.preco })),
+    };
     mostrarHoje();
     // Projeção
     $('dataUltima').setAttribute('aria-pressed', String(dataFinal === config.vencimento));

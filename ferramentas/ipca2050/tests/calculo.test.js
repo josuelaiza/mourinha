@@ -489,6 +489,8 @@ test('ações: resultado por ação soma vendas, proventos e o latente; vendidas
     perto(de('AAAA4F').proventos, 20.84);
     perto(de('AAAA4F').resultado, 110 + 20.84 + (50 * 12 - 500));
     perto(de('BBBB3').resultado, 8 + (450 - 500));
+    perto(de('AAAA4F').valorizacao, 50 * 12 - 500);
+    assert.equal(de('CCCC3').valorizacao, 0); // vendida por inteiro
     assert.equal(de('CCCC3').quantidade, 0);
     perto(de('CCCC3').resultado, 6000);
     perto(r.lucroVendas, 6180);
@@ -498,6 +500,7 @@ test('ações: resultado por ação soma vendas, proventos e o latente; vendidas
     // sem a cotação de uma ação ainda na carteira: o resultado dela fica sem valor
     const sem = resultadoPorAcao(OPERACOES_IR, PROVENTOS_IR, { AAAA4: 12 });
     assert.equal(sem.linhas.find(l => l.ticker === 'BBBB3').resultado, null);
+    assert.equal(sem.linhas.find(l => l.ticker === 'BBBB3').valorizacao, null);
     perto(sem.linhas.find(l => l.ticker === 'CCCC3').resultado, 6000);
 });
 

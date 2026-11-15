@@ -248,7 +248,8 @@ function percorrerAcoes(aportes, ate) {
 
 // Resultado de cada ação, inclusive as já vendidas por inteiro:
 // resultado = lucro das vendas + proventos + (valor atual − aportado).
-// resultado = null se a ação ainda está na carteira e falta a cotação.
+// valorizacao = valor atual − custo (0 se vendida por inteiro).
+// valorizacao e resultado = null se a ação ainda está na carteira e falta a cotação.
 export function resultadoPorAcao(aportes, proventos, cotacoes = {}) {
     const { porTicker, vendas } = percorrerAcoes(aportes);
     const linhas = new Map();
@@ -263,7 +264,7 @@ export function resultadoPorAcao(aportes, proventos, cotacoes = {}) {
         const pos = porTicker.get(l.ticker) || { quantidade: 0, investido: 0 };
         const cotacao = cotacoes[tickerCotacao(l.ticker)];
         const latente = pos.quantidade === 0 ? 0 : typeof cotacao === 'number' ? pos.quantidade * cotacao - pos.investido : null;
-        return { ...l, quantidade: pos.quantidade, resultado: latente === null ? null : l.lucroVendas + l.proventos + latente };
+        return { ...l, quantidade: pos.quantidade, valorizacao: latente, resultado: latente === null ? null : l.lucroVendas + l.proventos + latente };
     });
     return {
         linhas: lista,

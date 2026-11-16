@@ -388,6 +388,9 @@ test('rebalanceador: gatilho pela diferença entre o maior e o menor peso', () =
     assert.equal(r.disparou, true);
     assert.equal(analiseRebalanceamento([{ p: 10, q: 10 }, { p: 10.7, q: 10 }], 8).disparou, false);
     assert.equal(analiseRebalanceamento([{ p: 10, q: 0 }, { p: 10, q: 0 }], 8).disparou, false);
+    // gatilho com casa decimal (4,5 pontos)
+    assert.equal(analiseRebalanceamento([{ p: 52.25, q: 1 }, { p: 47.75, q: 1 }], 4.5).disparou, true);
+    assert.equal(analiseRebalanceamento([{ p: 52.2, q: 1 }, { p: 47.8, q: 1 }], 4.5).disparou, false);
 });
 
 test('rebalanceador: vende o excesso e compra a de menor peso com o caixa', () => {

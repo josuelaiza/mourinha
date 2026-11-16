@@ -1937,7 +1937,8 @@ function mostrarDeclaracao(temAcoes) {
 // ------------------------------------------------------------------ //
 // Rebalanceador: meta = partes iguais; gatilho = maior − menor chegar a N pontos
 // ------------------------------------------------------------------ //
-const gatilhoRebal = () => (config.acoes && config.acoes.gatilhoRebalanceamento) || 8;
+const gatilhoRebal = () => (config.acoes && config.acoes.gatilhoRebalanceamento) || 4.5;
+const gatilhoTexto = () => gatilhoRebal().toLocaleString('pt-BR'); // 4,5 e não 4.5
 const pontos = v => v.toFixed(1).replace('.', ',') + ' pts';
 
 // Só com a cotação de todas as ações. itens na ordem da tabela.
@@ -1974,13 +1975,12 @@ function mostrarRebalanceamento(c, rb) {
     $('usoAporteAcoes').textContent = rb.aporte > 0
         ? `Usa ${brl.format(rb.compra.usado)} do aporte · sobra ${brl.format(rb.compra.sobra)}`
         : '';
-    const g = gatilhoRebal();
     const forte = document.createElement('strong');
     forte.textContent = `Maior − menor: ${pontos(rb.analise.spread)}`;
     situacao.classList.toggle('perigo', rb.analise.disparou);
     situacao.replaceChildren(rb.analise.disparou
-        ? `Rebalancear: a diferença chegou a ${g} pontos. `
-        : `Tudo certo: diferença abaixo de ${g} pontos. Os aportes cuidam do ajuste. `, forte);
+        ? `Rebalancear: a diferença chegou a ${gatilhoTexto()} pontos. `
+        : `Tudo certo: diferença abaixo de ${gatilhoTexto()} pontos. Os aportes cuidam do ajuste. `, forte);
     if (!lista.length) return;
     const linhas = lista.map((x, n) => {
         const div = document.createElement('div');
@@ -2011,7 +2011,7 @@ $('botaoModoTeste').addEventListener('click', () => {
     const rb = dadosRebalanceamento(carteiraAcoes(aportesAcoes, cotacoes));
     if (!rb) return;
     if (!rb.analise.disparou) {
-        $('msgModoTeste').textContent = `Nada a ajustar: a diferença está abaixo de ${gatilhoRebal()} pontos.`;
+        $('msgModoTeste').textContent = `Nada a ajustar: a diferença está abaixo de ${gatilhoTexto()} pontos.`;
         return;
     }
     $('msgModoTeste').textContent = '';
@@ -2055,7 +2055,7 @@ function montarModoTeste() {
         d.querySelector('.pl').addEventListener('click', () => { s.q++; desenharModoTeste(); });
         return d;
     }));
-    $('rbNota').textContent = `A linha vertical em cada barra marca a meta de ${pct(t.meta).replace(',00', '')} (partes iguais). O gatilho é a diferença entre a maior e a menor chegar a ${gatilhoRebal()} pontos. Nada do modo teste é gravado.`;
+    $('rbNota').textContent = `A linha vertical em cada barra marca a meta de ${pct(t.meta).replace(',00', '')} (partes iguais). O gatilho é a diferença entre a maior e a menor chegar a ${gatilhoTexto()} pontos. Nada do modo teste é gravado.`;
     desenharModoTeste();
 }
 

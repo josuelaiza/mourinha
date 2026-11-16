@@ -26,7 +26,7 @@
   "diaAporteFuturo": 15,
   "ultimoMesAporteFuturo": "2050-07",
   "fii": { "aporteMensalPadrao": 0, "diaAporteFuturo": 15 },
-  "acoes": { "gatilhoRebalanceamento": 8 },
+  "acoes": { "gatilhoRebalanceamento": 4.5 },
   "sincronizacao": {
     "repo": "josuelaiza/mourinha",
     "workflow": "sincronizar-aportes.yml",

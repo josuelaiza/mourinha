@@ -1030,8 +1030,8 @@
 // juntar o index.html novo com o módulo antigo do cache e travar em "Carregando…"
 import { simular, simularFii, fiiPorAno, hojeLocal, aporteParaMeta, primeiraData, deflator, mediasMensais, tickerCotacao, carteiraAcoes,
     analiseRebalanceamento, sugerirRebalanceamento, passosRebalanceamento, caixaRebalanceamento, comprasComAporte,
-    resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao, fiisPorTicker, precoMedioFii, somarFiis } from './calculo.js?v=16';
-import * as cripto from './cripto.js?v=16';
+    resultadoPorAcao, apuracaoMensal, resumoAnual, anosDeclaracao, fiisPorTicker, precoMedioFii, somarFiis } from './calculo.js?v=17';
+import * as cripto from './cripto.js?v=17';
 
 const $ = id => document.getElementById(id);
 const CHAVE_APORTE = 'ipca2050.aporteMensal';
@@ -1122,10 +1122,10 @@ async function abrirComChave(chave, lembrada) {
             const a = await cripto.decifrarEntrada(chave, entrada);
             if (!/^\d{4}-\d{2}-\d{2}$/.test(a.data)) throw new Error('payload');
             if (a.tipo === 'acao') {
-                if (!/^[A-Z]{4}\d{1,2}F?$/.test(a.ticker) || !Number.isInteger(a.quantidade) || !(a.quantidade > 0) || !(a.valor > 0)
+                if (!/^[A-Z][A-Z0-9]{3}\d{1,2}F?$/.test(a.ticker) || !Number.isInteger(a.quantidade) || !(a.quantidade > 0) || !(a.valor > 0)
                     || ![undefined, 'venda'].includes(a.operacao) || ![undefined, 'rendimento'].includes(a.origem)) throw new Error('payload');
             } else if (a.tipo === 'provento') {
-                if (!/^[A-Z]{4}\d{1,2}F?$/.test(a.ticker) || !['dividendo', 'jcp'].includes(a.provento) || !(a.valor > 0)) throw new Error('payload');
+                if (!/^[A-Z][A-Z0-9]{3}\d{1,2}F?$/.test(a.ticker) || !['dividendo', 'jcp'].includes(a.provento) || !(a.valor > 0)) throw new Error('payload');
             } else if (a.tipo === 'fii') {
                 if (!(a.cotas > 0) || !(a.preco > 0) || ![undefined, 'rendimento'].includes(a.origem)
                     || (a.ticker !== undefined && !/^[A-Z]{4}\d{2}$/.test(a.ticker))) throw new Error('payload');

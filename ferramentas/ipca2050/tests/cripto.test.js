@@ -291,11 +291,12 @@ test('sincronização: nome fora do padrão é ignorado e banco desconhecido é 
         ], acoes: [
             acao('ABCD4', [paginaAcao('c3333333-3333-4333-8333-333333333333', '10/03/2031', 'Compra', 1, 10, null)]), // sem F
             { titulo: 'EFGH3F', bancos: [{ titulo: 'Notas', colunas: ['Data', 'Texto'], paginas: [] }] },
+            acao('AB1C3F', [paginaAcao('c4444444-4444-4444-8444-444444444444', '10/03/2031', 'Compra', 1, 10, null)]), // número no meio vale
         ] });
-        assert.match(rodar(), /^1 aporte\(s\) novo\(s\).*3 página\(s\) ou banco\(s\) com nome fora do padrão/);
-        assert.equal(dados().entries.length, 1);
+        assert.match(rodar(), /^2 aporte\(s\) novo\(s\).*3 página\(s\) ou banco\(s\) com nome fora do padrão/);
+        assert.equal(dados().entries.length, 2);
         assert.throws(() => rodar('--profunda'), /nome fora do padrão/);
-        assert.equal(dados().entries.length, 1);
+        assert.equal(dados().entries.length, 2);
     } finally {
         rmSync(pasta, { recursive: true, force: true });
     }

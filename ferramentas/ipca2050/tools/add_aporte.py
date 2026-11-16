@@ -88,8 +88,8 @@ def ler_cotas(texto: str) -> int:
 
 def ler_ticker(texto: str) -> str:
     ticker = texto.strip().upper()
-    # 4 letras + 1 ou 2 dígitos, com F no fim quando é do mercado fracionário
-    if not re.fullmatch(r"[A-Z]{4}\d{1,2}F?", ticker):
+    # 4 caracteres (começa com letra; pode ter número, ex.: AB1C) + 1 ou 2 dígitos, com F no fim quando é do mercado fracionário
+    if not re.fullmatch(r"[A-Z][A-Z0-9]{3}\d{1,2}F?", ticker):
         raise argparse.ArgumentTypeError("ticker no formato da B3, ex.: ABCD4 ou ABCD4F")
     return ticker
 

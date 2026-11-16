@@ -66,7 +66,7 @@ from add_aporte import PASTA, carregar_chave_publica, cifrar, gravar_atomico  # 
 API = "https://api.notion.com/v1"
 VERSAO_API = "2022-06-28"
 TICKER_FII = r"[A-Z]{4}\d{2}"
-TICKER_ACAO = r"[A-Z]{4}\d{1,2}F"  # sempre com F (fracionário)
+TICKER_ACAO = r"[A-Z][A-Z0-9]{3}\d{1,2}F"  # sempre com F (fracionário); pode ter número no meio, ex.: AB1C3F
 
 
 class LinhaInvalida(ValueError):

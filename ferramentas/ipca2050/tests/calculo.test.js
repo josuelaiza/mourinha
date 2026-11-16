@@ -348,6 +348,7 @@ test('ações: ticker fracionário consulta a cotação sem o F', () => {
     assert.equal(tickerCotacao('ABCD4F'), 'ABCD4');
     assert.equal(tickerCotacao('ABCD11F'), 'ABCD11');
     assert.equal(tickerCotacao('ABCD4'), 'ABCD4');
+    assert.equal(tickerCotacao('AB1C3F'), 'AB1C3'); // número no meio do código
 });
 
 test('ações: carteira agrupa por ticker, com preço médio, lucro e parte do total atual', () => {

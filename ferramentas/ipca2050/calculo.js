@@ -156,7 +156,7 @@ export function mediasMensais({ aportes, aportesFii = [], aportesAcoes = [], hoj
 
 // Ticker para consultar a cotação: o "F" do fim (mercado fracionário) é a mesma ação.
 export function tickerCotacao(ticker) {
-    return /^[A-Z]{4}\d{1,2}F$/.test(ticker) ? ticker.slice(0, -1) : ticker;
+    return /^[A-Z][A-Z0-9]{3}\d{1,2}F$/.test(ticker) ? ticker.slice(0, -1) : ticker;
 }
 
 // Carteira de ações, separada do resto do patrimônio.

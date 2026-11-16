@@ -888,7 +888,7 @@
                     <input type="number" id="aporteAcoes" min="0" step="10" inputmode="decimal" placeholder="0">
                     <span class="msg-rebal" id="usoAporteAcoes" role="status"></span>
                 </div>
-                <div class="situacao-rebal" id="situacaoRebal" role="status" hidden></div>
+                <div class="situacao-rebal" id="situacaoRebal" hidden><span id="textoRebal" role="status"></span> <span class="ajuda-envoltorio"><button type="button" class="ajuda-botao pequeno" aria-expanded="false" aria-controls="ajudaRebal" aria-label="O que é Maior − Menor e o gatilho">?</button><span class="ajuda" id="ajudaRebal" hidden><ul></ul></span></span></div>
                 <div class="rolagem">
                 <table class="tabela tabela-acoes">
                     <thead>
@@ -919,7 +919,7 @@
                 <h3>Rebalanceador de ações</h3>
                 <div class="grid">
                     <div class="mc"><div class="l">Total em ações</div><div id="rbTotal" class="v">—</div></div>
-                    <div class="mc"><div class="l">Maior − menor</div><div id="rbSpread" class="v">—</div></div>
+                    <div class="mc"><div class="l">Maior − Menor</div><div id="rbSpread" class="v">—</div></div>
                 </div>
                 <div class="st" id="rbSituacao"></div>
                 <div class="act" id="rbPassos"></div>
@@ -1976,9 +1976,17 @@ function mostrarRebalanceamento(c, rb) {
         ? `Usa ${brl.format(rb.compra.usado)} do aporte · sobra ${brl.format(rb.compra.sobra)}`
         : '';
     const forte = document.createElement('strong');
-    forte.textContent = `Maior − menor: ${pontos(rb.analise.spread)}`;
+    forte.textContent = `Maior − Menor = ${pontos(rb.analise.spread)}`;
     situacao.classList.toggle('perigo', rb.analise.disparou);
-    situacao.replaceChildren(rb.analise.disparou
+    const casas2 = v => v.toFixed(2).replace('.', ','); // duas casas no exemplo, para a conta fechar
+    const fatia = v => v.toFixed(1).replace('.', ',') + '%';
+    preencherAjuda('ajudaRebal', [
+        `Maior − Menor: a fatia da ação que mais pesa na carteira de ações menos a fatia da que menos pesa, pelo valor de hoje (quantidade × cotação). Agora: ${casas2(rb.analise.maior)}% − ${casas2(rb.analise.menor)}% = ${casas2(Number(rb.analise.maior.toFixed(2)) - Number(rb.analise.menor.toFixed(2)))} pontos.`,
+        `Meta: partes iguais, 100% ÷ ${rb.analise.pesos.length} = ${fatia(100 / rb.analise.pesos.length)} em cada.`,
+        `Gatilho de ${gatilhoTexto()} pontos: quando Maior − Menor chega a ${gatilhoTexto()}, a página sugere vender o excesso da maior e comprar a menor (lista logo abaixo). Abaixo disso, os aportes cuidam do ajuste.`,
+        `Por que ${gatilhoTexto()}: equivale a uma ação ter rendido uns 50% a mais que a outra. São os 8 pontos de quando eram 5 ações, × 5/9.`,
+    ]);
+    $('textoRebal').replaceChildren(rb.analise.disparou
         ? `Rebalancear: a diferença chegou a ${gatilhoTexto()} pontos. `
         : `Tudo certo: diferença abaixo de ${gatilhoTexto()} pontos. Os aportes cuidam do ajuste. `, forte);
     if (!lista.length) return;

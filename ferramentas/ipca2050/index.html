@@ -236,17 +236,6 @@
         .lista-composicao .nome { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--texto); min-width: 0; }
         .lista-composicao .sub { grid-column: 2; font-size: 0.72rem; color: var(--texto-3); }
         .lista-composicao .numero { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
-        /* Quem rende mais hoje: % sobre o dinheiro do bolso, com barra para comparar */
-        .lista-rendimento { list-style: none; }
-        .lista-rendimento li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px 10px; padding: 10px 0; }
-        .lista-rendimento li + li { border-top: 1px solid var(--borda); }
-        .lista-rendimento .marca { width: 10px; height: 10px; border-radius: 3px; }
-        .lista-rendimento .nome { font-size: 0.9rem; color: var(--texto); }
-        .lista-rendimento .numero { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
-        .lista-rendimento .numero.ganho { color: var(--ok); }
-        .lista-rendimento .numero.perda { color: var(--erro); }
-        .lista-rendimento .barra { grid-column: 2 / -1; height: 4px; background: var(--borda); border-radius: 2px; overflow: hidden; }
-        .lista-rendimento .barra span { display: block; height: 100%; border-radius: 2px; }
         .lista-composicao .parte { grid-column: 3; text-align: right; font-size: 0.72rem; color: var(--texto-3); font-variant-numeric: tabular-nums; }
         .abre-lista { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
         .abre-lista::before { content: "▸"; color: var(--texto-3); font-size: 0.75rem; }
@@ -534,15 +523,6 @@
                         <div class="detalhe" id="panHojeDetalhe"></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Quem rende mais hoje: rendimento de cada investimento em %, sobre o dinheiro do bolso -->
-            <div class="cartao" id="cartaoRendimento" hidden>
-                <div class="cabecalho">
-                    <h2>Quem rende mais hoje</h2>
-                    <div class="ajuda-envoltorio"><button type="button" class="ajuda-botao" aria-expanded="false" aria-controls="ajudaRendimento" aria-label="Como o rendimento é calculado">?</button><div class="ajuda" id="ajudaRendimento" hidden><ul></ul></div></div>
-                </div>
-                <ul class="lista-rendimento" id="listaRendimento"></ul>
             </div>
 
             <!-- Projeção: o total na data escolhida e de onde ele vem -->
@@ -1462,7 +1442,8 @@ function preencherAjuda(id, textos) {
 }
 
 // divisão por ativo no topo de uma caixa de ajuda: uma linha por ativo, com valor e % do total.
-// itens = [{ nome, valor, cor }]; um ativo novo é só mais um item na lista.
+// itens = [{ nome, valor, cor, parte? }]; um ativo novo é só mais um item na lista.
+// valor null mostra —; parte (texto) troca o % do total por outra coisa, como o rendimento.
 function preencherDivisao(id, itens) {
     const caixa = $(id);
     let divisao = caixa.querySelector('.divisao');
@@ -1471,11 +1452,12 @@ function preencherDivisao(id, itens) {
         divisao.className = 'divisao';
         caixa.prepend(divisao);
     }
-    const total = itens.reduce((soma, item) => soma + item.valor, 0);
+    const total = itens.reduce((soma, item) => soma + (item.valor ?? 0), 0);
     divisao.replaceChildren(...itens.map(item => {
         const linha = document.createElement('span');
         linha.className = 'divisao-linha';
-        const partes = [['marca', ''], ['nome', item.nome], ['numero', brl.format(item.valor)], ['parte', pct(total > 0 ? item.valor / total : 0)]];
+        const partes = [['marca', ''], ['nome', item.nome], ['numero', item.valor === null ? '—' : brl.format(item.valor)],
+            ['parte', item.parte ?? pct(total > 0 ? item.valor / total : 0)]];
         linha.replaceChildren(...partes.map(([classe, texto]) => {
             const el = document.createElement('span');
             el.className = classe;
@@ -2404,43 +2386,17 @@ function resultadoTotalAcoes() {
     return linhas.some(l => l.resultado === null) ? null : linhas.reduce((s, l) => s + l.resultado, 0);
 }
 
-// Quem rende mais hoje: rendimento de cada investimento sobre o dinheiro do bolso, do maior para o menor.
-// itens = [{ nome, cor, aportado, ganho }]; ganho null = falta cotação (mostra —).
-function mostrarRendimento(itens, nomeFii) {
+// Comparação no "?" do Patrimônio hoje: valor de hoje e rendimento de cada investimento sobre o
+// dinheiro do bolso, de quem rende mais para quem rende menos. itens = [{ nome, cor, aportado, hoje, ganho }];
+// hoje ou ganho null = falta cotação (mostra —).
+function mostrarRendimento(itens) {
     const lista = itens.filter(i => i.aportado > 0)
         .map(i => ({ ...i, taxa: i.ganho === null ? null : i.ganho / i.aportado }))
         .sort((a, b) => (b.taxa ?? -Infinity) - (a.taxa ?? -Infinity));
-    $('cartaoRendimento').hidden = !lista.length;
-    const maior = Math.max(0, ...lista.filter(i => i.taxa !== null).map(i => Math.abs(i.taxa)));
-    $('listaRendimento').replaceChildren(...lista.map(i => {
-        const li = document.createElement('li');
-        const marca = document.createElement('span');
-        marca.className = 'marca';
-        marca.style.background = i.cor;
-        const nome = document.createElement('span');
-        nome.className = 'nome';
-        nome.textContent = i.nome;
-        const numero = document.createElement('span');
-        numero.className = 'numero' + (i.taxa === null ? '' : i.taxa >= 0 ? ' ganho' : ' perda');
-        numero.textContent = i.taxa === null ? '—' : `${i.taxa >= 0 ? '+' : '−'}${pct(Math.abs(i.taxa))}`;
-        const barra = document.createElement('span');
-        barra.className = 'barra';
-        barra.setAttribute('aria-hidden', 'true');
-        const cheio = document.createElement('span');
-        cheio.style.width = (i.taxa === null || maior === 0 ? 0 : Math.abs(i.taxa) / maior * 100) + '%';
-        cheio.style.background = i.cor;
-        barra.appendChild(cheio);
-        li.append(marca, nome, numero, barra);
-        return li;
-    }));
-    preencherAjuda('ajudaRendimento', [
-        `Quanto cada investimento rendeu desde o primeiro aporte, em % do dinheiro que saiu do seu bolso. Mostra quem está rendendo mais em proporção, não quem tem mais dinheiro.`,
-        `Tesouro IPCA+ 2050: (valor de hoje − aportado) ÷ aportado. O valor de hoje vem da taxa contratada e da inflação projetada, já sem IR e sem custódia. Não é o preço de mercado do dia.`,
-        `${nomeFii}: (cotas × cotação atual − investido) ÷ investido. As cotas compradas com rendimento entram, porque estão nas cotas. Rendimento parado na corretora não entra. Sem a cotação de algum FII, aparece —.`,
-        `Ações: (lucro das vendas + proventos + valorização) ÷ aportado (compras − vendas). É o Resultado total da aba Ações. Sem a cotação de alguma ação, aparece —.`,
-        `Imposto: FIIs e ações aparecem sem descontar IR, que só existiria se você vendesse. O Tesouro IPCA+ já vem sem IR.`,
-        `A comparação é justa porque os três começaram na mesma semana e recebem aportes todo mês, em paralelo.`,
-    ]);
+    preencherDivisao('ajudaHoje', lista.map(i => ({
+        nome: i.nome, cor: i.cor, valor: i.hoje,
+        parte: i.taxa === null ? '—' : `${i.taxa >= 0 ? '+' : '−'}${pct(Math.abs(i.taxa))}`,
+    })));
 }
 
 // Hoje do Panorama: IPCA+, FII e ações. Roda de novo quando chega a cotação das ações.
@@ -2476,10 +2432,10 @@ function mostrarHoje() {
         $('panHojeDetalhe').replaceChildren(sinal, ' sobre o aportado');
     }
     mostrarRendimento([
-        { nome: 'Tesouro IPCA+ 2050', cor: 'var(--cor-ipca)', aportado: ipcaAportado, ganho: ipcaHoje - ipcaAportado },
-        { nome: nomeFii, cor: 'var(--cor-fii)', aportado: fiiAportado, ganho: fiisSemCotacao.length ? null : fiiHoje - fiiAportado },
-        { nome: 'Ações', cor: 'var(--cor-acoes)', aportado: aportesAcoes.length ? acoesAportado : 0, ganho: resultadoTotalAcoes() },
-    ], nomeFii);
+        { nome: 'Tesouro IPCA+ 2050', cor: 'var(--cor-ipca)', aportado: ipcaAportado, hoje: ipcaHoje, ganho: ipcaHoje - ipcaAportado },
+        { nome: nomeFii, cor: 'var(--cor-fii)', aportado: fiiAportado, hoje: fiiHoje, ganho: fiisSemCotacao.length ? null : fiiHoje - fiiAportado },
+        { nome: 'Ações', cor: 'var(--cor-acoes)', aportado: aportesAcoes.length ? acoesAportado : 0, hoje: acoesHoje, ganho: resultadoTotalAcoes() },
+    ]);
     preencherDivisao('ajudaAportado', [
         { nome: 'Tesouro IPCA+ 2050', valor: ipcaAportado, cor: 'var(--cor-ipca)' },
         { nome: nomeFii, valor: fiiAportado, cor: 'var(--cor-fii)' },
@@ -2493,6 +2449,11 @@ function mostrarHoje() {
     ]);
     preencherAjuda('ajudaHoje', [
         `Estimativa do que você receberia resgatando tudo hoje.`,
+        `Na lista acima: o valor de hoje de cada investimento e, à direita, quanto ele rendeu desde o primeiro aporte, em % do dinheiro do seu bolso. A ordem vai de quem rende mais para quem rende menos. A comparação é justa porque os três começaram na mesma semana e recebem aportes todo mês.`,
+        `Rendimento do Tesouro IPCA+: (valor de hoje − aportado) ÷ aportado.`,
+        `Rendimento dos ${nomeFii}: (cotas × cotação atual − investido) ÷ investido. Sem a cotação de algum FII, o rendimento fica em —.`,
+        `Rendimento das ações: (lucro das vendas + proventos + valorização) ÷ aportado (compras − vendas). É o Resultado total da aba Ações.`,
+        `FIIs e ações aparecem sem descontar IR, que só existiria se você vendesse.`,
         `Tesouro IPCA+: valor pela taxa contratada e pela inflação projetada, já líquido (sem IR e sem custódia).`,
         `${nomeFii}: cotas na carteira × cotação mais recente (brapi.dev). Se faltar a cotação de um FII, entra o preço da última compra dele.`
             + (fiisSemCotacao.length ? ` Agora sem cotação: ${fiisSemCotacao.join(', ')}.` : ''),

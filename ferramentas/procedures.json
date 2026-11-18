@@ -447,5 +447,12 @@
     "topico": "Rotina e Comunicação",
     "informacao": "Após imprimir o livro, junte todos os documentos conforme a folha na parede. Ao final, o sistema perguntará se é MULTI ou UNICA; escolha MULTI para criar um único documento com todas as páginas e coloque na pasta da equipe de SV. Para digitalizar, use o pen drive: conecte-o, aguarde o reconhecimento pela impressora, clique em digitalizar, renomeie o arquivo para identificação e depois coloque o pen drive no PC.",
     "imagem": ""
+  },
+  {
+    "id": 65,
+    "titulo": "Localidades Especiais/Diversas",
+    "topico": "Informações Gerais",
+    "informacao": "Todas as localidades da Região Norte referentes ao serviço de Conferente de Carga.",
+    "imagem": "imagens conferente/localidades-cindacta4.png"
   }
 ]

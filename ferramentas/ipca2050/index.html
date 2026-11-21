@@ -303,6 +303,9 @@
         .tabela-acoes .ticker { font-weight: 600; }
         .tabela-acoes td .pct-lucro { display: block; font-size: 0.72rem; }
         .tabela-acoes .vazio { text-align: left; color: var(--texto-3); white-space: normal; }
+        /* SimAp: simular um aporte numa ação */
+        .simap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+        .simap .sobra { display: block; font-size: 0.72rem; color: var(--texto-3); }
         /* Rebalanceador na tabela de ações (visual do site) */
         .situacao-rebal {
             font-size: 0.8rem; color: var(--texto-2); background: var(--cartao-2); border-left: 3px solid var(--ok);
@@ -389,11 +392,11 @@
             background: var(--cartao); color: var(--texto); border: 1px solid var(--borda); border-radius: 10px; padding: 14px;
         }
         dialog#janelaPrecos::backdrop { background: rgba(0, 0, 0, 0.6); }
-        dialog#janelaToken, dialog#janelaBrapi, dialog#janelaFicticio {
+        dialog#janelaToken, dialog#janelaBrapi, dialog#janelaFicticio, dialog#janelaSimAp {
             margin: auto; width: min(480px, calc(100vw - 24px)); max-height: calc(100vh - 48px);
             background: var(--cartao); color: var(--texto); border: 1px solid var(--borda); border-radius: 10px; padding: 14px;
         }
-        dialog#janelaToken::backdrop, dialog#janelaBrapi::backdrop, dialog#janelaFicticio::backdrop { background: rgba(0, 0, 0, 0.6); }
+        dialog#janelaToken::backdrop, dialog#janelaBrapi::backdrop, dialog#janelaFicticio::backdrop, dialog#janelaSimAp::backdrop { background: rgba(0, 0, 0, 0.6); }
         dialog h2 { font-size: 0.85rem; font-weight: 600; color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.4px; }
         .texto-janela { font-size: 0.8rem; color: var(--texto-2); margin-bottom: 8px; }
         .passos { font-size: 0.8rem; color: var(--texto-2); margin: 0 0 10px 18px; }
@@ -909,6 +912,7 @@
                             <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Resultado" data-ajuda="Valorização das ações que você tem: Atual − Custo na declaração, em R$ e em %. Não inclui proventos nem lucro de vendas: o resultado completo está no cartão Resultado por ação.">Resultado</button></th>
                             <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="% do total" data-ajuda="Peso da ação na carteira de ações pelo valor de hoje (Atual, já com a valorização), não pelo que você aportou: Atual da ação ÷ soma do Atual de todas. Com um valor no campo Aporte, mostra o peso depois das compras sugeridas. Na barra, o risco do meio é a meta (partes iguais).">% do total</button></th>
                             <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="Sugestão" data-ajuda="O que comprar ou vender para voltar às partes iguais. Aparece quando a diferença entre a maior e a menor chega ao gatilho de rebalanceamento, ou quando você digita um Aporte (aí só compras).">Sugestão</button></th>
+                            <th scope="col"><button type="button" class="coluna-ajuda" aria-expanded="false" aria-controls="ajudaColuna" data-titulo="SimAp" data-ajuda="Simular aporte: toque no + para ver como a tabela fica se você comprar esta ação com um valor em R$, à cotação que escolher (vem a atual). Compra só ações inteiras; o troco aparece como sobra. Atual e Resultado continuam pela cotação real. Uma simulação por vez: some na lixeira ou ao fechar a página. Os cartões de cima seguem com os valores reais.">SimAp</button></th>
                         </tr>
                     </thead>
                     <tbody id="corpoAcoes"></tbody>
@@ -968,6 +972,27 @@
         </section>
 
         <!-- Token da brapi.dev, para as cotações (janela) -->
+        <dialog id="janelaSimAp" aria-labelledby="tituloSimAp">
+            <form id="formSimAp" method="dialog" novalidate>
+                <div class="cabecalho">
+                    <h2 id="tituloSimAp">Simular aporte</h2>
+                </div>
+                <p class="texto-janela" id="textoSimAp"></p>
+                <div class="campo">
+                    <label for="valorSimAp">Aporte (R$)</label>
+                    <input type="number" id="valorSimAp" min="0.01" step="0.01" inputmode="decimal" required>
+                </div>
+                <div class="campo">
+                    <label for="precoSimAp">Cotação (R$)</label>
+                    <input type="number" id="precoSimAp" min="0.01" step="0.01" inputmode="decimal" required>
+                </div>
+                <div class="mensagem" id="mensagemSimAp" role="status"></div>
+                <div class="botoes-janela">
+                    <button type="button" class="botao secundario" id="cancelarSimAp">Cancelar</button>
+                    <button type="submit" class="botao">Aplicar</button>
+                </div>
+            </form>
+        </dialog>
         <dialog id="janelaFicticio" aria-labelledby="tituloFicticio">
             <form id="formFicticio" method="dialog" novalidate>
                 <div class="cabecalho">
@@ -1284,6 +1309,7 @@ $('botaoEsquecer').addEventListener('click', async () => {
     proventosAcoes = [];
     cotacoes = {};
     modoTeste = null;
+    simAp = null;
     $('modoTeste').hidden = true;
     ultimoResultado = null;
     ultimoPanorama = null;
@@ -1793,20 +1819,23 @@ function mostrarAcoes() {
     }[estadoCotacao];
     texto.replaceChildren(...partes);
 
-    // tabela: uma linha por ação (com o rebalanceador, se todas tiverem cotação)
-    const rb = dadosRebalanceamento(c);
+    // tabela: uma linha por ação (com o rebalanceador, se todas tiverem cotação).
+    // Os cartões de cima ficam com c (real); a tabela usa t, que inclui o SimAp, se houver.
+    if (simAp && !c.posicoes.some(p => p.ticker === simAp.ticker)) simAp = null;
+    const t = simAp ? carteiraTabela() : c;
+    const rb = dadosRebalanceamento(t);
     const corpo = $('corpoAcoes');
-    if (!c.posicoes.length) {
+    if (!t.posicoes.length) {
         const tr = document.createElement('tr'), td = document.createElement('td');
-        td.colSpan = 9;
+        td.colSpan = 10;
         td.className = 'vazio';
         td.textContent = 'Nenhuma compra de ações registrada.';
         tr.appendChild(td);
         corpo.replaceChildren(tr);
-        mostrarRebalanceamento(c, null);
+        mostrarRebalanceamento(t, null);
         return;
     }
-    corpo.replaceChildren(...c.posicoes.map((p, i) => {
+    corpo.replaceChildren(...t.posicoes.map((p, i) => {
         const tr = document.createElement('tr');
         const celula = (conteudo, classe) => {
             const td = document.createElement('td');
@@ -1847,10 +1876,99 @@ function mostrarAcoes() {
         }
         const d = rb ? rb.final[i] - p.quantidade : 0;
         celula(d < 0 ? `Vender ${-d}` : d > 0 ? `Comprar ${d}` : '');
+        celula(celulaSimAp(p));
         return tr;
     }));
-    mostrarRebalanceamento(c, rb);
+    mostrarRebalanceamento(t, rb);
 }
+
+// ------------------------------------------------------------------ //
+// SimAp: um aporte simulado numa ação, só na tabela e só enquanto a página
+// está aberta. Entra como uma compra a mais (quantidade inteira × cotação
+// escolhida); Atual e Resultado seguem pela cotação real.
+// ------------------------------------------------------------------ //
+let simAp = null; // { ticker, valor, preco, quantidade, sobra }
+
+function carteiraTabela() {
+    if (!simAp) return carteiraAcoes(aportesAcoes, cotacoes);
+    const compra = { data: '9999-12-31', ticker: simAp.ticker, quantidade: simAp.quantidade, valor: simAp.quantidade * simAp.preco };
+    return carteiraAcoes([...aportesAcoes, compra], cotacoes);
+}
+
+const ICONE_LIXEIRA = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+
+function celulaSimAp(p) {
+    const div = document.createElement('div');
+    div.className = 'simap';
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.className = 'botao-atualizar';
+    botao.dataset.simap = p.ticker;
+    if (simAp && simAp.ticker === p.ticker) {
+        const texto = document.createElement('span');
+        texto.append(`+${simAp.quantidade} × ${brl.format(simAp.preco)}`);
+        const sobra = document.createElement('span');
+        sobra.className = 'sobra';
+        sobra.textContent = `sobra ${brl.format(simAp.sobra)}`;
+        texto.appendChild(sobra);
+        botao.innerHTML = ICONE_LIXEIRA;
+        botao.setAttribute('aria-label', `Remover simulação de ${p.ticker}`);
+        botao.title = 'Remover simulação';
+        botao.addEventListener('click', () => {
+            simAp = null;
+            mostrarAcoes();
+            const mais = document.querySelector(`#corpoAcoes [data-simap="${p.ticker}"]`);
+            if (mais) mais.focus();
+        });
+        div.append(texto, botao);
+    } else if (!simAp) {
+        botao.textContent = '+';
+        botao.setAttribute('aria-label', `Simular aporte em ${p.ticker}`);
+        botao.title = 'Simular aporte';
+        botao.addEventListener('click', () => abrirSimAp(p.ticker));
+        div.appendChild(botao);
+    }
+    return div;
+}
+
+let tickerSimAp = null; // ação da janela aberta
+function abrirSimAp(ticker) {
+    tickerSimAp = ticker;
+    const pos = carteiraAcoes(aportesAcoes, cotacoes).posicoes.find(x => x.ticker === ticker);
+    $('textoSimAp').textContent = `${ticker}: compra só ações inteiras e o troco fica como sobra. Aparece só na tabela e some na lixeira ou ao fechar a página.`;
+    $('valorSimAp').value = '';
+    $('precoSimAp').value = pos && pos.cotacao !== null ? pos.cotacao.toFixed(2) : '';
+    $('mensagemSimAp').textContent = '';
+    $('mensagemSimAp').className = 'mensagem';
+    $('janelaSimAp').showModal();
+    $('valorSimAp').focus();
+}
+$('cancelarSimAp').addEventListener('click', () => $('janelaSimAp').close());
+$('formSimAp').addEventListener('submit', e => {
+    e.preventDefault();
+    const centavosValor = Math.round(Number($('valorSimAp').value) * 100);
+    const centavosPreco = Math.round(Number($('precoSimAp').value) * 100);
+    const quantidade = centavosPreco > 0 ? Math.floor(centavosValor / centavosPreco) : 0;
+    const erro = !(centavosValor > 0) ? 'Digite um aporte maior que zero.'
+        : !(centavosPreco > 0) ? 'Digite uma cotação maior que zero.'
+        : quantidade < 1 ? 'O aporte não compra nem 1 ação a essa cotação.' : '';
+    if (erro) {
+        $('mensagemSimAp').className = 'mensagem erro';
+        $('mensagemSimAp').textContent = erro;
+        return;
+    }
+    simAp = {
+        ticker: tickerSimAp,
+        valor: centavosValor / 100,
+        preco: centavosPreco / 100,
+        quantidade,
+        sobra: (centavosValor - quantidade * centavosPreco) / 100,
+    };
+    $('janelaSimAp').close();
+    mostrarAcoes();
+    const lixeira = document.querySelector(`#corpoAcoes [data-simap="${tickerSimAp}"]`);
+    if (lixeira) lixeira.focus();
+});
 
 // Valor com sinal e cor (+ ganho, − perda), como a coluna Resultado da tabela
 function valorComSinal(v) {
@@ -2048,14 +2166,14 @@ function mostrarRebalanceamento(c, rb) {
 let modoTeste = null; // { tickers, itens (cópia simulada), snap, alvo, base, meta }
 
 $('botaoModoTeste').addEventListener('click', () => {
-    const rb = dadosRebalanceamento(carteiraAcoes(aportesAcoes, cotacoes));
+    const rb = dadosRebalanceamento(carteiraTabela());
     if (!rb) return;
     if (!rb.analise.disparou) {
         $('msgModoTeste').textContent = `Nada a ajustar: a diferença está abaixo de ${gatilhoTexto()} pontos.`;
         return;
     }
     $('msgModoTeste').textContent = '';
-    const c = carteiraAcoes(aportesAcoes, cotacoes);
+    const c = carteiraTabela();
     modoTeste = {
         tickers: c.posicoes.map(p => p.ticker),
         itens: rb.hoje.map(s => ({ ...s })),
